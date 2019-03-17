@@ -74,7 +74,7 @@
                     <?php } ?>
                     <li><a role="presentation" href="<?php echo_uri("projects/files/" . $project_info->id); ?>" data-target="#project-files-section"> <?php echo lang('files'); ?></a></li>
                     <li><a role="presentation" href="<?php echo_uri("projects/comments/" . $project_info->id); ?>" data-target="#project-comments-section"> <?php echo lang('comments'); ?></a></li>
-                    <li><a role="presentation" href="<?php echo_uri("projects/customer_feedback/" . $project_info->id); ?>" data-target="#project-customer-feedback-section"> <?php echo lang('customer_feedback'); ?></a></li>
+                    <!--<li><a role="presentation" href="<?php echo_uri("projects/customer_feedback/" . $project_info->id); ?>" data-target="#project-customer-feedback-section"> <?php echo lang('customer_feedback'); ?></a></li>-->
 
                     <?php if ($show_timesheet_info) { ?>
                         <li><a role="presentation" href="<?php echo_uri("projects/timesheets/" . $project_info->id); ?>" data-target="#project-timesheets-section"> <?php echo lang('timesheets'); ?></a></li>

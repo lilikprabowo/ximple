@@ -20,12 +20,14 @@
 - Clone this repo to your local machine using `https://gitlab.com/fajaruddin93/ximple.git`
 
 ### Demo
-Admin Login: 
-Email: admin@dummy.com 
-Password: 12345
-Spv Login:
-Email: fajaruddin93@gmail.com 
-Password: P@ssw0rd
-Staff Login:
-Email: dhanny@dummy.com 
-Password: P@ssw0rd
+<br>Admin Login: 
+<br>Email: admin@dummy.com 
+<br>Password: 12345
+
+<br>Spv Login:
+<br>Email: fajaruddin93@gmail.com 
+<br>Password: P@ssw0rd
+
+<br>Staff Login:
+<br>Email: dhanny@dummy.com 
+<br>Password: P@ssw0rd

@@ -8,6 +8,8 @@
 > If you're `README` has a lot of info, section headers might be nice.
 
 - [Installation](#installation)
+- [Clone](#Clone)
+- [Demo](#Demo)
 
 ## Installation
 

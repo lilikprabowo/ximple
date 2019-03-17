@@ -1,12 +1,15 @@
 # Implementor CRM Website (X-IMPLE)
 > Solution for every Projects Management, Team Management, and Ticketing System on Implementor Division.
 
-[![Codeigniter 3](http://www.itrelease.com/wp-content/uploads/2011/08/codeigniter-logo.png)](https://codeigniter.com/)
+<img src="http://www.itrelease.com/wp-content/uploads/2011/08/codeigniter-logo.png" width="100">
+<img src="https://cdn-images-1.medium.com/max/800/1*KWBfLD6aEEHNWyuYmL2CVw.png" width="100">
 
 ## Table of Contents 
 > If you're `README` has a lot of info, section headers might be nice.
 
 - [Installation](#installation)
+- [Clone](#Clone)
+- [Demo](#Demo)
 
 ## Installation
 
@@ -18,6 +21,15 @@
 
 - Clone this repo to your local machine using `https://gitlab.com/fajaruddin93/ximple.git`
 
-### Tech
+### Demo
+<br>Admin Login: 
+<br>Email: admin@dummy.com 
+<br>Password: 12345
 
-This project uses Codeigniter 3. Make sure you have basic PHP Programming skills. 
+<br>Spv Login:
+<br>Email: fajaruddin93@gmail.com 
+<br>Password: P@ssw0rd
+
+<br>Staff Login:
+<br>Email: dhanny@dummy.com 
+<br>Password: P@ssw0rd

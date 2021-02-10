@@ -263,23 +263,6 @@
                         ?>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="item_purchase_code" class=" col-md-2"><?php echo lang('item_purchase_code'); ?></label>
-                    <div class=" col-md-10">
-                        <?php
-                        echo form_input(array(
-                            "id" => "item_purchase_code",
-                            "name" => "item_purchase_code",
-                            "value" => get_setting('item_purchase_code') ? "******" : "",
-                            "class" => "form-control",
-                            "placeholder" => "Envato Purchase Code",
-                            "data-rule-required" => true,
-                            "data-msg-required" => lang("field_required"),
-                        ));
-                        ?>
-                    </div>
-                </div>
-
             </div>
             <div class="panel-footer">
                 <button type="submit" class="btn btn-primary"><span class="fa fa-check-circle"></span> <?php echo lang('save'); ?></button>

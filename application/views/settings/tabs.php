@@ -38,5 +38,4 @@
         
     <li role="presentation" class="<?php echo ($active_tab == 'cron_job') ? 'active' : ''; ?>"><a href="<?php echo_uri("settings/cron_job"); ?>"><?php echo lang("cron_job"); ?></a></li>
     <li role="presentation" class="<?php echo ($active_tab == 'integration') ? 'active' : ''; ?>"><a href="<?php echo_uri("settings/integration"); ?>"><?php echo lang("integration"); ?></a></li>
-    <li role="presentation" class="<?php echo ($active_tab == 'updates') ? 'active' : ''; ?>"><a href="<?php echo_uri("Updates"); ?>"><?php echo lang("updates"); ?></a></li>
 </ul>

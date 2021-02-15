@@ -6,6 +6,142 @@ ALTER TABLE `projects` ADD `estimate_id` INT(11) NOT NULL AFTER `starred_by`;
 ALTER TABLE `project_time` ADD `hours` FLOAT NOT NULL AFTER `end_time`;
 ALTER TABLE `users` ADD `requested_account_removal` TINYINT(1) NOT NULL DEFAULT '0' AFTER `last_online`;
 
+ALTER TABLE `clients` 
+ADD `is_lead` tinyint(1) NOT NULL DEFAULT '0',
+ADD `lead_status_id` int(11) NOT NULL,
+ADD `owner_id` int(11) NOT NULL,
+ADD `created_by` int(11) NOT NULL,
+ADD `sort` int(11) NOT NULL DEFAULT '0',
+ADD `lead_source_id` int(11) NOT NULL,
+ADD `last_lead_status` text COLLATE utf8_unicode_ci NOT NULL,
+ADD `client_migration_date` date NOT NULL
+AFTER `deleted`;
+
+ALTER TABLE `custom_fields` 
+ADD `example_variable_name` text COLLATE utf8_unicode_ci
+AFTER `placeholder`;
+
+ALTER TABLE `custom_fields` 
+ADD `show_in_order` tinyint(1) NOT NULL DEFAULT 0 
+AFTER `show_in_estimate`;
+
+ALTER TABLE `custom_fields` ADD `disable_editing_by_clients` TINYINT(1) NOT NULL DEFAULT '0' AFTER `hide_from_clients`, ADD `show_on_kanban_card` TINYINT(1) NOT NULL DEFAULT '0' AFTER `disable_editing_by_clients`;
+ALTER TABLE `events` ADD `editable_google_event` tinyint(1) NOT NULL DEFAULT '0' AFTER `share_with`, ADD `google_event_id` text COLLATE utf8_unicode_ci NOT NULL AFTER `editable_google_event`;
+ALTER TABLE `notifications` ADD `lead_id` int(11) NOT NULL AFTER `client_id`, ADD `order_id` int(11) NOT NULL AFTER `estimate_id`;
+ALTER TABLE `project_files` ADD `file_id` text COLLATE utf8_unicode_ci AFTER `file_name`, ADD `service_type` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL AFTER `file_id`;
+
+ALTER TABLE `tasks` 
+ADD `recurring` tinyint(1) NOT NULL DEFAULT '0' AFTER `sort`,
+ADD `repeat_every` int(11) NOT NULL DEFAULT '0' AFTER `recurring`,
+ADD `repeat_type` enum('days','weeks','months','years') COLLATE utf8_unicode_ci DEFAULT NULL AFTER `repeat_every`,
+ADD `no_of_cycles` int(11) NOT NULL DEFAULT '0' AFTER `repeat_type`,
+ADD `recurring_task_id` int(11) NOT NULL DEFAULT '0' AFTER `no_of_cycles`,
+ADD `no_of_cycles_completed` int(11) NOT NULL DEFAULT '0' AFTER `recurring_task_id`,
+ADD `created_date` date NOT NULL AFTER `no_of_cycles_completed`,
+ADD `blocking` text COLLATE utf8_unicode_ci NOT NULL AFTER `created_date`,
+ADD `blocked_by` text COLLATE utf8_unicode_ci NOT NULL AFTER `blocking`,
+ADD `parent_task_id` int(11) NOT NULL AFTER `blocked_by`,
+ADD `next_recurring_date` date DEFAULT NULL AFTER `parent_task_id`,
+ADD `reminder_date` date NOT NULL AFTER `next_recurring_date`,
+ADD `ticket_id` int(11) NOT NULL AFTER `reminder_date`,
+ADD `status_changed_at` datetime DEFAULT NULL AFTER `ticket_id` ;
+
+ALTER TABLE `tickets`
+ADD `requested_by` int(11) NOT NULL DEFAULT 0 AFTER `created_by`,
+ADD `creator_name` varchar(100) COLLATE utf8_unicode_ci NOT NULL AFTER `assigned_to`,
+ADD `creator_email` varchar(255) COLLATE utf8_unicode_ci NOT NULL AFTER `creator_name`, 
+ADD `task_id` int(11) NOT NULL AFTER `labels`,
+ADD `closed_at` datetime NOT NULL AFTER `task_id`;
+
+CREATE TABLE IF NOT EXISTS `custom_widgets` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+`user_id` int(11) NOT NULL,
+`title` text COLLATE utf8_unicode_ci,
+`content` text COLLATE utf8_unicode_ci,
+`show_title` TINYINT(1) NOT NULL DEFAULT '0',
+`show_border` TINYINT(1) NOT NULL DEFAULT '0',
+`deleted` TINYINT(1) NOT NULL DEFAULT '0',
+PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `dashboards` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+`user_id` int(11) NOT NULL,
+`title` text COLLATE utf8_unicode_ci,
+`data` text COLLATE utf8_unicode_ci,
+`color` VARCHAR(15) NOT NULL,
+`sort` INT(11) NOT NULL DEFAULT '0',
+`deleted` tinyint(1) NOT NULL DEFAULT '0',
+PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `labels` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+`title` text COLLATE utf8_unicode_ci NOT NULL,
+`color` VARCHAR(15) NOT NULL,
+`context` enum('event','invoice','note','project','task','ticket','to_do') COLLATE utf8_unicode_ci DEFAULT NULL,
+`user_id` int(11) NOT NULL DEFAULT '0',
+`deleted` int(1) NOT NULL DEFAULT '0',
+PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `lead_source` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `sort` int(11) NOT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+
+INSERT INTO `lead_source` (`id`, `title`, `sort`, `deleted`) VALUES
+(1, 'Google', 1, 0),
+(2, 'Facebook', 2, 0),
+(3, 'Twitter', 3, 0),
+(4, 'Youtube', 4, 0),
+(5, 'Elsewhere', 5, 0);
+
+CREATE TABLE IF NOT EXISTS `lead_status` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `color` varchar(7) COLLATE utf8_unicode_ci NOT NULL,
+  `sort` int(11) NOT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+ INSERT INTO `lead_status` (`id`, `title`, `color`, `sort`, `deleted`) VALUES 
+('1', 'New', '#f1c40f', '0', '0'), 
+('2', 'Qualified', '#2d9cdb', '1', '0'),  
+('3', 'Discussion', '#29c2c2', '2', '0'),  
+('4', 'Negotiation', '#2d9cdb', '3', '0'),
+('5', 'Won', '#83c340', '4', '0'),
+('6', 'Lost', '#e74c3c', '5', '0');
+
+CREATE TABLE IF NOT EXISTS `pages` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+`title` text COLLATE utf8_unicode_ci,
+`content` text COLLATE utf8_unicode_ci,
+`slug` text COLLATE utf8_unicode_ci,
+`status` enum('active','inactive') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'active',
+`internal_use_only` tinyint(1) NOT NULL DEFAULT 0,
+`visible_to_team_members_only` tinyint(1) NOT NULL DEFAULT 0,
+`visible_to_clients_only` tinyint(1) NOT NULL DEFAULT 0,
+`deleted` int(1) NOT NULL DEFAULT '0',
+PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `verification` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+`type` enum('invoice_payment','reset_password','verify_email','invitation') COLLATE utf8_unicode_ci NOT NULL,
+`code` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
+`params` text COLLATE utf8_unicode_ci NOT NULL,
+`deleted` int(1) NOT NULL DEFAULT '0',
+PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+
 new table 
 - custom_widgets
 - dashboards

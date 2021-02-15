@@ -141,6 +141,15 @@ CREATE TABLE IF NOT EXISTS `verification` (
 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
+CREATE TABLE IF NOT EXISTS `likes` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+`project_comment_id` int(11) NOT NULL,
+`created_by` int(11) NOT NULL,
+`created_at` datetime NOT NULL,
+`deleted` tinyint(1) NOT NULL DEFAULT '0',
+PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
 
 new table 
 - custom_widgets

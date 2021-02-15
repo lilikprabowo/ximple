@@ -1,0 +1,26 @@
+ALTER TABLE `checklist_items` ADD `sort` INT(11) NOT NULL DEFAULT '0' AFTER `task_id`;
+ALTER TABLE `general_files` ADD `file_id` TEXT NULL DEFAULT NULL AFTER `file_name`, ADD `service_type` VARCHAR(20) NULL DEFAULT NULL AFTER `file_id`;
+ALTER TABLE `notes` ADD `is_public` TINYINT(1) NOT NULL DEFAULT '0' AFTER `files`;
+ALTER TABLE `notification_settings` ADD `enable_slack` INT(1) NULL DEFAULT '0' AFTER `enable_web`;
+ALTER TABLE `projects` ADD `estimate_id` INT(11) NOT NULL AFTER `starred_by`;
+ALTER TABLE `project_time` ADD `hours` FLOAT NOT NULL AFTER `end_time`;
+ALTER TABLE `users` ADD `requested_account_removal` TINYINT(1) NOT NULL DEFAULT '0' AFTER `last_online`;
+
+new table 
+- custom_widgets
+- dashboards
+- labels
+- lead_source
+- lead_status
+- pages
+- verification
+
+update table : 
+- clients
+- custom field
+- events
+- items
+- notifications
+- project_files
+- tasks
+- tickets

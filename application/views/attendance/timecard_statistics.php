@@ -26,7 +26,7 @@
                             shadowSize: 0
                         },
                         {
-                            label: "<?php echo lang('income'); ?>",
+                            label: "<?php echo lang('attendance'); ?>",
                             data: timesheets,
                             color: "rgba(0, 179, 147, 1)",
                             lines: {

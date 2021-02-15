@@ -30,7 +30,12 @@
         </div>
     </div>
 </div>
-<div id="js-chat-messages-container" class="rise-chat-body clearfix"></div>
+
+<div class="rise-chat-body clearfix">
+    <div id="js-chat-messages-container" class="clearfix"></div>
+    <div id="js-chat-reply-indicator"></div>
+</div>
+
 <div class="rise-chat-footer">
     <div id="chat-reply-form-dropzone" class="post-dropzone">
         <?php echo form_open(get_uri("messages/reply/1"), array("id" => "chat-message-reply-form", "class" => "general-form", "role" => "form")); ?>
@@ -90,6 +95,7 @@
         var dropzone = attachDropzoneWithForm("#chat-reply-form-dropzone", uploadUrl, validationUrl);
         $("#chat-message-reply-form").appForm({
             isModal: false,
+            showLoader: false,
             beforeAjaxSubmit: function (data) {
 
                 //send the last message id
@@ -100,6 +106,7 @@
                 });
                 //clear message input box
                 $("#js-chat-message-textarea").val("");
+                $("#chat-message-reply-form").append('<div id="fast-loader" class="fast-line"></div>');
             },
             onSuccess: function (response) {
                 if (dropzone) {
@@ -107,6 +114,7 @@
                 }
                 if (response.success) {
                     renderMessages(response.data);
+                    $("#fast-loader").remove();
                 }
 
             }
@@ -137,8 +145,45 @@
             }
         });
 
+        if ("<?php echo get_setting('enable_chat_via_pusher') ?>" && "<?php echo get_setting('enable_push_notification') ?>") {
+            var pusherKey = "<?php echo get_setting("pusher_key"); ?>";
+            var pusherCluster = "<?php echo get_setting("pusher_cluster"); ?>";
 
+            var pusher = new Pusher(pusherKey, {
+                cluster: pusherCluster,
+                encrypted: true
+            });
 
+            var channel = pusher.subscribe("user_" + "<?php echo $this->login_user->id; ?>" + "_message_id_" + "<?php echo $message_id ?>" + "_channel");
+
+            channel.bind('rise-chat-event',
+                    function (data) {
+                        $.ajax({
+                            url: "<?php echo get_uri('messages/view_chat'); ?>",
+                            type: "POST",
+                            data: {
+                                message_id: "<?php echo $message_id; ?>",
+                            },
+                            success: function (response) {
+                                if (response) {
+                                    $("#js-chat-messages-container").append(response);
+                                    $("#js-chat-reply-indicator").html(" ");
+                                    chatScrollToBottom();
+                                }
+                            }
+                        });
+                    });
+
+            channel.bind('rise-chat-typing-event',
+                    function (data) {
+                        $("#js-chat-reply-indicator").html(data);
+                        chatScrollToBottom();
+
+                        setTimeout(function () {
+                            $("#js-chat-reply-indicator").html(" ");
+                        }, 8000);
+                    });
+        }
 
     });
     function handle_mousedown(e) {
@@ -188,8 +233,9 @@
     }
 
     function loadMoreMessages(callback) {
-        if($("#js-chat-old-messages").attr("no-messages")==="1") return false; //there is no messages to show.
-        
+        if ($("#js-chat-old-messages").attr("no-messages") === "1")
+            return false; //there is no messages to show.
+
         var message_id = "<?php echo $message_id; ?>";
 
         $("#js-chat-old-messages").prepend("<div id='loading-more-chat-messages-" + message_id + "' class='inline-loader' >....<br></br></div>");
@@ -209,13 +255,13 @@
                         callback(); //has more data?
                     }
                 }
-                
+
                 //if we got empty message, then we'll add a flag to stop finding new messages for next calls.
-                if(!$(response).find("#temp-script").remove().text()){
-                    $("#js-chat-old-messages").attr("no-messages","1");  
+                if (!$(response).find("#temp-script").remove().text()) {
+                    $("#js-chat-old-messages").attr("no-messages", "1");
                 }
-                
-                
+
+
 
                 $('#loading-more-chat-messages-' + message_id).remove();
 
@@ -238,12 +284,27 @@
             window.clearInterval(window.activeChatChecker);
         }
 
-        window.activeChatChecker = window.setInterval(function () {
-            loadMessages();
-        }, 5000); //check message in every 5 seconds
+        if ("<?php echo get_setting('enable_chat_via_pusher') != 1 ?>") {
+            window.activeChatChecker = window.setInterval(function () {
+                loadMessages();
+            }, 5000); //check message in every 5 seconds
+        }
     }
 
+    //send typing status to pusher
+    if ("<?php echo get_setting('enable_chat_via_pusher') ?>" && "<?php echo get_setting('enable_push_notification') ?>") {
+        addKeyup();
+        function addKeyup() {
+            $("#chat-message-reply-form").one('keyup', function (e) {
+                $.ajax({
+                    url: '<?php echo get_uri("messages/send_typing_indicator_to_pusher"); ?>',
+                    type: "POST",
+                    data: {message_id: "<?php echo $message_id ?>"}
+                });
 
-
+                setTimeout(addKeyup, 10000);
+            });
+        }
+    }
 
 </script>  

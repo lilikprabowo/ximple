@@ -116,7 +116,8 @@
                         "name" => "dob",
                         "value" => $user_info->dob,
                         "class" => "form-control",
-                        "placeholder" => lang('date_of_birth')
+                        "placeholder" => lang('date_of_birth'),
+                        "autocomplete" => "off"
                     ));
                     ?>
                 </div>
@@ -142,14 +143,12 @@
                     echo form_radio(array(
                         "id" => "gender_male",
                         "name" => "gender",
-                        "data-msg-required" => lang("field_required"),
-                            ), "male", ($user_info->gender === "female") ? false : true);
+                            ), "male", ($user_info->gender === "male") ? true : false);
                     ?>
                     <label for="gender_male" class="mr15"><?php echo lang('male'); ?></label> <?php
                     echo form_radio(array(
                         "id" => "gender_female",
                         "name" => "gender",
-                        "data-msg-required" => lang("field_required"),
                             ), "female", ($user_info->gender === "female") ? true : false);
                     ?>
                     <label for="gender_female" class=""><?php echo lang('female'); ?></label>

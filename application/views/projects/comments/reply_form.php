@@ -20,6 +20,10 @@ if (isset($comment_id)) {
             "placeholder" => lang('write_a_reply'),
             "data-rule-required" => true,
             "data-msg-required" => lang("field_required"),
+            "data-rich-text-editor" => true,
+            "data-mention" => true,
+            "data-mention-source" => get_uri("projects/get_member_suggestion_to_mention"),
+            "data-mention-project_id" => $project_id
         ));
         ?>
         <?php $this->load->view("includes/dropzone_preview"); ?>

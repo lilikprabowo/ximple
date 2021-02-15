@@ -28,6 +28,7 @@
                 "value" => $model_info->description,
                 "class" => "form-control",
                 "placeholder" => lang('description'),
+                "data-rich-text-editor" => true
             ));
             ?>
         </div>

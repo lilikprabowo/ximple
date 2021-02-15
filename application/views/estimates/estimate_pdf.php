@@ -1,8 +1,8 @@
 <div style=" margin: auto;">
     <?php
-    $color = get_setting("invoice_color");
+    $color = get_setting("estimate_color");
     if (!$color) {
-        $color = "#2AA384";
+        $color = get_setting("invoice_color") ? get_setting("invoice_color") : "#2AA384";
     }
     $style = get_setting("invoice_style");
     ?>
@@ -17,12 +17,17 @@
     } else {
         $this->load->view('estimates/estimate_parts/header_style_1.php', $data);
     }
+
+    $discount_row = '<tr>
+                        <td colspan="3" style="text-align: right;">' . lang("discount") . '</td>
+                        <td style="text-align: right; width: 20%; border: 1px solid #fff; background-color: #f4f4f4;">' . to_currency($estimate_total_summary->discount_total, $estimate_total_summary->currency_symbol) . '</td>
+                    </tr>';
     ?>
 </div>
 
 <br />
 
-<table style="width: 100%; color: #444;">            
+<table class="table-responsive" style="width: 100%; color: #444;">            
     <tr style="font-weight: bold; background-color: <?php echo $color; ?>; color: #fff;  ">
         <th style="width: 45%; border-right: 1px solid #eee;"> <?php echo lang("item"); ?> </th>
         <th style="text-align: center;  width: 15%; border-right: 1px solid #eee;"> <?php echo lang("quantity"); ?></th>
@@ -43,11 +48,16 @@
         </tr>
     <?php } ?>
     <tr>
-        <td colspan="3" style="text-align: right;"><?php echo lang("total"); ?></td>
+        <td colspan="3" style="text-align: right;"><?php echo lang("sub_total"); ?></td>
         <td style="text-align: right; width: 20%; border: 1px solid #fff; background-color: #f4f4f4;">
             <?php echo to_currency($estimate_total_summary->estimate_subtotal, $estimate_total_summary->currency_symbol); ?>
         </td>
     </tr>
+    <?php
+    if ($estimate_total_summary->discount_total && $estimate_total_summary->discount_type == "before_tax") {
+        echo $discount_row;
+    }
+    ?>  
     <?php if ($estimate_total_summary->tax) { ?>
         <tr>
             <td colspan="3" style="text-align: right;"><?php echo $estimate_total_summary->tax_name; ?></td>
@@ -64,6 +74,11 @@
             </td>
         </tr>
     <?php } ?>
+    <?php
+    if ($estimate_total_summary->discount_total && $estimate_total_summary->discount_type == "after_tax") {
+        echo $discount_row;
+    }
+    ?> 
     <tr>
         <td colspan="3" style="text-align: right;"><?php echo lang("total"); ?></td>
         <td style="text-align: right; width: 20%; background-color: <?php echo $color; ?>; color: #fff;">
@@ -71,14 +86,15 @@
         </td>
     </tr>
 </table>
+<?php if ($estimate_info->note) { ?>
+    <br />
+    <br />
+    <div style="border-top: 2px solid #f2f2f2; color:#444; padding:0 0 20px 0;"><br /><?php echo nl2br($estimate_info->note); ?></div>
+<?php } else { ?><!-- use table to avoid extra spaces -->
+    <br /><br /><table class="invoice-pdf-hidden-table" style="border-top: 2px solid #f2f2f2; margin: 0; padding: 0; display: block; width: 100%; height: 10px;"></table>
+<?php } ?>
 
-<br />
-<br />
-<div style="border-top: 2px solid #f2f2f2; color:#444;">
-    <div><?php echo nl2br($estimate_info->note); ?></div>
-</div>
-
-<div style="margin-top: 15px;">
+<span style="color:#444; line-height: 14px;">
     <?php echo get_setting("estimate_footer"); ?>
-</div>
+</span>
 

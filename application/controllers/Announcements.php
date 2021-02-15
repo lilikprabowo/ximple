@@ -1,4 +1,4 @@
-<?php
+<?php 
 
 if (!defined('BASEPATH'))
     exit('No direct script access allowed');
@@ -19,7 +19,7 @@ class Announcements extends MY_Controller {
             $view_data["show_add_button"] = false;
         }
         $view_data["show_option"] = true;
-        if($this->access_type !== "all"){
+        if ($this->access_type !== "all") {
             $view_data["show_option"] = false;
         }
         $this->template->rander("announcements/index", $view_data);
@@ -120,20 +120,18 @@ class Announcements extends MY_Controller {
         $save_id = $this->Announcements_model->save($data, $id);
 
 
-        //send log notification
-        if (!$id) {
-            if ($data["share_with"]) {
-                log_notification("new_announcement_created", array("announcement_id" => $save_id));
-            }
-        }
 
 
         if ($save_id) {
-            $this->session->set_flashdata("success_message", lang('record_saved'));
-            redirect(get_uri("announcements/form/" . $save_id));
+
+            //send log notification
+            if (!$id && $data["share_with"]) {
+                log_notification("new_announcement_created", array("announcement_id" => $save_id));
+            }
+            
+            echo json_encode(array("success" => true, "recirect_to" => get_uri("announcements/form/" . $save_id), 'id' => $save_id, 'message' => lang('record_saved')));
         } else {
-            $this->session->set_flashdata("error_message", lang('error_occurred'));
-            redirect(get_uri("announcements/form/"));
+            echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
         }
     }
 

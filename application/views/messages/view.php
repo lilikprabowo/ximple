@@ -16,61 +16,67 @@
     ?>
 
     <div class="media b-b p15 m0 bg-white">
-        <div class="media-left"> 
-            <span class="avatar avatar-sm">
-                <img src="<?php echo get_avatar($user_image); ?>" alt="..." />
-            </span>
-        </div>
-        <div class="media-body w100p">
-            <div class="media-heading clearfix">
-                <?php
-                $message_user_id = $message_info->from_user_id;
-                if ($mode === "sent_items" && $is_reply != "1" || $mode === "inbox" && $is_reply == "1") {
-                    $message_user_id = $message_info->to_user_id;
-                    ?>
-                    <label class="label label-success large"><?php echo lang("to"); ?></label>
-                <?php } ?>
-                <?php
-                if ($message_info->user_type == "client") {
-                    echo get_client_contact_profile_link($message_user_id, $message_info->user_name, array("class" => "dark strong"));
-                } else {
-                    echo get_team_member_profile_link($message_user_id, $message_info->user_name, array("class" => "dark strong"));
-                }
-                ?>
-                <span class="text-off pull-right"><?php echo format_to_relative_time($message_info->created_at); ?></span>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="media-left"> 
+                    <span class="avatar avatar-sm">
+                        <img src="<?php echo get_avatar($user_image); ?>" alt="..." />
+                    </span>
+                </div>
+                <div class="media-body w100p">
+                    <div class="media-heading clearfix">
+                        <?php
+                        $message_user_id = $message_info->from_user_id;
+                        if ($mode === "sent_items" && $is_reply != "1" || $mode === "inbox" && $is_reply == "1") {
+                            $message_user_id = $message_info->to_user_id;
+                            ?>
+                            <label class="label label-success large"><?php echo lang("to"); ?></label>
+                        <?php } ?>
+                        <?php
+                        if ($message_info->user_type == "client") {
+                            echo get_client_contact_profile_link($message_user_id, $message_info->user_name, array("class" => "dark strong"));
+                        } else {
+                            echo get_team_member_profile_link($message_user_id, $message_info->user_name, array("class" => "dark strong"));
+                        }
+                        ?>
+                        <span class="text-off pull-right"><?php echo format_to_relative_time($message_info->created_at); ?></span>
 
-                <span class="pull-right dropdown" style="position: absolute; right: 30px; margin-top: 15px;">
-                    <div class="text-off dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true" >
-                        <i class="fa fa-chevron-down clickable"></i>
+                        <span class="pull-right dropdown">
+                            <div class="text-off dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true" >
+                                <i class="fa fa-chevron-down clickable"></i>
+                            </div>
+                            <ul class="dropdown-menu" role="menu">
+                                <li role="presentation"><?php echo ajax_anchor(get_uri("messages/delete_my_messages/$message_info->id"), "<i class='fa fa-times'></i> " . lang('delete'), array("class" => "", "title" => lang('delete'), "data-fade-out-on-success" => ".message-container-$message_info->id")); ?> </li>
+                            </ul>
+                        </span>
                     </div>
-                    <ul class="dropdown-menu" role="menu">
-                        <li role="presentation"><?php echo ajax_anchor(get_uri("messages/delete_my_messages/$message_info->id"), "<i class='fa fa-times'></i> " . lang('delete'), array("class" => "", "title" => lang('delete'), "data-fade-out-on-success" => ".message-container-$message_info->id")); ?> </li>
-                    </ul>
-                </span>
+                    <p class="pt5 pb10 b-b">
+                        <?php echo lang("subject"); ?>:  <?php echo $message_info->subject; ?>  
+                    </p>
+
+                    <p>
+                        <?php echo nl2br(link_it($message_info->message)); ?>
+                    </p>
+
+                    <div class="comment-image-box clearfix">
+                        <?php
+                        $files = unserialize($message_info->files);
+                        $total_files = count($files);
+
+                        if ($total_files) {
+                            $this->load->view("includes/timeline_preview", array("files" => $files));
+                            $download_caption = lang('download');
+                            if ($total_files > 1) {
+                                $download_caption = sprintf(lang('download_files'), $total_files);
+                            }
+                            echo "<i class='fa fa-paperclip pull-left font-16'></i>";
+                            echo anchor(get_uri("messages/download_message_files/" . $message_info->id), $download_caption, array("class" => "pull-right", "title" => $download_caption));
+                        }
+                        ?>
+                    </div>
+
+                </div>
             </div>
-            <p class="pt5 pb10 b-b">
-                <?php echo lang("subject"); ?>:  <?php echo $message_info->subject; ?>  
-            </p>
-
-            <p>
-                <?php echo nl2br(link_it($message_info->message)); ?>
-            </p>
-            <p>
-                <?php
-                $files = unserialize($message_info->files);
-                $total_files = count($files);
-
-                if ($total_files) {
-                    $download_caption = lang('download');
-                    if ($total_files > 1) {
-                        $download_caption = sprintf(lang('download_files'), $total_files);
-                    }
-                    echo "<i class='fa fa-paperclip pull-left font-16'></i>";
-                    echo anchor(get_uri("messages/download_message_files/" . $message_info->id), $download_caption, array("class" => "", "title" => $download_caption));
-                }
-                ?>
-            </p>
-
         </div>
     </div>
 
@@ -115,6 +121,7 @@
                         "placeholder" => lang('write_a_reply'),
                         "data-rule-required" => true,
                         "data-msg-required" => lang("field_required"),
+                        "data-rich-text-editor" => true
                     ));
                     ?>
                     <?php $this->load->view("includes/dropzone_preview"); ?>    
@@ -168,13 +175,6 @@
                     if (response) {
                         $("#load-more-messages-container").prepend(response);
                         $("#load-more-messages-link").removeClass("inline-loader");
-//
-//                        var target = $topMessageDiv.parents(".mCustomScrollbar");
-//                        if (target.length) {
-//                            setTimeout(function () {
-//                               target.mCustomScrollbar("scrollTo", $topMessageDiv.offset().top);
-//                            }, 200);
-//                        }
 
                         if (callback) {
                             callback(); //has more data?

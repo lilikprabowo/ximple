@@ -12,6 +12,7 @@
             "placeholder" => lang('write_a_reply'),
             "data-rule-required" => true,
             "data-msg-required" => lang("field_required"),
+            "data-rich-text-editor" => true
         ));
         ?>
         <footer class="panel-footer b-a clearfix">
@@ -23,10 +24,10 @@
 
 
 <script type="text/javascript">
-    $(document).ready(function() {
+    $(document).ready(function () {
         $(".reply-form").appForm({
             isModal: false,
-            onSuccess: function(result) {
+            onSuccess: function (result) {
                 $(".reply-form").parent().html("");
                 var $triggerTarget = $("#reload-reply-list-button-" + "<?php echo isset($post_id) ? $post_id : 0; ?>");
                 $triggerTarget.trigger("click");

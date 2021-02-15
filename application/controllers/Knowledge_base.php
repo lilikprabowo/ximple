@@ -104,6 +104,8 @@ class Knowledge_base extends CI_Controller {
             $view_data['topbar'] = "includes/public/topbar";
             $view_data['left_menu'] = false;
         }
+        
+        $view_data["scroll_to_content"] = true;
 
         $this->template->rander('help_and_knowledge_base/articles/view_page', $view_data);
     }

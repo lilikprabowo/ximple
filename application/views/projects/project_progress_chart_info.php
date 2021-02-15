@@ -11,10 +11,10 @@
     </div>
 
     <div class="p10 b-t b-b">
-        <?php echo lang("start_date"); ?>: <?php echo is_date_exists($project_info->start_date) ? format_to_date($project_info->start_date) : "-"; ?>
+        <?php echo lang("start_date"); ?>: <?php echo is_date_exists($project_info->start_date) ? format_to_date($project_info->start_date, false) : "-"; ?>
     </div>
     <div class="p10 b-b">
-        <?php echo lang("deadline"); ?>: <?php echo is_date_exists($project_info->deadline) ? format_to_date($project_info->deadline) : "-"; ?>
+        <?php echo lang("deadline"); ?>: <?php echo is_date_exists($project_info->deadline) ? format_to_date($project_info->deadline, false) : "-"; ?>
     </div>
     <?php if ($this->login_user->user_type === "staff") { ?>
         <div class="p10">

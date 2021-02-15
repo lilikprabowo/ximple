@@ -1,7 +1,7 @@
 <div class="panel panel-default mb15">
     <div class="panel-heading text-center">
         <?php if (get_setting("show_logo_in_signin_page") === "yes") { ?>
-            <img class="p20" src="<?php echo get_file_uri(get_setting("system_file_path") . get_setting("site_logo")); ?>" />
+            <img class="p20 mw100p" src="<?php echo get_logo_url(); ?>" />
         <?php } else { ?>
             <h2><?php echo lang('signin'); ?></h2>
         <?php } ?>
@@ -48,9 +48,9 @@
         }
         ?>" />
 
-       
+
         <?php $this->load->view("signin/re_captcha"); ?>
-     
+
 
         <div class="form-group mb0">
             <button class="btn btn-lg btn-primary btn-block mt15" type="submit"><?php echo lang('signin'); ?></button>

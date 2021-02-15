@@ -35,7 +35,7 @@
                 </a>
             </div>
             <?php
-            if ($count % 3 === 0) {
+            if (($count % 3 === 0) || ($count === count($categories))) {
                 echo "</div>";
             }
         }

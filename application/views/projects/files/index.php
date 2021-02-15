@@ -44,7 +44,7 @@
                 fields.push(file_id);
                 checkbox.addClass("checkbox-checked");
             }
-            
+
             checkbox.removeClass("inline-loader");
 
             var serializeOfArray = fields.join("-");

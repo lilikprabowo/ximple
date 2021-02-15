@@ -1,8 +1,11 @@
 <div class="panel panel-default  p15 no-border m0">
-    <span><?php echo $invoice_status_label; ?></span>
+    <span class="mr10"><?php echo $invoice_status_label; ?></span>
+
+    <?php echo make_labels_view_data($invoice_info->labels_list, "", true); ?>
+
     <?php if ($invoice_info->project_id) { ?>
         <span class="ml15"><?php echo lang("project") . ": " . anchor(get_uri("projects/view/" . $invoice_info->project_id), $invoice_info->project_title); ?></span>
-    <?php }; ?>
+    <?php } ?>
 
     <span class="ml15"><?php
         echo lang("client") . ": ";
@@ -12,15 +15,24 @@
 
     <span class="ml15"><?php
         echo lang("last_email_sent") . ": ";
-        echo (is_date_exists($invoice_info->last_email_sent_date)) ? $invoice_info->last_email_sent_date : lang("never");
+        echo (is_date_exists($invoice_info->last_email_sent_date)) ? format_to_date($invoice_info->last_email_sent_date, FALSE) : lang("never");
         ?>
     </span>
-    <span class="ml15"><?php
-        if ($invoice_info->recurring_invoice_id) {
+    <?php if ($invoice_info->recurring_invoice_id) { ?>
+        <span class="ml15">
+            <?php
             echo lang("created_from") . ": ";
             echo anchor(get_uri("invoices/view/" . $invoice_info->recurring_invoice_id), get_invoice_id($invoice_info->recurring_invoice_id));
-        }
-        ?>
-    </span>
+            ?>
+        </span>
+    <?php } ?>
+
+    <?php if ($invoice_info->cancelled_at) { ?>
+        <span class="ml15"><?php echo lang("cancelled_at") . ": " . format_to_relative_time($invoice_info->cancelled_at); ?></span>
+    <?php } ?>
+
+    <?php if ($invoice_info->cancelled_by) { ?>
+        <span class="ml15"><?php echo lang("cancelled_by") . ": " . get_team_member_profile_link($invoice_info->cancelled_by, $invoice_info->cancelled_by_user); ?></span>
+    <?php } ?>
 
 </div>

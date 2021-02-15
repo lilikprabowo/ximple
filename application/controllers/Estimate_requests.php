@@ -59,10 +59,8 @@ class Estimate_requests extends MY_Controller {
 
         $view_data['lead_info'] = "";
 
-        $this->load->model("Leads_model");
-
-        if (!$model_info->client_id && $model_info->lead_id) {
-            $view_data['lead_info'] = $this->Leads_model->get_details(array("id" => $model_info->lead_id))->row();
+        if ($model_info->is_lead) {
+            $view_data['lead_info'] = $this->Clients_model->get_details(array("id" => $model_info->client_id))->row();
         }
 
 
@@ -76,9 +74,10 @@ class Estimate_requests extends MY_Controller {
             $view_data["show_actions"] = true;
             $view_data["show_client_info"] = true;
             $view_data["show_assignee"] = true;
-             $view_data["show_download_option"] = true;
+            $view_data["show_download_option"] = true;
         }
 
+        $view_data["estimates"] = $this->Estimates_model->get_all_where(array("estimate_request_id" => $id))->result();
 
         $this->template->rander('estimate_requests/view_estimate_request', $view_data);
     }
@@ -141,10 +140,29 @@ class Estimate_requests extends MY_Controller {
 
         $client = "";
         if ($data->company_name) {
-            $client = anchor(get_uri("clients/view/" . $data->client_id), $data->company_name);
-        } else if ($data->lead_company_name) {
-            $client = $data->lead_company_name;
+            if ($data->is_lead) {
+                $client = anchor(get_uri("leads/view/" . $data->client_id), $data->company_name);
+            } else {
+                $client = anchor(get_uri("clients/view/" . $data->client_id), $data->company_name);
+            }
         }
+
+        $edit = '<li role="presentation">' . modal_anchor(get_uri("estimate_requests/edit_estimate_request_modal_form"), "<i class='fa fa-pencil'></i> " . lang('edit'), array("title" => lang('estimate_request'), "data-post-view" => "details", "data-post-id" => $data->id)) . '</li>';
+
+        $request_status = $this->load->view("estimate_requests/estimate_request_status_options", array("model_info" => $data), true);
+
+        $add_estimate = '<li role="presentation">' . modal_anchor(get_uri("estimates/modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('add_estimate'), array('title' => lang('add_estimate'), "data-post-estimate_request_id" => $data->id, "data-post-client_id" => $data->client_id)) . '</li>';
+
+        $delete = '<li role="presentation">' . js_anchor("<i class='fa fa-times fa-fw'></i>" . lang('delete'), array('title' => lang('delete_estimate_form'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("estimate_requests/delete_estimate_request"), "data-action" => "delete-confirmation")) . '</li>';
+
+        $options = '<span class="dropdown inline-block">
+                        <button class="btn btn-default dropdown-toggle  mt0 mb0" type="button" data-toggle="dropdown" aria-expanded="true">
+                            <i class="fa fa-cogs"></i>&nbsp;
+                             <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu pull-right" role="menu">' . $edit . $request_status . $add_estimate . $delete . '</ul>
+                    </span>';
+
 
         return array(
             anchor(get_uri("estimate_requests/view_estimate_request/" . $data->id), lang("estimate_request") . " - " . $data->id),
@@ -154,7 +172,7 @@ class Estimate_requests extends MY_Controller {
             $data->created_at,
             format_to_datetime($data->created_at),
             $status,
-            js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete_estimate_form'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("estimate_requests/delete_estimate_request"), "data-action" => "delete"))
+            $options
         );
     }
 
@@ -176,18 +194,10 @@ class Estimate_requests extends MY_Controller {
 
         $id = $this->input->post('id');
 
-        if ($this->input->post('undo')) {
-            if ($this->Estimate_requests_model->delete($id, true)) {
-                echo json_encode(array("success" => true, "data" => $this->_estimate_request_row_data($id), "message" => lang('record_undone')));
-            } else {
-                echo json_encode(array("success" => false, lang('error_occurred')));
-            }
+        if ($this->Estimate_requests_model->delete($id)) {
+            echo json_encode(array("success" => true, 'message' => lang('record_deleted')));
         } else {
-            if ($this->Estimate_requests_model->delete($id)) {
-                echo json_encode(array("success" => true, 'message' => lang('record_deleted')));
-            } else {
-                echo json_encode(array("success" => false, 'message' => lang('record_cannot_be_deleted')));
-            }
+            echo json_encode(array("success" => false, 'message' => lang('record_cannot_be_deleted')));
         }
     }
 
@@ -234,7 +244,7 @@ class Estimate_requests extends MY_Controller {
     //prepare a row of estimates request's field list row
     private function _make_estimate_request_field_row($data) {
         $field = "<p class='clearfix'><i class='fa fa-check-circle'></i><strong class=''> $data->custom_field_title </strong> </p>";
-        $field.="<div class='pl15'>" . $this->load->view("custom_fields/output_" . $data->custom_field_type, array("value" => $data->value), true) . "</div>";
+        $field .= "<div class='pl15'>" . $this->load->view("custom_fields/output_" . $data->custom_field_type, array("value" => $data->value), true) . "</div>";
         return array(
             $field,
             $data->sort
@@ -253,6 +263,11 @@ class Estimate_requests extends MY_Controller {
         $this->access_only_allowed_members();
 
         $view_data['model_info'] = $this->Estimate_forms_model->get_one($this->input->post('id'));
+
+        //prepare assign to list
+        $assigned_to_dropdown = array("" => "-") + $this->Users_model->get_dropdown_list(array("first_name", "last_name"), "id", array("deleted" => 0, "user_type" => "staff"));
+        $view_data['assigned_to_dropdown'] = $assigned_to_dropdown;
+
         $this->load->view('estimate_requests/estimate_request_modal_form', $view_data);
     }
 
@@ -273,6 +288,7 @@ class Estimate_requests extends MY_Controller {
             "title" => $this->input->post('title'),
             "description" => $this->input->post('description'),
             "status" => $this->input->post('status'),
+            "assigned_to" => $this->input->post('assigned_to'),
             "public" => $public ? 1 : 0,
             "enable_attachment" => $enable_attachment ? 1 : 0
         );
@@ -342,9 +358,15 @@ class Estimate_requests extends MY_Controller {
             $public = lang("no");
         }
 
+        $embedded_code = "";
+        if ($data->public) {
+            $embedded_code = modal_anchor(get_uri("estimate_requests/embedded_code_modal_form"), "<i class='fa fa-code'></i>", array("title" => lang('embed'), "class" => "edit", "data-post-id" => $data->id));
+        }
+
         return array(
             $title,
             $public,
+            $embedded_code,
             lang($data->status),
             modal_anchor(get_uri("estimate_requests/estimate_request_modal_form"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => lang('edit_form'), "data-post-id" => $data->id))
             . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete_estimate_form'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("estimate_requests/delete_estimate_request_form"), "data-action" => "delete"))
@@ -514,8 +536,8 @@ class Estimate_requests extends MY_Controller {
             $required = "*";
         }
 
-        $field = "<label data-id='$data->id' class='field-row'>$data->title $required</label>";
-        $field.="<div class='form-group'>" . $this->load->view("custom_fields/input_" . $data->field_type, array("field_info" => $data), true) . "</div>";
+        $field = "<label for='custom_field_$data->id' data-id='$data->id' class='field-row'>$data->title $required</label>";
+        $field .= "<div class='form-group'>" . $this->load->view("custom_fields/input_" . $data->field_type, array("field_info" => $data), true) . "</div>";
 
         //extract estimate id from related_to field. 2nd index should be the id
         $estimate_form_id = get_array_value(explode("-", $data->related_to), 1);
@@ -580,7 +602,7 @@ class Estimate_requests extends MY_Controller {
     //show a modal to choose a from for request an estimate from client side
 
     function request_an_estimate_modal_form() {
-        $this->access_only_clients();
+        $this->access_only_team_members_or_client();
 
         $view_data["estimate_forms"] = $this->Estimate_forms_model->get_all_where(array("status" => "active", "deleted" => 0))->result();
         $this->load->view("estimate_requests/request_an_estimate_modal_form", $view_data);
@@ -588,12 +610,19 @@ class Estimate_requests extends MY_Controller {
 
     //view estimate request form from client side
     function submit_estimate_request_form($id = 0) {
-        $this->access_only_clients();
+        $this->access_only_team_members_or_client();
 
         $model_info = $this->Estimate_forms_model->get_one_where(array("id" => $id, "status" => "active", "deleted" => 0));
 
         if (get_setting("module_estimate_request") && $model_info->id) {
             $view_data['model_info'] = $model_info;
+
+            //show clients dropdown on team members portal
+            $view_data['clients_dropdown'] = "";
+            if ($this->login_user->user_type == "staff") {
+                $view_data['clients_dropdown'] = $this->get_clients_and_leads_dropdown();
+            }
+
             $this->template->rander('estimate_requests/submit_estimate_request_form', $view_data);
         } else {
             show_404();
@@ -603,9 +632,10 @@ class Estimate_requests extends MY_Controller {
     //save estimate request from client
     function save_estimate_request() {
 
-        $this->access_only_clients();
+        $this->access_only_team_members_or_client();
 
         $form_id = $this->input->post('form_id');
+        $assigned_to = $this->input->post('assigned_to');
 
         validate_submitted_data(array(
             "form_id" => "required|numeric"
@@ -622,8 +652,8 @@ class Estimate_requests extends MY_Controller {
             "estimate_form_id" => $form_id,
             "created_by" => $this->login_user->id,
             "created_at" => get_current_utc_time(),
-            "client_id" => $this->login_user->client_id,
-            "assigned_to" => 0,
+            "client_id" => $this->input->post('client_id') ? $this->input->post('client_id') : $this->login_user->client_id,
+            "assigned_to" => $assigned_to ? $assigned_to : 0,
             "status" => "new"
         );
 
@@ -675,6 +705,15 @@ class Estimate_requests extends MY_Controller {
 
     function validate_file() {
         return validate_post_file($this->input->post("file_name"));
+    }
+
+    function embedded_code_modal_form() {
+        $model_info = $this->Estimate_forms_model->get_one($this->input->post('id'));
+
+        $embedded_code = "<iframe width='768' height='360' src='" . get_uri("request_estimate/form/" . $model_info->id . "/embedded") . "' frameborder='0'></iframe>";
+        $view_data['embedded'] = $embedded_code;
+
+        $this->load->view('estimate_requests/embedded_code_modal_form', $view_data);
     }
 
 }

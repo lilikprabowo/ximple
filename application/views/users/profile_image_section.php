@@ -1,4 +1,4 @@
-<div class="box">
+<div class="box" id="profile-image-section">
     <div class="box-content w200 text-center profile-image">
         <?php
         $url = "team_members";
@@ -10,7 +10,7 @@
         echo form_open(get_uri($url . "/save_profile_image/" . $user_info->id), array("id" => "profile-image-form", "class" => "general-form", "role" => "form"));
         ?>
         <?php if ($this->login_user->is_admin || $user_info->id === $this->login_user->id) { ?>
-            <div class="file-upload btn mt0 p0" style="vertical-align: top;  margin-left: -45px; ">
+            <div class="file-upload btn mt0 p0 profile-image-upload">
                 <span><i class="btn fa fa-camera" ></i></span> 
                 <input id="profile_image_file" class="upload" name="profile_image_file" type="file" data-height="200" data-width="200" data-preview-container="#profile-image-preview" data-input-field="#profile_image" />
             </div>
@@ -61,6 +61,13 @@
                     if (!in_array($this->login_user->id, $client_message_users_array)) {
                         $show_message_button = false;
                     }
+                } else if ($user_info->user_type === "lead") {
+                    //don't show message button for lead contacts
+                    $show_message_button = false;
+                }
+
+                if (isset($hide_send_message_button) && $hide_send_message_button) {
+                    $show_message_button = false;
                 }
 
                 if (get_setting("module_message") && $show_message_button) {
@@ -71,3 +78,16 @@
         </div>
     </div>
 </div>
+
+
+<script>
+    $(document).ready(function () {
+        //modify design for mobile devices
+        if (isMobile()) {
+            $("#profile-image-section").children("div").each(function () {
+                $(this).addClass("p0");
+                $(this).removeClass("box-content");
+            });
+        }
+    });
+</script>

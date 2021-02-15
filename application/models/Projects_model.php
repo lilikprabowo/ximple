@@ -30,7 +30,7 @@ class Projects_model extends Crud_model {
         if ($status) {
             $where .= " AND $projects_table.status='$status'";
         }
-        
+
         $statuses = get_array_value($options, "statuses");
         if ($statuses) {
             $where .= " AND (FIND_IN_SET($projects_table.status, '$statuses')) ";
@@ -41,10 +41,11 @@ class Projects_model extends Crud_model {
         if ($project_label) {
             $where .= " AND (FIND_IN_SET('$project_label', $projects_table.labels)) ";
         }
-        
-        
+
+
         $deadline = get_array_value($options, "deadline");
-        if ($deadline) {
+        $for_events_table = get_array_value($options, "for_events_table");
+        if ($deadline && !$for_events_table) {
             $now = get_my_local_time("Y-m-d");
             if ($deadline === "expired") {
                 $where .= " AND ($projects_table.deadline IS NOT NULL AND $projects_table.deadline<'$now')";
@@ -52,19 +53,34 @@ class Projects_model extends Crud_model {
                 $where .= " AND ($projects_table.deadline IS NOT NULL AND $projects_table.deadline<='$deadline')";
             }
         }
-        
+
+        $start_date = get_array_value($options, "start_date");
+        $start_date_for_events = get_array_value($options, "start_date_for_events");
+        if ($start_date && $deadline) {
+            if ($start_date_for_events) {
+                $where .= " AND ($projects_table.start_date BETWEEN '$start_date' AND '$deadline') ";
+            } else {
+                $where .= " AND ($projects_table.deadline BETWEEN '$start_date' AND '$deadline') ";
+            }
+        }
+
 
         $extra_join = "";
         $extra_where = "";
         $user_id = get_array_value($options, "user_id");
 
-        if (!$client_id && $user_id) {
+        $starred_projects = get_array_value($options, "starred_projects");
+        if ($starred_projects) {
+            $where .= " AND FIND_IN_SET(':$user_id:',$projects_table.starred_by) ";
+        }
+
+        if (!$client_id && $user_id && !$starred_projects) {
             $extra_join = " LEFT JOIN (SELECT $project_members_table.user_id, $project_members_table.project_id FROM $project_members_table WHERE $project_members_table.user_id=$user_id AND $project_members_table.deleted=0 GROUP BY $project_members_table.project_id) AS project_members_table ON project_members_table.project_id= $projects_table.id ";
             $extra_where = " AND project_members_table.user_id=$user_id";
         }
 
+        $select_labels_data_query = $this->get_labels_data_query();
 
-               
         //prepare custom fild binding query
         $custom_fields = get_array_value($options, "custom_fields");
         $custom_field_query_info = $this->prepare_custom_field_query_string("projects", $custom_fields, $projects_table);
@@ -72,8 +88,8 @@ class Projects_model extends Crud_model {
         $join_custom_fieds = get_array_value($custom_field_query_info, "join_string");
 
         $this->db->query('SET SQL_BIG_SELECTS=1');
-        
-        $sql = "SELECT $projects_table.*, $clients_table.company_name, $clients_table.currency_symbol,  total_points_table.total_points, completed_points_table.completed_points $select_custom_fieds
+
+        $sql = "SELECT $projects_table.*, $clients_table.company_name, $clients_table.currency_symbol,  total_points_table.total_points, completed_points_table.completed_points, $select_labels_data_query $select_custom_fieds
         FROM $projects_table
         LEFT JOIN $clients_table ON $clients_table.id= $projects_table.client_id
         LEFT JOIN (SELECT project_id, SUM(points) AS total_points FROM $tasks_table WHERE deleted=0 GROUP BY project_id) AS  total_points_table ON total_points_table.project_id= $projects_table.id
@@ -122,11 +138,13 @@ class Projects_model extends Crud_model {
         return $info;
     }
 
-    function get_gantt_data($project_id = 0, $options = array()) {
+    function get_gantt_data($options = array()) {
         $tasks_table = $this->db->dbprefix('tasks');
         $milestones_table = $this->db->dbprefix('milestones');
         $users_table = $this->db->dbprefix('users');
         $task_status_table = $this->db->dbprefix('task_status');
+        $project_members_table = $this->db->dbprefix('project_members');
+        $projects_table = $this->db->dbprefix('projects');
 
         $where = "";
 
@@ -135,24 +153,58 @@ class Projects_model extends Crud_model {
             $where .= " AND $tasks_table.milestone_id=$milestone_id";
         }
 
+        $project_id = get_array_value($options, "project_id");
+        if ($project_id) {
+            $where .= " AND $tasks_table.project_id=$project_id";
+        } else {
+            //show only opened project's tasks on global view
+            $where .= " AND $tasks_table.project_id IN(SELECT $projects_table.id FROM $projects_table WHERE $projects_table.deleted=0 AND $projects_table.status='open')";
+        }
+
         $assigned_to = get_array_value($options, "assigned_to");
         if ($assigned_to) {
             $where .= " AND $tasks_table.assigned_to=$assigned_to";
         }
-        
+
         $status_id = get_array_value($options, "status_id");
         if ($status_id) {
             $where .= " AND $tasks_table.status_id=$status_id";
         }
 
-        $sql = "SELECT $tasks_table.id AS task_id, $tasks_table.title AS task_title, $tasks_table.status_id, $tasks_table.start_date, $tasks_table.deadline AS end_date, 
-             $milestones_table.id AS milestone_id, $milestones_table.title AS milestone_title, $milestones_table.due_date AS milestone_due_date, $tasks_table.assigned_to, CONCAT($users_table.first_name, ' ', $users_table.last_name ) AS assigned_to_name,
+        $status_ids = get_array_value($options, "status_ids");
+        if ($status_ids) {
+            $where .= " AND $tasks_table.status_id IN($status_ids)";
+        }
+
+        $exclude_status = get_array_value($options, "exclude_status");
+        if ($exclude_status) {
+            $where .= " AND $tasks_table.status_id!=$exclude_status";
+        }
+
+
+        $extra_join = "";
+        $extra_where = "";
+        $user_id = get_array_value($options, "user_id");
+        if ($user_id) {
+            $extra_join = " LEFT JOIN (SELECT $project_members_table.user_id, $project_members_table.project_id FROM $project_members_table WHERE $project_members_table.user_id=$user_id AND $project_members_table.deleted=0 GROUP BY $project_members_table.project_id) AS project_members_table ON project_members_table.project_id= $tasks_table.project_id ";
+            $extra_where = " AND project_members_table.user_id=$user_id";
+        }
+
+        $show_assigned_tasks_only_user_id = get_array_value($options, "show_assigned_tasks_only_user_id");
+        if ($show_assigned_tasks_only_user_id) {
+            $where .= " AND ($tasks_table.assigned_to=$show_assigned_tasks_only_user_id OR FIND_IN_SET('$show_assigned_tasks_only_user_id', $tasks_table.collaborators))";
+        }
+
+        $sql = "SELECT $tasks_table.id AS task_id, $tasks_table.title AS task_title, $tasks_table.status_id, $tasks_table.start_date, $tasks_table.deadline AS end_date, $tasks_table.parent_task_id,
+             $milestones_table.id AS milestone_id, $milestones_table.title AS milestone_title, $milestones_table.due_date AS milestone_due_date, $tasks_table.assigned_to, CONCAT($users_table.first_name, ' ', $users_table.last_name ) AS assigned_to_name, $tasks_table.project_id, CONCAT($projects_table.title) AS project_name,
              $task_status_table.title AS status_title, $task_status_table.color AS status_color
                 FROM $tasks_table
                 LEFT JOIN $milestones_table ON $milestones_table.id= $tasks_table.milestone_id
                 LEFT JOIN $users_table ON $users_table.id= $tasks_table.assigned_to
                 LEFT JOIN $task_status_table ON $task_status_table.id =  $tasks_table.status_id
-        WHERE $tasks_table.deleted=0 AND $tasks_table.project_id=$project_id $where
+                LEFT JOIN $projects_table ON $projects_table.id= $tasks_table.project_id
+                $extra_join
+        WHERE $tasks_table.deleted=0 $where $extra_where
         ORDER BY $tasks_table.start_date, $milestones_table.due_date DESC";
         return $this->db->query($sql)->result();
     }
@@ -223,14 +275,13 @@ class Projects_model extends Crud_model {
         $this->db->query($delete_notifications_sql);
 
 
-        //delete the files from directory
+        //delete the comment files from directory
         $comment_file_path = get_setting("timeline_file_path");
         foreach ($project_comments as $comment_info) {
             if ($comment_info->files && $comment_info->files != "a:0:{}") {
                 $files = unserialize($comment_info->files);
                 foreach ($files as $file) {
-                    $source_path = $comment_file_path . get_array_value($file, "file_name");
-                    delete_file_from_directory($source_path);
+                    delete_app_files($comment_file_path, array($file));
                 }
             }
         }
@@ -238,12 +289,37 @@ class Projects_model extends Crud_model {
 
 
         //delete the project files from directory
-        $file_path = get_setting("project_file_path");
+        $file_path = get_setting("project_file_path") . $project_id . "/";
         foreach ($project_files as $file) {
-            delete_file_from_directory($file_path . $file->project_id . "/" . $file->file_name);
+            delete_app_files($file_path, array(make_array_of_file($file)));
         }
 
         return true;
+    }
+
+    function get_search_suggestion($search = "", $options = array()) {
+        $projects_table = $this->db->dbprefix('projects');
+        $project_members_table = $this->db->dbprefix('project_members');
+
+        $where = "";
+        $extra_join = "";
+
+        $user_id = get_array_value($options, "user_id");
+        if ($user_id) {
+            $extra_join = " LEFT JOIN (SELECT $project_members_table.user_id, $project_members_table.project_id FROM $project_members_table WHERE $project_members_table.user_id=$user_id AND $project_members_table.deleted=0 GROUP BY $project_members_table.project_id) AS project_members_table ON project_members_table.project_id= $projects_table.id ";
+            $where = " AND project_members_table.user_id=$user_id";
+        }
+
+        $search = $this->db->escape_str($search);
+
+        $sql = "SELECT $projects_table.id, $projects_table.title
+        FROM $projects_table  
+        $extra_join
+        WHERE $projects_table.deleted=0 AND $projects_table.title LIKE '%$search%' $where
+        ORDER BY $projects_table.title ASC
+        LIMIT 0, 10";
+
+        return $this->db->query($sql);
     }
 
 }

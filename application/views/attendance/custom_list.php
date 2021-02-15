@@ -17,7 +17,7 @@
                 {visible: false, searchable: false},
                 {title: "<?php echo lang("out_date"); ?>", "class": "w15p", iDataSort: 4},
                 {title: "<?php echo lang("out_time"); ?>", "class": "w15p"},
-                {title: "<?php echo lang("duration"); ?>"},
+                {title: "<?php echo lang("duration"); ?>", "class": "text-right"},
                 {title: '<i class="fa fa-comment"></i>', "class": "text-center w50"},
                 {title: '<i class="fa fa-bars"></i>', "class": "text-center option w100"}
             ],

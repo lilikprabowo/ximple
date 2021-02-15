@@ -25,23 +25,12 @@ class Todo extends MY_Controller {
     function modal_form() {
         $view_data['model_info'] = $this->Todo_model->get_one($this->input->post('id'));
 
-        $labels = explode(",", $this->Todo_model->get_label_suggestions($this->login_user->id));
-
         //check permission for saved todo list
         if ($view_data['model_info']->id) {
             $this->validate_access($view_data['model_info']);
         }
 
-        $label_suggestions = array();
-        foreach ($labels as $label) {
-            if ($label && !in_array($label, $label_suggestions)) {
-                $label_suggestions[] = $label;
-            }
-        }
-        if (!count($label_suggestions)) {
-            $label_suggestions = array("0" => "Important");
-        }
-        $view_data['label_suggestions'] = $label_suggestions;
+        $view_data['label_suggestions'] = $this->make_labels_dropdown("to_do", $view_data['model_info']->labels);
         $this->load->view('todo/modal_form', $view_data);
     }
 
@@ -62,12 +51,12 @@ class Todo extends MY_Controller {
         );
 
         $data = clean_data($data);
-        
-         //set null value after cleaning the data
+
+        //set null value after cleaning the data
         if (!$data["start_date"]) {
             $data["start_date"] = NULL;
         }
-        
+
         if ($id) {
             //saving existing todo. check permission
             $todo_info = $this->Todo_model->get_one($id);
@@ -94,7 +83,9 @@ class Todo extends MY_Controller {
             "status" => "required"
         ));
 
-        $this->access_only_team_members();
+        $todo_info = $this->Todo_model->get_one( $this->input->post('id'));
+        $this->validate_access($todo_info);
+        
         $data = array(
             "status" => $this->input->post('status')
         );
@@ -157,13 +148,10 @@ class Todo extends MY_Controller {
 
     private function _make_row($data) {
         $title = modal_anchor(get_uri("todo/view/" . $data->id), $data->title, array("class" => "edit", "title" => lang('todo'), "data-post-id" => $data->id));
-        $todo_labels = "";
-        if ($data->labels) {
-            $labels = explode(",", $data->labels);
-            foreach ($labels as $label) {
-                $todo_labels.="<span class='label label-info clickable'>" . $label . "</span> ";
-            }
-            $title.="<span class='pull-right'>" . $todo_labels . "</span>";
+
+        if ($data->labels_list) {
+            $todo_labels = make_labels_view_data($data->labels_list, true);
+            $title .= "<span class='pull-right'>" . $todo_labels . "</span>";
         }
 
 
@@ -205,7 +193,7 @@ class Todo extends MY_Controller {
             "id" => "required|numeric"
         ));
 
-        $model_info = $this->Todo_model->get_one($this->input->post('id'));
+        $model_info = $this->Todo_model->get_details(array("id" => $this->input->post('id')))->row();
 
         $this->validate_access($model_info);
 

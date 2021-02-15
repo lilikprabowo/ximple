@@ -15,7 +15,7 @@ foreach ($comments as $comment) {
     }
     ?>
     <div id="prject-comment-container-<?php echo $type . "-" . $comment->id; ?>"  class="comment-container media b-b mb15 <?php echo "comment-" . $type; ?>">
-        <div class="media-left pl15">
+        <div class="media-left comment-avatar">
             <span class="avatar <?php echo ($type === "project") ? " avatar-sm" : " avatar-xs"; ?> ">
                 <img src="<?php echo get_avatar($comment->created_by_avatar); ?>" alt="..." />
             </span>
@@ -30,6 +30,16 @@ foreach ($comments as $comment) {
                 }
                 ?>
                 <small><span class="text-off"><?php echo format_to_relative_time($comment->created_at); ?></span></small>
+
+
+                <span class="pull-right comment-like-top">
+                    <?php
+                    if (isset($comment->like_status)) {
+                        $like_icon = $comment->like_status ? "fa-thumbs-up" : "fa-thumbs-o-up";
+                        echo ajax_anchor(get_uri("projects/like_comment/" . $comment->id), "<i class='fa $like_icon'></i> " . lang('like') . " ", array("class" => "mr5 like-button", "data-real-target" => "#comment-like-container-$comment->id"));
+                    }
+                    ?>
+                </span>
 
                 <?php if ($this->login_user->is_admin || $comment->created_by == $this->login_user->id) { ?>
                     <span class="pull-right dropdown comment-dropdown">
@@ -54,6 +64,12 @@ foreach ($comments as $comment) {
                 ?>
 
                 <div class="mb15 clearfix">
+                    <?php if (isset($comment->like_status)) { ?>
+                        <span id="comment-like-container-<?php echo $comment->id; ?>">
+                            <?php $this->load->view("projects/comments/like_comment", array("comment" => $comment)); ?>
+                        </span>
+                    <?php } ?>
+
                     <?php
                     $can_reply = false;
                     if ($type === "project" || $type === "customer_feedback") {
@@ -96,3 +112,21 @@ foreach ($comments as $comment) {
         </div>
     </div>
 <?php } ?>
+
+
+
+<script>
+    $(document).ready(function () {
+        $(".like-button").click(function () {
+            var $icon = $(this).find("i");
+            console.log($icon.hasClass("fa-thumbs-up"));
+            if ($icon.hasClass("fa-thumbs-up")) {
+                $icon.removeClass("fa-thumbs-up");
+                $icon.addClass("fa-thumbs-o-up");
+            } else {
+                $icon.removeClass("fa-thumbs-o-up");
+                $icon.addClass("fa-thumbs-up");
+            }
+        });
+    });
+</script>

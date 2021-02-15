@@ -1,7 +1,5 @@
+<?php echo form_open(get_uri("custom_fields/save"), array("id" => "custom-field-form", "class" => "general-form", "role" => "form")); ?>
 <div class="modal-body clearfix">
-
-    <?php echo form_open(get_uri("custom_fields/save"), array("id" => "custom-field-form", "class" => "general-form", "role" => "form")); ?>
-
     <input type="hidden" name="related_to" value="<?php echo $related_to; ?>" />
     <?php $this->load->view("custom_fields/form/input_fields"); ?>
 
@@ -44,6 +42,18 @@
         </div>
     <?php } ?>
 
+    <?php if ($related_to === "orders") { ?>
+        <div class="form-group">
+            <label for="show_in_order" class="col-md-3"><?php echo lang('show_in_order'); ?></label>
+            <div class="col-md-9">
+                <?php
+                echo form_checkbox(
+                        "show_in_order", "1", $model_info->show_in_order, "id='show_in_order'"
+                );
+                ?>
+            </div>
+        </div>
+    <?php } ?>
 
     <?php if ($related_to != "events") { ?>
         <div class="form-group" id="visible_to_admins_only_container">
@@ -58,7 +68,7 @@
         </div>
     <?php } ?>
 
-    <?php if ($related_to === "clients" || $related_to === "contacts" || $related_to === "projects" || $related_to === "tasks" || $related_to === "tickets" || $related_to === "invoices" || $related_to === "estimates") { ?>
+    <?php if ($related_to === "clients" || $related_to === "client_contacts" || $related_to === "projects" || $related_to === "tasks" || $related_to === "tickets" || $related_to === "invoices" || $related_to === "estimates" || $related_to === "orders" || $related_to === "timesheets") { ?>
         <div class="form-group" id="hide_from_clients_container">
             <label for="hide_from_clients" class=" col-md-3"><?php echo lang('hide_from_clients'); ?></label>
             <div class="col-md-9">
@@ -70,17 +80,39 @@
             </div>
         </div>
     <?php } ?>
-    <div class="row">
-        <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal"><span class="fa fa-close"></span> <?php echo lang('close'); ?></button>
-            <button type="submit" class="btn btn-primary"><span class="fa fa-check-circle"></span> <?php echo lang('save'); ?></button>
+    <?php if ($related_to === "clients" || $related_to === "client_contacts") { ?>
+        <div class="form-group" id="disable_editing_by_clients_container">
+            <label for="disable_editing_by_clients" class=" col-md-3"><?php echo lang('disable_editing_by_clients'); ?></label>
+            <div class="col-md-9">
+                <?php
+                echo form_checkbox(
+                        "disable_editing_by_clients", "1", $model_info->disable_editing_by_clients, "id='disable_editing_by_clients'"
+                );
+                ?>
+            </div>
         </div>
-    </div>
-
-    <?php echo form_close(); ?>
+    <?php } ?>
+    <?php if ($related_to === "leads") { ?>
+        <div class="form-group">
+            <label for="show_on_kanban_card" class=" col-md-3"><?php echo lang('show_on_kanban_card'); ?></label>
+            <div class="col-md-9">
+                <?php
+                echo form_checkbox(
+                        "show_on_kanban_card", "1", $model_info->show_on_kanban_card, "id='show_on_kanban_card'"
+                );
+                ?>
+            </div>
+        </div>
+    <?php } ?>
 
 </div>
 
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" data-dismiss="modal"><span class="fa fa-close"></span> <?php echo lang('close'); ?></button>
+    <button type="submit" class="btn btn-primary"><span class="fa fa-check-circle"></span> <?php echo lang('save'); ?></button>
+</div>
+
+<?php echo form_close(); ?>
 
 
 <script type="text/javascript">
@@ -93,7 +125,7 @@
         });
 
         showHideFields();
-        $("#show_in_invoice, #visible_to_admins_only, #show_in_estimate").click(function () {
+        $("#show_in_invoice, #visible_to_admins_only, #show_in_estimate, #hide_from_clients, #show_in_order").click(function () {
             showHideFields();
         });
 
@@ -102,6 +134,7 @@
 
             $("#hide_from_clients_container").show();
             $("#visible_to_admins_only_container").show();
+            $("#disable_editing_by_clients_container").show();
 
             //if any field is visible to invoice, then it'll be availab for non-admins and clients
             if ($("#show_in_invoice").is(":checked")) {
@@ -111,14 +144,30 @@
 
             if ($("#visible_to_admins_only").is(":checked")) {
                 $("#hide_from_clients_container").hide();
+                $("#disable_editing_by_clients_container").hide();
+            }
+
+            if ($("#hide_from_clients").is(":checked")) {
+                $("#disable_editing_by_clients_container").hide();
             }
 
             if ($("#show_in_estimate").is(":checked")) {
                 $("#hide_from_clients_container").hide();
                 $("#visible_to_admins_only_container").hide();
             }
+
+            if ($("#show_in_order").is(":checked")) {
+                $("#hide_from_clients_container").hide();
+                $("#visible_to_admins_only_container").hide();
+            }
         }
 
 
+        $("#example_variable_name").keydown(function (e) {
+            //don't let the user to input space
+            if (e.keyCode === 32) {
+                e.preventDefault();
+            }
+        });
     });
 </script>

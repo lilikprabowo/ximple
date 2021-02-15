@@ -1,4 +1,6 @@
 <?php echo form_open(get_uri("projects/timer/" . $project_id . "/stop"), array("id" => "stop-timer-form", "class" => "general-form", "role" => "form")); ?>
+<input type="hidden" name="task_id" value="<?php echo $task_id; ?>" />
+
 <div class="modal-body clearfix">
     <div class="form-group">
         <label for="note" class=" col-md-12"><?php echo lang('note'); ?></label>
@@ -8,20 +10,22 @@
                 "id" => "note",
                 "name" => "note",
                 "class" => "form-control",
-                "placeholder" => lang('note')
+                "placeholder" => lang('note'),
+                "data-rich-text-editor" => true
             ));
             ?>
         </div>
     </div>
-
-    <div class="form-group">
-        <label for="task" class="col-md-12"><?php echo lang('task'); ?>        </label>
-        <div class="col-md-12">
-            <?php
-            echo form_dropdown("task_id", $tasks_dropdown, "", "class='select2'");
-            ?>
+    <?php if (!$open_task_id) { ?>
+        <div class="form-group">
+            <label for="task" class="col-md-12"><?php echo lang('task'); ?>        </label>
+            <div class="col-md-12">
+                <?php
+                echo form_dropdown("task_id", $tasks_dropdown, $task_id, "class='select2'");
+                ?>
+            </div>
         </div>
-    </div>
+    <?php } ?>
 </div>
 
 <div class="modal-footer">

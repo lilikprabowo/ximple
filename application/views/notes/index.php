@@ -3,6 +3,7 @@
         <div class="page-title clearfix">
             <h1> <?php echo lang('notes') . " (" . lang('private') . ")"; ?></h1>
             <div class="title-button-group">
+                <?php echo modal_anchor(get_uri("labels/modal_form"), "<i class='fa fa-tags'></i> " . lang('manage_labels'), array("class" => "btn btn-default", "title" => lang('manage_labels'), "data-post-type" => "note")); ?>
                 <?php echo modal_anchor(get_uri("notes/modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('add_note'), array("class" => "btn btn-default", "title" => lang('add_note'))); ?>
             </div>
         </div>

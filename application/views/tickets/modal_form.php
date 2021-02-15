@@ -1,8 +1,7 @@
-<div class="modal-body clearfix">
-    <div id="new-ticket-dropzone" class="post-dropzone">
-        <?php echo form_open(get_uri("tickets/save"), array("id" => "ticket-form", "class" => "general-form", "role" => "form")); ?>
+<?php echo form_open(get_uri("tickets/save"), array("id" => "ticket-form", "class" => "general-form", "role" => "form")); ?>
+<div id="new-ticket-dropzone" class="post-dropzone">
+    <div class="modal-body clearfix">
         <input type="hidden" name="id" value="<?php echo $model_info->id; ?>" />
-
 
         <div class="form-group">
             <label for="title" class=" col-md-3"><?php echo lang('title'); ?></label>
@@ -21,36 +20,59 @@
                 ?>
             </div>
         </div>
-        
-            <!-- client can't be changed during editing -->
-            <?php if ($client_id) { ?>
-                <input type="hidden" name="client_id" value="<?php echo $client_id; ?>" />
-            <?php } else { ?>
-                <div class="form-group">
-                    <label for="client_id" class=" col-md-3"><?php echo lang('client'); ?></label>
-                    <div class="col-md-9">
-                        <?php
-                        echo form_dropdown("client_id", $clients_dropdown, array(""), "class='select2 validate-hidden' id='client_id' data-rule-required='true', data-msg-required='" . lang('field_required') . "'");
-                        ?>
-                    </div>
-                </div>
-            <?php } ?>
 
-        <?php if ($show_project_reference == "1") { ?>
+        <!-- client can't be changed during editing -->
+        <?php if ($client_id) { ?>
+            <input type="hidden" name="client_id" value="<?php echo $client_id; ?>" />
+        <?php } else if (!$model_info->creator_email) { ?>
+            <div class="form-group">
+                <label for="client_id" class=" col-md-3"><?php echo lang('client'); ?></label>
+                <div class="col-md-9">
+                    <?php
+                    echo form_dropdown("client_id", $clients_dropdown, array(""), "class='select2 validate-hidden' id='client_id' data-rule-required='true', data-msg-required='" . lang('field_required') . "'");
+                    ?>
+                </div>
+            </div>
+        <?php } ?>
+
+        <?php if (!$requested_by_id && !$model_info->id) { ?>
+            <?php if ($this->login_user->user_type == "staff") { ?>
                 <div class="form-group">
-                    <label for="project_id" class=" col-md-3"><?php echo lang('project'); ?></label>
-                    <div class="col-md-9" id="porject-dropdown-section">
+                    <label for="requested_by_id" class=" col-md-3"><?php echo lang('requested_by'); ?></label>
+                    <div class="col-md-9" id="requested-by-dropdown-section">
                         <?php
                         echo form_input(array(
-                            "id" => "project_id",
-                            "name" => "project_id",
-                            "value" => $model_info->project_id,
+                            "id" => "requested_by_id",
+                            "name" => "requested_by_id",
+                            "value" => $model_info->requested_by,
                             "class" => "form-control",
-                            "placeholder" => lang('project')
+                            "placeholder" => lang('requested_by')
                         ));
                         ?>
                     </div>
                 </div>
+            <?php } else if ($this->login_user->user_type == "client") { ?>
+                <input type="hidden" name="requested_by_id" value="<?php echo $this->login_user->id; ?>" />
+            <?php } ?>
+        <?php } else { ?>
+            <input type="hidden" name="requested_by_id" value="<?php echo $requested_by_id; ?>" />
+        <?php } ?>
+
+        <?php if ($show_project_reference == "1") { ?>
+            <div class="form-group">
+                <label for="project_id" class=" col-md-3"><?php echo lang('project'); ?></label>
+                <div class="col-md-9" id="porject-dropdown-section">
+                    <?php
+                    echo form_input(array(
+                        "id" => "project_id",
+                        "name" => "project_id",
+                        "value" => $model_info->project_id,
+                        "class" => "form-control",
+                        "placeholder" => lang('project')
+                    ));
+                    ?>
+                </div>
+            </div>
         <?php } ?>
 
         <div class="form-group">
@@ -75,6 +97,7 @@
                         "placeholder" => lang('description'),
                         "data-rule-required" => true,
                         "data-msg-required" => lang("field_required"),
+                        "data-rich-text-editor" => true
                     ));
                     ?>
                 </div>
@@ -110,27 +133,23 @@
 
         <?php $this->load->view("custom_fields/form/prepare_context_fields", array("custom_fields" => $custom_fields, "label_column" => "col-md-3", "field_column" => " col-md-9")); ?> 
 
+        <?php $this->load->view("includes/dropzone_preview"); ?>
+    </div>
 
-        <?php $this->load->view("includes/dropzone_preview"); ?>    
-        <div class="row">
-            <div class="modal-footer">
+    <div class="modal-footer">
 
-                <!-- file can't be uploaded during editing -->
-                <button class="btn btn-default upload-file-button pull-left btn-sm round  <?php
-                if ($model_info->id) {
-                    echo "hide";
-                }
-                ?>" type="button" style="color:#7988a2"><i class='fa fa-camera'></i> <?php echo lang("upload_file"); ?></button>
+        <!-- file can't be uploaded during editing -->
+        <button class="btn btn-default upload-file-button pull-left btn-sm round  <?php
+        if ($model_info->id) {
+            echo "hide";
+        }
+        ?>" type="button" style="color:#7988a2"><i class='fa fa-camera'></i> <?php echo lang("upload_file"); ?></button>
 
-
-                <button type="button" class="btn btn-default" data-dismiss="modal"><span class="fa fa-close"></span> <?php echo lang('close'); ?></button>
-                <button type="submit" class="btn btn-primary"><span class="fa fa-check-circle"></span> <?php echo lang('save'); ?></button>
-            </div>
-        </div>
-
-        <?php echo form_close(); ?>
+        <button type="button" class="btn btn-default" data-dismiss="modal"><span class="fa fa-close"></span> <?php echo lang('close'); ?></button>
+        <button type="submit" class="btn btn-primary"><span class="fa fa-check-circle"></span> <?php echo lang('save'); ?></button>
     </div>
 </div>
+<?php echo form_close(); ?>
 
 
 
@@ -146,15 +165,15 @@
         $("#ticket-form").appForm({
             onSuccess: function (result) {
                 if (editMode) {
-                    
+
                     appAlert.success(result.message, {duration: 10000});
-                    
+
                     //don't reload whole page when it's the list view
-                    if($("#ticket-table").length){
+                    if ($("#ticket-table").length) {
                         $("#ticket-table").appTable({newData: result.data, dataId: result.id});
                     } else {
                         location.reload();
-                    } 
+                    }
                 } else {
                     $("#ticket-table").appTable({newData: result.data, dataId: result.id});
                 }
@@ -164,33 +183,52 @@
         $("#title").focus();
         $("#ticket-form .select2").select2();
 
-        $("#ticket_labels").select2({
-            tags: <?php echo json_encode($label_suggestions); ?>
-        });
+        $("#ticket_labels").select2({multiple: true, data: <?php echo json_encode($label_suggestions); ?>});
 
 <?php if ($show_project_reference == "1") { ?>
-        //load all projects of selected client
+            //load all projects of selected client
+            $("#client_id").select2().on("change", function () {
+                var client_id = $(this).val();
+                if ($(this).val()) {
+                    $('#project_id').select2("destroy");
+                    $("#project_id").hide();
+                    appLoader.show({container: "#porject-dropdown-section"});
+                    $.ajax({
+                        url: "<?php echo get_uri("tickets/get_project_suggestion") ?>" + "/" + client_id,
+                        dataType: "json",
+                        success: function (result) {
+                            $("#project_id").show().val("");
+                            $('#project_id').select2({data: result});
+                            appLoader.hide();
+                        }
+                    });
+                }
+            });
+
+            $('#project_id').select2({data: <?php echo json_encode($projects_suggestion); ?>});
+
+<?php } ?>
+
+        //load all client contacts of selected client
         $("#client_id").select2().on("change", function () {
             var client_id = $(this).val();
             if ($(this).val()) {
-                $('#project_id').select2("destroy");
-                $("#project_id").hide();
-                appLoader.show({container: "#porject-dropdown-section"});
+                $('#requested_by_id').select2("destroy");
+                $("#requested_by_id").hide();
+                appLoader.show({container: "#requested-by-dropdown-section"});
                 $.ajax({
-                    url: "<?php echo get_uri("tickets/get_project_suggestion") ?>" + "/" + client_id,
+                    url: "<?php echo get_uri("tickets/get_client_contact_suggestion") ?>" + "/" + client_id,
                     dataType: "json",
                     success: function (result) {
-                        $("#project_id").show().val("");
-                        $('#project_id').select2({data: result});
+                        $("#requested_by_id").show().val("");
+                        $('#requested_by_id').select2({data: result});
                         appLoader.hide();
                     }
                 });
             }
         });
-        
-        $('#project_id').select2({data: <?php echo json_encode($projects_suggestion); ?>});
 
-<?php } ?>
+        $('#requested_by_id').select2({data: <?php echo json_encode($requested_by_dropdown); ?>});
 
     });
 

@@ -19,49 +19,35 @@
                                 <li role="presentation">
                                     <?php echo modal_anchor(get_uri("estimate_requests/edit_estimate_request_modal_form"), "<i class='fa fa-pencil'></i> " . lang('edit'), array("title" => lang('estimate_request'), "data-post-view" => "details", "data-post-id" => $model_info->id)); ?>
                                 </li>
-                            <?php } ?>
-                            <?php if ($model_info->status === "new") { ?>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/processing"), "<i class='fa fa-refresh'></i> " . lang('mark_as_processing'), array("class" => "", "title" => lang('mark_as_processing'), "data-reload-on-success" => "1")); ?> </li>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/estimated"), "<i class='fa fa-check-circle'></i> " . lang('mark_as_estimated'), array("class" => "", "title" => lang('mark_as_estimated'), "data-reload-on-success" => "1")); ?> </li>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/hold"), "<i class='fa fa-pause-circle-o'></i> " . lang('mark_as_hold'), array("class" => "", "title" => lang('mark_as_hold'), "data-reload-on-success" => "1")); ?> </li>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/canceled"), "<i class='fa fa-times-circle-o'></i> " . lang('mark_as_canceled'), array("class" => "", "title" => lang('mark_as_canceled'), "data-reload-on-success" => "1")); ?> </li>
-                            <?php } else if ($model_info->status === "processing") { ?>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/estimated"), "<i class='fa fa-check-circle'></i> " . lang('mark_as_estimated'), array("class" => "", "title" => lang('mark_as_estimated'), "data-reload-on-success" => "1")); ?> </li>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/hold"), "<i class='fa fa-pause-circle-o'></i> " . lang('mark_as_hold'), array("class" => "", "title" => lang('mark_as_hold'), "data-reload-on-success" => "1")); ?> </li>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/canceled"), "<i class='fa fa-times-circle-o'></i> " . lang('mark_as_canceled'), array("class" => "", "title" => lang('mark_as_canceled'), "data-reload-on-success" => "1")); ?> </li>
-                            <?php } else if ($model_info->status === "estimated") { ?>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/processing"), "<i class='fa fa-check-circle'></i> " . lang('mark_as_processing'), array("class" => "", "title" => lang('mark_as_processing'), "data-reload-on-success" => "1")); ?> </li>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/hold"), "<i class='fa fa-pause-circle-o'></i> " . lang('mark_as_hold'), array("class" => "", "title" => lang('mark_as_hold'), "data-reload-on-success" => "1")); ?> </li>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/canceled"), "<i class='fa fa-times-circle-o'></i> " . lang('mark_as_canceled'), array("class" => "", "title" => lang('mark_as_canceled'), "data-reload-on-success" => "1")); ?> </li>
-                            <?php } else if ($model_info->status === "hold") { ?>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/processing"), "<i class='fa fa-check-circle'></i> " . lang('mark_as_processing'), array("class" => "", "title" => lang('mark_as_processing'), "data-reload-on-success" => "1")); ?> </li>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/estimated"), "<i class='fa fa-pause-circle-o'></i> " . lang('mark_as_estimated'), array("class" => "", "title" => lang('mark_as_estimated'), "data-reload-on-success" => "1")); ?> </li>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/canceled"), "<i class='fa fa-times-circle-o'></i> " . lang('mark_as_canceled'), array("class" => "", "title" => lang('mark_as_canceled'), "data-reload-on-success" => "1")); ?> </li>
-                            <?php } else if ($model_info->status === "canceled") { ?>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/processing"), "<i class='fa fa-check-circle'></i> " . lang('mark_as_processing'), array("class" => "", "title" => lang('mark_as_processing'), "data-reload-on-success" => "1")); ?> </li>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/estimated"), "<i class='fa fa-pause-circle-o'></i> " . lang('mark_as_estimated'), array("class" => "", "title" => lang('mark_as_estimated'), "data-reload-on-success" => "1")); ?> </li>
-                                <li role="presentation"><?php echo ajax_anchor(get_uri("estimate_requests/change_estimate_request_status/$model_info->id/hold"), "<i class='fa fa-pause-circle-o'></i> " . lang('mark_as_hold'), array("class" => "", "title" => lang('mark_as_hold'), "data-reload-on-success" => "1")); ?> </li>
+                                <?php
+                            }
+
+                            $this->load->view("estimate_requests/estimate_request_status_options");
+                            ?>
+
+                            <?php if ($this->login_user->user_type == "staff") { ?>
+                                <li role="presentation">
+                                    <?php echo modal_anchor(get_uri("estimates/modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('add_estimate'), array("title" => lang('add_estimate'), "data-post-estimate_request_id" => $model_info->id, "data-post-client_id" => $model_info->client_id)); ?>    
+                                </li>
                             <?php } ?>
                         </ul>
                     </span>
                 </div>
             <?php } ?>
         </div>
-        <div class="panel panel-default  p15 no-border">
+        <div id="estimate-request-status-bar" class="panel panel-default  p15 no-border">
             <span class="text-off"><?php echo lang("status") . ": "; ?></span>
             <?php echo $status; ?>
 
+            <?php if ($show_client_info && $model_info->company_name) { ?>
 
-            <?php if ($show_client_info) { ?>
-            
-                <span class="text-off ml15"><?php echo lang("client") . ": "; ?></span>
-                <?php
-                if ($model_info->company_name) {
-                    echo anchor(get_uri("clients/view/" . $model_info->client_id), $model_info->company_name);
-                } else if ($model_info->lead_company_name) {
-                    echo $model_info->lead_company_name;
-                }
-                ?>
+                <?php if ($model_info->is_lead) { ?>
+                    <span class="text-off ml15"><?php echo lang("lead") . ": "; ?></span>
+                    <?php echo (anchor(get_uri("leads/view/" . $model_info->client_id), $model_info->company_name)); ?>
+                <?php } else { ?>
+                    <span class="text-off ml15"><?php echo lang("client") . ": "; ?></span>
+                    <?php echo (anchor(get_uri("clients/view/" . $model_info->client_id), $model_info->company_name)); ?>
+                <?php } ?>
 
             <?php } ?>
 
@@ -79,6 +65,25 @@
                 <?php
             }
             ?>
+
+            <?php
+            if ($this->login_user->user_type == "staff" && $estimates) {
+                $estimate_lang = lang("estimate");
+                if (count($estimates) > 1) {
+                    $estimate_lang = lang("estimates");
+                }
+                ?>
+
+                <span class="text-off ml15"><?php echo $estimate_lang . ": "; ?></span>
+
+                <?php
+                $last_estimate = end($estimates);
+                foreach ($estimates as $estimate) {
+                    $seperation = ($estimate == $last_estimate) ? "" : ", ";
+                    echo anchor(get_uri("estimates/view/" . $estimate->id), get_estimate_id($estimate->id)) . $seperation;
+                }
+                ?>
+            <?php } ?>  
 
         </div>
 
@@ -121,7 +126,7 @@
         <?php if ($lead_info) { ?>
             <div class="panel panel-default">
                 <div class="page-title ml15">
-                    <h4><?php echo lang("client_info"); ?></h4>
+                    <h4><?php echo lang("lead_info"); ?></h4>
                 </div>
                 <div class="panel-body">
                     <table class="display no-thead b-t b-b-only no-hover dataTable no-footer ">
@@ -130,25 +135,6 @@
                                 <td>
                                     <i class="fa fa-cube"></i><strong> <?php echo lang('company_name'); ?></strong>
                                     <div class="pl15"><?php echo $lead_info->company_name; ?></div>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <td>
-                                    <i class="fa fa-cube"></i><strong> <?php echo lang('first_name'); ?></strong>
-                                    <div class="pl15"><?php echo $lead_info->first_name; ?></div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <i class="fa fa-cube"></i><strong> <?php echo lang('last_name'); ?></strong>
-                                    <div class="pl15"><?php echo $lead_info->last_name; ?></div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <i class="fa fa-cube"></i><strong> <?php echo lang('email'); ?></strong>
-                                    <div class="pl15"><?php echo $lead_info->email; ?></div>
                                 </td>
                             </tr>
 

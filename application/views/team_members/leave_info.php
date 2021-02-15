@@ -3,7 +3,7 @@ if (isset($page_type) && $page_type === "full") {
     echo "m20";
 }
 ?>">
-    <ul data-toggle="ajax-tab" class="nav nav-tabs bg-white title" role="tablist">
+    <ul id="team-member-leave-tabs" data-toggle="ajax-tab" class="nav nav-tabs bg-white title" role="tablist">
         <li class="title-tab"><h4 class="pl15 pt10 pr15">
                 <?php
                 if ($this->login_user->id === $applicant_id) {
@@ -49,7 +49,6 @@ if (isset($page_type) && $page_type === "full") {
                 };
 
                 $(document).ready(function() {
-                    $("#monthly-leaves-button").trigger("click");
                     loadMembersLeavesTable("#monthly-leaves-table", "monthly");
                 });
             </script>

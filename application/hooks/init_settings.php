@@ -10,7 +10,7 @@ function init_settings() {
         $ci->config->set_item($setting->setting_name, $setting->setting_value);
     }
 
-    $language = get_setting("language");
+    $language = get_setting('user_' . $login_user_id . '_personal_language') ? get_setting('user_' . $login_user_id . '_personal_language') : get_setting("language");
 
     $ci->lang->load('default', $language);
     $ci->lang->load('custom', $language); //load custom after loading the default. because custom will overwrite the default file.

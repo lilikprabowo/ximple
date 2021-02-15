@@ -27,6 +27,7 @@
                     "value" => $model_info->description,
                     "class" => "form-control",
                     "placeholder" => lang('description') . "...",
+                    "data-rich-text-editor" => true
                 ));
                 ?>
             </div>
@@ -55,7 +56,8 @@
                 "name" => "start_date",
                 "value" => is_date_exists($model_info->start_date) ? $model_info->start_date : "",
                 "class" => "form-control",
-                "placeholder" => lang('date')
+                "placeholder" => lang('date'),
+                "autocomplete" => "off"
             ));
             ?>
         </div>
@@ -76,10 +78,7 @@
             }
         });
         $("#title").focus();
-        $("#todo_labels").select2({
-            tags: <?php echo json_encode($label_suggestions); ?>,
-            'minimumInputLength': 0
-        });
+        $("#todo_labels").select2({multiple: true, data: <?php echo json_encode($label_suggestions); ?>});
 
         setDatePicker("#start_date");
     });

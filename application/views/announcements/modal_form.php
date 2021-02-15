@@ -1,7 +1,3 @@
-<?php
-$this->load->view("includes/summernote");
-?>
-
 <div id="page-content" class="clearfix p20">
     <div class="panel view-container">
         <div id="announcement-dropzone" class="post-dropzone">
@@ -64,6 +60,7 @@ $this->load->view("includes/summernote");
                                 "value" => $model_info->start_date,
                                 "class" => "form-control",
                                 "placeholder" => "YYYY-MM-DD",
+                                "autocomplete" => "off",
                                 "data-rule-required" => true,
                                 "data-msg-required" => lang("field_required")
                             ));
@@ -79,6 +76,7 @@ $this->load->view("includes/summernote");
                                 "value" => $model_info->end_date,
                                 "class" => "form-control",
                                 "placeholder" => "YYYY-MM-DD",
+                                "autocomplete" => "off",
                                 "data-rule-required" => true,
                                 "data-msg-required" => lang("field_required"),
                                 "data-rule-greaterThanOrEqual" => "#start_date",
@@ -138,7 +136,14 @@ $this->load->view("includes/summernote");
 <script type="text/javascript">
     $(document).ready(function () {
         $("#announcement-form").appForm({
-            ajaxSubmit: false
+            isModal: false,
+            onSuccess: function (response) {
+                appAlert.success(response.message, {duration: 10000});
+                setTimeout(function () {
+                    window.location.href = response.recirect_to;
+                }, 1000)
+
+            }
         });
         $("#title").focus();
 
@@ -161,7 +166,8 @@ $this->load->view("includes/summernote");
             lang: "<?php echo lang('language_locale_long'); ?>"
         });
 
-        setDatePicker("#start_date, #end_date");
+        setDatePicker("#start_date");
+        setDatePicker("#end_date");
 
 
         var uploadUrl = "<?php echo get_uri("announcements/upload_file"); ?>";

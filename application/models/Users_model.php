@@ -10,30 +10,45 @@ class Users_model extends Crud_model {
     }
 
     function authenticate($email, $password) {
-        $this->db->select("id,user_type,client_id");
-        $result = $this->db->get_where($this->table, array('email' => $email, 'password' => md5($password), 'status' => 'active', 'deleted' => 0, 'disable_login' => 0));
-        if ($result->num_rows() == 1) {
-            $user_info = $result->row();
 
-            //check client login settings
-            if ($user_info->user_type === "client" && get_setting("disable_client_login")) {
-                return false;
-            } else if ($user_info->user_type === "client") {
-                //user can't be loged in if client has deleted
-                $clients_table = $this->db->dbprefix('clients');
+        $email = $this->db->escape_str($email);
 
-                $sql = "SELECT $clients_table.id
-                        FROM $clients_table
-                        WHERE $clients_table.id= $user_info->client_id AND $clients_table.deleted=0
-                        ";
-                $client_result = $this->db->query($sql);
-                if (!$client_result->num_rows()) {
-                    return false;
-                }
+        $this->db->select("id,user_type,client_id,password");
+        $result = $this->db->get_where($this->table, array('email' => $email, 'status' => 'active', 'deleted' => 0, 'disable_login' => 0));
+
+        if ($result->num_rows() !== 1) {
+            return false;
+        }
+
+        $user_info = $result->row();
+
+        //there has two password encryption method for legacy (md5) compatibility
+        //check if anyone of them is correct
+        if ((strlen($user_info->password) === 60 && password_verify($password, $user_info->password)) || $user_info->password === md5($password)) {
+
+            if ($this->_client_can_login($user_info) !== false) {
+                $this->session->set_userdata('user_id', $user_info->id);
+                return true;
             }
+        }
+    }
 
-            $this->session->set_userdata('user_id', $user_info->id);
-            return true;
+    private function _client_can_login($user_info) {
+        //check client login settings
+        if ($user_info->user_type === "client" && get_setting("disable_client_login")) {
+            return false;
+        } else if ($user_info->user_type === "client") {
+            //user can't be loged in if client has deleted
+            $clients_table = $this->db->dbprefix('clients');
+
+            $sql = "SELECT $clients_table.id
+                    FROM $clients_table
+                    WHERE $clients_table.id = $user_info->client_id AND $clients_table.deleted=0";
+            $client_result = $this->db->query($sql);
+
+            if ($client_result->num_rows() !== 1) {
+                return false;
+            }
         }
     }
 
@@ -50,6 +65,7 @@ class Users_model extends Crud_model {
     function get_details($options = array()) {
         $users_table = $this->db->dbprefix('users');
         $team_member_job_info_table = $this->db->dbprefix('team_member_job_info');
+        $clients_table = $this->db->dbprefix('clients');
 
         $where = "";
         $id = get_array_value($options, "id");
@@ -71,6 +87,11 @@ class Users_model extends Crud_model {
             $where .= " AND $users_table.user_type='$user_type'";
         }
 
+        if ($user_type == 'client') {
+            $where .= " AND $clients_table.deleted=0";
+        }
+
+
         if ($client_id) {
             $where .= " AND $users_table.client_id=$client_id";
         }
@@ -79,10 +100,17 @@ class Users_model extends Crud_model {
             $where .= " AND $users_table.id!=$exclude_user_id";
         }
 
+        $show_own_clients_only_user_id = get_array_value($options, "show_own_clients_only_user_id");
+        if ($user_type == "client" && $show_own_clients_only_user_id) {
+            $where .= " AND $users_table.client_id IN(SELECT $clients_table.id FROM $clients_table WHERE $clients_table.deleted=0 AND $clients_table.created_by=$show_own_clients_only_user_id)";
+        }
+
 
         $custom_field_type = "team_members";
         if ($user_type === "client") {
-            $custom_field_type = "contacts";
+            $custom_field_type = "client_contacts";
+        } else if ($user_type === "lead") {
+            $custom_field_type = "lead_contacts";
         }
 
         //prepare custom fild binding query
@@ -97,6 +125,7 @@ class Users_model extends Crud_model {
             $team_member_job_info_table.date_of_hire, $team_member_job_info_table.salary, $team_member_job_info_table.salary_term $select_custom_fieds
         FROM $users_table
         LEFT JOIN $team_member_job_info_table ON $team_member_job_info_table.user_id=$users_table.id
+        LEFT JOIN $clients_table ON $clients_table.id=$users_table.client_id
         $join_custom_fieds    
         WHERE $users_table.deleted=0 $where
         ORDER BY $users_table.first_name";
@@ -104,7 +133,13 @@ class Users_model extends Crud_model {
     }
 
     function is_email_exists($email, $id = 0) {
-        $result = $this->get_all_where(array("email" => $email, "deleted" => 0));
+        $users_table = $this->db->dbprefix('users');
+
+        $sql = "SELECT $users_table.* FROM $users_table   
+        WHERE $users_table.deleted=0 AND $users_table.email='$email' AND $users_table.user_type!='lead'";
+
+        $result = $this->db->query($sql);
+
         if ($result->num_rows() && $result->row()->id != $id) {
             return $result->row();
         } else {
@@ -147,7 +182,7 @@ class Users_model extends Crud_model {
         $team_table = $this->db->dbprefix('team');
 
         $sql = "SELECT $users_table.id, $users_table.user_type, $users_table.is_admin, $users_table.role_id, $users_table.email,
-            $users_table.first_name, $users_table.last_name, $users_table.image, $users_table.message_checked_at, $users_table.notification_checked_at, $users_table.client_id, 
+            $users_table.first_name, $users_table.last_name, $users_table.image, $users_table.message_checked_at, $users_table.notification_checked_at, $users_table.client_id, $users_table.enable_web_notification,
             $users_table.is_primary_contact, $users_table.sticky_note,
             $roles_table.title as role_title, $roles_table.permissions,
             (SELECT GROUP_CONCAT(id) team_ids FROM $team_table WHERE FIND_IN_SET('$user_id', `members`)) as team_ids
@@ -165,15 +200,17 @@ class Users_model extends Crud_model {
 
         $where = "";
         if ($user_type) {
-            $where.= " AND $users_table.user_type='$user_type'";
+            $where .= " AND $users_table.user_type='$user_type'";
+        } else {
+            $where .= " AND $users_table.user_type!='lead'";
         }
 
         if ($user_ids) {
-            $where.= "  AND FIND_IN_SET($users_table.id, '$user_ids')";
+            $where .= "  AND FIND_IN_SET($users_table.id, '$user_ids')";
         }
 
         if ($exlclude_user) {
-            $where.= " AND $users_table.id !=$exlclude_user";
+            $where .= " AND $users_table.id !=$exlclude_user";
         }
 
         $sql = "SELECT $users_table.id,$users_table.client_id, $users_table.user_type, $users_table.first_name, $users_table.last_name, $clients_table.company_name,
@@ -196,7 +233,6 @@ class Users_model extends Crud_model {
         return $this->db->query($sql)->row();
     }
 
-    
     /* return list of ids of the online users */
 
     function get_online_user_ids() {
@@ -208,4 +244,49 @@ class Users_model extends Crud_model {
         WHERE TIMESTAMPDIFF(MINUTE, users.last_online, '$now')<=0";
         return $this->db->query($sql)->result();
     }
+
+    function get_active_members_and_clients($options = array()) {
+        $users_table = $this->db->dbprefix('users');
+        $clients_table = $this->db->dbprefix('clients');
+
+        $where = "";
+
+        $user_type = get_array_value($options, "user_type");
+        if ($user_type) {
+            $where .= " AND $users_table.user_type='$user_type'";
+        }
+
+        $exclude_user_id = get_array_value($options, "exclude_user_id");
+        if ($exclude_user_id) {
+            $where .= " AND $users_table.id!=$exclude_user_id";
+        }
+
+        $show_own_clients_only_user_id = get_array_value($options, "show_own_clients_only_user_id");
+        if ($user_type == "client" && $show_own_clients_only_user_id) {
+            $where .= " AND $users_table.client_id IN(SELECT $clients_table.id FROM $clients_table WHERE $clients_table.deleted=0 AND $clients_table.created_by=$show_own_clients_only_user_id)";
+        }
+
+        $sql = "SELECT CONCAT($users_table.first_name, ' ',$users_table.last_name) AS member_name, $users_table.last_online, $users_table.id, $users_table.image, $users_table.job_title, $users_table.user_type, $clients_table.company_name
+        FROM $users_table
+        LEFT JOIN $clients_table ON $clients_table.id = $users_table.client_id AND $clients_table.deleted=0
+        WHERE $users_table.deleted=0 $where
+        ORDER BY $users_table.last_online DESC";
+        return $this->db->query($sql);
+    }
+
+    function count_total_contacts($show_own_clients_only_user_id = "") {
+        $users_table = $this->db->dbprefix('users');
+        $clients_table = $this->db->dbprefix('clients');
+
+        $where = "";
+        if ($show_own_clients_only_user_id) {
+            $where .= " AND $users_table.client_id IN(SELECT $clients_table.id FROM $clients_table WHERE $clients_table.deleted=0 AND $clients_table.created_by=$show_own_clients_only_user_id)";
+        }
+
+        $sql = "SELECT COUNT($users_table.id) AS total
+        FROM $users_table 
+        WHERE $users_table.deleted=0 AND $users_table.user_type='client' $where";
+        return $this->db->query($sql)->row()->total;
+    }
+
 }

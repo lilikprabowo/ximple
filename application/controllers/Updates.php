@@ -36,8 +36,22 @@ class Updates extends MY_Controller {
 
         $data = curl_exec($ch);
         curl_close($ch);
+    }
 
-        return $data;
+    private function _get_release_contents($url, $download = false) {
+        $curl_data = $this->_curl_get_contents($url);
+
+        //try with file_get_contents 
+        if (!$curl_data) {
+
+            if ($download) {
+                $curl_data = fopen($url, "r");
+            } else {
+                $curl_data = file_get_contents($url);
+            }
+        }
+
+        return $curl_data;
     }
 
     private function _get_updates_info() {
@@ -60,7 +74,7 @@ class Updates extends MY_Controller {
         $downloadable_updates = array();
 
         //check updates
-        $releases = $this->_curl_get_contents($remot_uplates_url);
+        $releases = $this->_get_release_contents($remot_uplates_url);
         if ($releases) {
 
             //explode the string to get the released versions
@@ -120,6 +134,7 @@ class Updates extends MY_Controller {
     }
 
     function download_updates($version = "", $salt = "") {
+        ini_set('max_execution_time', 300); //300 seconds 
 
         $local_updates_dir = get_setting("updates_path");
         $update_zip = $local_updates_dir . $version . ".zip";
@@ -130,7 +145,7 @@ class Updates extends MY_Controller {
             echo json_encode(array("success" => true, 'message' => "File already exists"));
         } else {
             //get updates from remote
-            $new_update = $this->_curl_get_contents($download_url);
+            $new_update = $this->_get_release_contents($download_url, true);
             if ($new_update) {
 
                 //crate updates folter if required

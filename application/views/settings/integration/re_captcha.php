@@ -5,7 +5,7 @@
     <div class="panel-body">
 
         <div class="form-group">
-            <label for="company_name" class=" col-md-12">
+            <label class=" col-md-12">
                 <?php echo lang("get_your_key_from_here") . " " . anchor("https://www.google.com/recaptcha/admin", "Google reCAPTCHA", array("target" => "_blank")); ?>
             </label>
         </div>

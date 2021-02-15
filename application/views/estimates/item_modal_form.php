@@ -29,7 +29,8 @@
                 "name" => "estimate_item_description",
                 "value" => $model_info->description ? $model_info->description : "",
                 "class" => "form-control",
-                "placeholder" => lang('description')
+                "placeholder" => lang('description'),
+                "data-rich-text-editor" => true
             ));
             ?>
         </div>

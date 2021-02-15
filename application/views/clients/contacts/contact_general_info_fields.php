@@ -109,14 +109,12 @@ if (!$model_info->id) {
         echo form_radio(array(
             "id" => "gender_male",
             "name" => "gender",
-            "data-msg-required" => lang("field_required"),
-                ), "male", ($model_info->gender == "female") ? false : true);
+                ), "male", ($model_info->gender == "male") ? true : false);
         ?>
         <label for="gender_male" class="mr15"><?php echo lang('male'); ?></label> <?php
         echo form_radio(array(
             "id" => "gender_female",
             "name" => "gender",
-            "data-msg-required" => lang("field_required"),
                 ), "female", ($model_info->gender == "female") ? true : false);
         ?>
         <label for="gender_female" class=""><?php echo lang('female'); ?></label>
@@ -142,7 +140,7 @@ if (!$model_info->id && !get_setting("disable_client_login")) {
                     "class" => "form-control",
                     "placeholder" => lang('password'),
                     "readonly" => "readonly",
-                    "onfocus"=>"this.removeAttribute('readonly');",
+                    "onfocus" => "this.removeAttribute('readonly');",
                     "style" => "z-index:auto;"
                 );
                 if (!$model_info->id) {
@@ -187,11 +185,11 @@ if (!$model_info->id && !get_setting("disable_client_login")) {
 <?php } ?>
 
 <script type="text/javascript">
-    $(document).ready(function() {
-        $("#generate_password").click(function() {
+    $(document).ready(function () {
+        $("#generate_password").click(function () {
             $("#login_password").val(getRndomString(8));
         });
-        $("#show_hide_password").click(function() {
+        $("#show_hide_password").click(function () {
             var $target = $("#login_password"),
                     type = $target.attr("type");
             if (type === "password") {

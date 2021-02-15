@@ -1,6 +1,6 @@
-<div id="js-chat-team-members-list">
-    <?php
-    if ($users) {
+<?php if ($users) { ?>
+    <div id="js-chat-team-members-list">
+        <?php
         foreach ($users as $user) {
             $online = "";
             if ($user->last_online && is_online_user($user->last_online)) {
@@ -30,6 +30,14 @@
             </div>
             <?php
         }
-    }
-    ?>
-</div>
+        ?>
+    </div>
+<?php } else { ?>
+
+    <div class="chat-no-messages text-off text-center">
+        <i class="fa fa-frown-o"></i><br />
+        <?php echo lang("no_users_found"); ?>
+    </div>
+
+<?php } ?>
+

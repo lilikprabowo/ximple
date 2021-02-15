@@ -1,9 +1,15 @@
 <div class="panel panel-default">
     <div class="panel-heading">
-        <i class="fa fa-file-text-o"></i>&nbsp; <?php echo lang("timesheet_statistics"); ?>
+        <i class="fa fa-file-text-o"></i>&nbsp; <?php
+        if ($timesheet_type == "my_timesheet_statistics") {
+            echo lang("my_timesheet");
+        } else {
+            echo lang("all_timesheets");
+        }
+        ?>
     </div>
     <div class="panel-body ">
-        <div id="timesheet-statistics-flotchart" style="width: 100%; height: 300px;"></div>
+        <div id="timesheet-statistics-flotchart-<?php echo $timesheet_type; ?>" style="width: 100%; height: 300px;"></div>
     </div>
 </div>
 
@@ -46,7 +52,7 @@
                         }
                     ];
 
-            $.plot("#timesheet-statistics-flotchart", dataset, {
+            $.plot("#timesheet-statistics-flotchart-<?php echo $timesheet_type; ?>", dataset, {
                 series: {
                     curvedLines: {
                         apply: true,

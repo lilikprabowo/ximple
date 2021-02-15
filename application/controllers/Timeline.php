@@ -15,12 +15,12 @@ class Timeline extends MY_Controller {
     function index() {
         $this->check_module_availability("module_timeline");
 
-        $members_options = array(
-            "status" => "active",
-            "user_type" => "staff",
-            "exclude_user_id" => $this->login_user->id
-        );
-        $view_data['team_members'] = $this->Users_model->get_details($members_options)->result();
+        $view_data['team_members'] = "";
+        $this->init_permission_checker("message_permission");
+        if (get_array_value($this->login_user->permissions, "message_permission") !== "no") {
+            $view_data['team_members'] = $this->Messages_model->get_users_for_messaging($this->get_user_options_for_query("staff"))->result();
+        }
+
         $this->template->rander("timeline/index", $view_data);
     }
 
@@ -33,6 +33,8 @@ class Timeline extends MY_Controller {
 
         $id = $this->input->post('id');
 
+        $post_id = $this->input->post('post_id');
+
         $target_path = get_setting("timeline_file_path");
 
         $files_data = move_files_from_temp_dir_to_permanent_dir($target_path, "timeline_post");
@@ -40,14 +42,14 @@ class Timeline extends MY_Controller {
         $data = array(
             "created_by" => $this->login_user->id,
             "created_at" => get_current_utc_time(),
-            "post_id" => $this->input->post('post_id'),
+            "post_id" => $post_id,
             "description" => $this->input->post('description'),
             "share_with" => ""
         );
-        
+
         $data = clean_data($data);
         $data["files"] = $files_data; //don't clean serilized data
-        
+
         $save_id = $this->Posts_model->save($data, $id);
         if ($save_id) {
             $data = "";
@@ -56,9 +58,16 @@ class Timeline extends MY_Controller {
                 $view_data['posts'] = $this->Posts_model->get_details($options)->result;
                 $view_data['result_remaining'] = 0;
                 $view_data['is_first_load'] = false;
+                $view_data['single_post'] = '';
                 $data = $this->load->view("timeline/post_list", $view_data, true);
             }
             echo json_encode(array("success" => true, "data" => $data, 'message' => lang('comment_submited')));
+
+            if ($post_id == 0) {
+                log_notification("created_a_new_post", array("post_id" => $save_id));
+            } else {
+                log_notification("timeline_post_commented", array("post_id" => $save_id));
+            }
         } else {
             echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
         }
@@ -85,10 +94,7 @@ class Timeline extends MY_Controller {
             $timeline_file_path = get_setting("timeline_file_path");
             $files = unserialize($post_info->files);
 
-            foreach ($files as $file) {
-                $source_path = $timeline_file_path . get_array_value($file, "file_name");
-                delete_file_from_directory($source_path);
-            }
+            delete_app_files($timeline_file_path, $files);
         }
     }
 
@@ -127,6 +133,23 @@ class Timeline extends MY_Controller {
 
     function load_more_posts($offset = 0) {
         timeline_widget(array("limit" => 20, "offset" => $offset));
+    }
+
+    /* post page for notification */
+
+    function post($post_id) {
+        //check if it's a post's comment
+        $original_post_info = $this->Posts_model->get_one($post_id);
+        if ($original_post_info->post_id) {
+            $post_id = $original_post_info->post_id;
+        }
+
+        $post = $this->Posts_model->get_details(array("id" => $post_id));
+        $view_data["posts"] = $post->result;
+        $view_data['is_first_load'] = true;
+        $view_data['result_remaining'] = 0;
+        $view_data['single_post'] = 'single_post';
+        $this->template->rander("timeline/post_list", $view_data);
     }
 
 }

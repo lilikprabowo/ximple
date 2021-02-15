@@ -20,8 +20,9 @@
             order: [[0, 'asc']],
             columns: [
                 {title: "<?php echo lang("title"); ?>"},
-                {title: "<?php echo lang("public"); ?>", "class": "w200"},
-                {title: "<?php echo lang("status"); ?>", "class": "w200"},
+                {title: "<?php echo lang("public"); ?>", "class": "w150"},
+                {title: "<?php echo lang("embed"); ?>", "class": "option w150"},
+                {title: "<?php echo lang("status"); ?>", "class": "w150"},
                 {title: '<i class="fa fa-bars"></i>', "class": "text-center option w100"}
             ]
         });

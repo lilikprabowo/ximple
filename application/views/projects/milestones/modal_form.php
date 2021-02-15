@@ -28,7 +28,8 @@
                 "name" => "description",
                 "value" => $model_info->description,
                 "class" => "form-control",
-                "placeholder" => lang('description')
+                "placeholder" => lang('description'),
+                "data-rich-text-editor" => true
             ));
             ?>
         </div>
@@ -43,6 +44,7 @@
                 "value" => $model_info->due_date,
                 "class" => "form-control",
                 "placeholder" => lang('due_date'),
+                "autocomplete" => "off",
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required")
             ));

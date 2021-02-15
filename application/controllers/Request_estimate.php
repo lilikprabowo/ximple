@@ -21,7 +21,7 @@ class Request_estimate extends CI_Controller {
         $this->template->rander("request_estimate/index", $view_data);
     }
 
-    function form($id = 0) {
+    function form($id = 0, $embedded = 0) {
         if (!get_setting("module_estimate_request")) {
             show_404();
         }
@@ -30,10 +30,15 @@ class Request_estimate extends CI_Controller {
             redirect("request_estimate");
         }
 
+        if ($embedded) {
+            $view_data['topbar'] = false;
+        } else {
+            $view_data['topbar'] = "includes/public/topbar";
+        }
 
-        $view_data['topbar'] = "includes/public/topbar";
         $view_data['left_menu'] = false;
 
+        $view_data['embedded'] = $embedded;
 
         $model_info = $this->Estimate_forms_model->get_one_where(array("id" => $id, "public" => "1", "status" => "active", "deleted" => 0));
 
@@ -45,23 +50,60 @@ class Request_estimate extends CI_Controller {
         }
     }
 
+    private function is_valid_recaptcha($recaptcha_post_data) {
+        //load recaptcha lib
+        require_once(APPPATH . "third_party/recaptcha/autoload.php");
+        $recaptcha = new \ReCaptcha\ReCaptcha(get_setting("re_captcha_secret_key"));
+        $resp = $recaptcha->verify($recaptcha_post_data, $_SERVER['REMOTE_ADDR']);
+
+        if ($resp->isSuccess()) {
+            return true;
+        } else {
+
+            $error = "";
+            foreach ($resp->getErrorCodes() as $code) {
+                $error = $code;
+            }
+
+            return $error;
+        }
+    }
+
     //save estimate request from client
     function save_estimate_request() {
 
 
         $form_id = $this->input->post('form_id');
+        $assigned_to = $this->input->post('assigned_to');
 
         validate_submitted_data(array(
-            "form_id" => "required|numeric",
             "company_name" => "required",
-            "first_name" => "required",
-            "last_name" => "required",
-            "email" => "required",
+            "form_id" => "required|numeric"
         ));
 
+        //check if there reCaptcha is enabled
+        //if reCaptcha is enabled, check the validation
+        if (get_setting("re_captcha_secret_key")) {
 
-        $this->load->model("Leads_model");
+            $response = $this->is_valid_recaptcha($this->input->post("g-recaptcha-response"));
 
+            if ($response !== true) {
+
+                if ($response) {
+                    echo json_encode(array('success' => false, 'message' => lang("re_captcha_error-" . $response)));
+                } else {
+                    echo json_encode(array('success' => false, 'message' => lang("re_captcha_expired")));
+                }
+
+                return false;
+            }
+        }
+
+        //validate duplicate email address
+        if ($this->input->post('email') && $this->Users_model->is_email_exists(trim($this->input->post('email')))) {
+            echo json_encode(array("success" => false, 'message' => lang('duplicate_email')));
+            exit();
+        }
 
         $options = array("related_to" => "estimate_form-" . $form_id);
         $form_fields = $this->Custom_fields_model->get_details($options)->result();
@@ -78,26 +120,43 @@ class Request_estimate extends CI_Controller {
             "zip" => $this->input->post('zip'),
             "country" => $this->input->post('country'),
             "phone" => $this->input->post('phone'),
-            "first_name" => $this->input->post('first_name'),
-            "last_name" => $this->input->post('last_name'),
-            "email" => $this->input->post('email')
+            "is_lead" => 1,
+            "lead_status_id" => $this->Lead_status_model->get_first_status(),
+            "created_date" => get_current_utc_time(),
+            "owner_id" => $assigned_to ? $assigned_to : 0
         );
 
         $leads_data = clean_data($leads_data);
-        $lead_id = $this->Leads_model->save($leads_data);
+        $lead_id = $this->Clients_model->save($leads_data);
+
+        if ($lead_id) {
+            //lead created, create a contact on that lead
+            $lead_contact_data = array(
+                "first_name" => $this->input->post('first_name'),
+                "last_name" => $this->input->post('last_name'),
+                "client_id" => $lead_id,
+                "user_type" => "lead",
+                "email" => trim($this->input->post('email')),
+                "created_at" => get_current_utc_time(),
+                "is_primary_contact" => 1
+            );
+
+            $lead_contact_data = clean_data($lead_contact_data);
+            $lead_contact_id = $this->Users_model->save($lead_contact_data);
+        }
 
         $request_data = array(
             "estimate_form_id" => $form_id,
             "created_by" => 0,
             "created_at" => get_current_utc_time(),
-            "client_id" => 0,
-            "lead_id" => $lead_id,
-            "assigned_to" => 0,
+            "client_id" => $lead_id,
+            "lead_id" => 0,
+            "assigned_to" => $assigned_to ? $assigned_to : 0,
             "status" => "new"
         );
 
         $request_data = clean_data($request_data);
-        
+
         $request_data["files"] = $files_data; //don't clean serilized data
 
         $save_id = $this->Estimate_requests_model->save($request_data);
@@ -150,8 +209,9 @@ class Request_estimate extends CI_Controller {
             $required = "*";
         }
 
-        $field = "<label data-id='$data->id' class='field-row'>$data->title $required</label>";
-        $field.="<div class='form-group'>" . $this->load->view("custom_fields/input_" . $data->field_type, array("field_info" => $data), true) . "</div>";
+        $field = "<label for='custom_field_$data->id' data-id='$data->id' class='field-row'>$data->title $required</label>";
+
+        $field .= "<div class='form-group'>" . $this->load->view("custom_fields/input_" . $data->field_type, array("field_info" => $data), true) . "</div>";
 
         //extract estimate id from related_to field. 2nd index should be the id
         $estimate_form_id = get_array_value(explode("-", $data->related_to), 1);
@@ -160,7 +220,7 @@ class Request_estimate extends CI_Controller {
             $field,
             $data->sort,
             modal_anchor(get_uri("estimate_requests/estimate_form_field_modal_form/" . $estimate_form_id), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => lang('edit_form'), "data-post-id" => $data->id))
-            . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete_estimate_form'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("estimate_requests/estimate_form_field_delete"), "data-action" => "delete"))
+            . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("estimate_requests/estimate_form_field_delete"), "data-action" => "delete"))
         );
     }
 

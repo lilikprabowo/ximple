@@ -6,10 +6,11 @@ class Activity_logs_model extends CI_Model {
         
     }
 
-    function save($data) {
+    function save($data, $activity_log_created_by_app = false) {
         $data["created_at"] = get_current_utc_time();
-        $data["created_by"] = $this->login_user->id;
+        $data["created_by"] = $activity_log_created_by_app ? 0 : $this->login_user->id;
         $this->db->insert("activity_logs", $data);
+        return $this->db->insert_id();
     }
 
     function delete_where($where = array()) {
@@ -21,8 +22,10 @@ class Activity_logs_model extends CI_Model {
     function get_details($options = array()) {
         $activity_logs_table = $this->db->dbprefix('activity_logs');
         $project_members_table = $this->db->dbprefix('project_members');
-
         $users_table = $this->db->dbprefix('users');
+        $projects_table = $this->db->dbprefix('projects');
+        $tasks_table = $this->db->dbprefix('tasks');
+
         $where = "";
         $limit = get_array_value($options, "limit");
         $limit = $limit ? $limit : "20";
@@ -60,9 +63,33 @@ class Activity_logs_model extends CI_Model {
         $project_where = "";
         $user_id = get_array_value($options, "user_id");
         $is_admin = get_array_value($options, "is_admin");
-        if (!$is_admin && $user_id) {
+        $user_type = get_array_value($options, "user_type");
+        if (!$is_admin && $user_id && $user_type !== "client") {
             $project_join = " LEFT JOIN (SELECT $project_members_table.user_id, $project_members_table.project_id FROM $project_members_table WHERE $project_members_table.user_id=$user_id AND $project_members_table.deleted=0 GROUP BY $project_members_table.project_id) AS project_members_table ON project_members_table.project_id= $activity_logs_table.log_for_id AND log_for='project' ";
             $project_where = " AND project_members_table.user_id=$user_id";
+
+            $show_assigned_tasks_only = get_array_value($options, "show_assigned_tasks_only");
+            if ($show_assigned_tasks_only) {
+                //this is restricted only for tasks related logs
+                //task created/updated/deleted
+                $where .= " AND IF($activity_logs_table.log_type='task', $activity_logs_table.log_type_id IN(SELECT $tasks_table.id FROM $tasks_table WHERE $tasks_table.id=$activity_logs_table.log_type_id AND ($tasks_table.assigned_to=$user_id OR FIND_IN_SET('$user_id', $tasks_table.collaborators))), $activity_logs_table.log_type!='task')";
+
+                //task commented
+                $where .= " AND IF($activity_logs_table.log_type='task_comment', $activity_logs_table.log_for_id2 IN(SELECT $tasks_table.id FROM $tasks_table WHERE $tasks_table.id=$activity_logs_table.log_for_id2 AND ($tasks_table.assigned_to=$user_id OR FIND_IN_SET('$user_id', $tasks_table.collaborators))), $activity_logs_table.log_type!='task_comment')";
+            }
+        }
+
+        //show client's own projects activity
+        if ($user_type == "client") {
+            $client_id = get_array_value($options, "client_id");
+
+            if ($client_id) {
+                $project_join = " LEFT JOIN (SELECT $projects_table.client_id, $projects_table.id FROM $projects_table WHERE $projects_table.client_id=$client_id AND $projects_table.deleted=0 GROUP BY $projects_table.id) AS projects_table ON projects_table.id= $activity_logs_table.log_for_id AND log_for='project' ";
+                $project_where = " AND projects_table.client_id=$client_id";
+            }
+
+            //don't show project's comments to clients
+            $where .= " AND $activity_logs_table.log_type!='project_comment'";
         }
 
 
@@ -96,6 +123,12 @@ class Activity_logs_model extends CI_Model {
                 $fields->$field = "";
             }
             return $fields;
+        }
+    }
+
+    function update_where($data = array(), $where = array()) {
+        if (count($where)) {
+            return $this->db->update("activity_logs", $data, $where);
         }
     }
 

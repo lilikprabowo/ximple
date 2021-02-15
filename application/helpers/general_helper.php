@@ -52,11 +52,20 @@ if (!function_exists('get_file_uri')) {
  */
 if (!function_exists('get_avatar')) {
 
-    function get_avatar($image_name = "") {
-        if ($image_name === "system_bot") {
+    function get_avatar($image = "") {
+        if ($image === "system_bot") {
             return base_url("assets/images/avatar-bot.jpg");
-        } else if ($image_name) {
-            return base_url(get_setting("profile_image_path")) . "/" . $image_name;
+        } else if ($image === "bitbucket") {
+            return base_url("assets/images/bitbucket_logo.png");
+        } else if ($image === "github") {
+            return base_url("assets/images/github_logo.png");
+        } else if ($image) {
+            $file = @unserialize($image);
+            if (is_array($file)) {
+                return get_source_url_of_file($file, get_setting("profile_image_path") . "/", "thumbnail");
+            } else {
+                return base_url(get_setting("profile_image_path")) . "/" . $image;
+            }
         } else {
             return base_url("assets/images/avatar.jpg");
         }
@@ -109,8 +118,8 @@ if (!function_exists('load_js')) {
  */
 if (!function_exists('get_array_value')) {
 
-    function get_array_value(array $array, $key) {
-        if (array_key_exists($key, $array)) {
+    function get_array_value($array, $key) {
+        if (is_array($array) && array_key_exists($key, $array)) {
             return $array[$key];
         }
     }
@@ -187,28 +196,79 @@ if (!function_exists('ajax_anchor')) {
 /**
  * get the selected menu 
  * 
- * @param string $url
- * @param array $submenu
- * @return string "active" indecating the active page
+ * @param array $sidebar_menu
+ * @return the array containing an active class key
  */
 if (!function_exists('active_menu')) {
 
-    function active_menu($menu = "", $submenu = array()) {
+    function get_active_menu($sidebar_menu = array()) {
         $ci = & get_instance();
         $controller_name = strtolower(get_class($ci));
+        $uri_string = uri_string();
+        $current_url = get_uri($uri_string);
 
-        //compare with controller name. if not found, check in submenu values
-        if ($menu === $controller_name) {
-            return "active";
-        } else if ($submenu && count($submenu)) {
-            foreach ($submenu as $sub_menu) {
-                if (get_array_value($sub_menu, "name") === $controller_name) {
-                    return "active";
-                } else if (get_array_value($sub_menu, "category") === $controller_name) {
-                    return "active";
+        $found_url_active_key = null;
+        $found_controller_active_key = null;
+        $found_special_active_key = null;
+
+        foreach ($sidebar_menu as $key => $menu) {
+            if (isset($menu["name"])) {
+                $menu_name = $menu["name"];
+                $menu_url = $menu["url"];
+
+                //compare with current url
+                if ($menu_url === $current_url || get_uri($menu_url) === $current_url) {
+                    $found_url_active_key = $key;
+                }
+
+                //compare with controller name
+                if ($menu_name === $controller_name) {
+                    $found_controller_active_key = $key;
+                }
+
+                //compare with some special links
+                if ($uri_string == "projects/all_tasks_kanban" && $menu_url == "projects/all_tasks") {
+                    $found_special_active_key = $key;
+                }
+
+                //check in submenu values
+                $submenu = get_array_value($menu, "submenu");
+                if ($submenu && count($submenu)) {
+                    foreach ($submenu as $sub_menu) {
+                        if (isset($sub_menu['name'])) {
+                            $sub_menu_url = $sub_menu["url"];
+
+                            //compare with current url
+                            if ($sub_menu_url === $current_url || get_uri($sub_menu_url) === $current_url) {
+                                $found_url_active_key = $key;
+                            }
+
+                            //compare with controller name
+                            if (get_array_value($sub_menu, "name") === $controller_name) {
+                                $found_controller_active_key = $key;
+                            } else if (get_array_value($sub_menu, "category") === $controller_name) {
+                                $found_controller_active_key = $key;
+                            }
+
+                            //compare with some special links
+                            if ($uri_string == "projects/all_tasks_kanban" && $sub_menu_url == "projects/all_tasks") {
+                                $found_special_active_key = $key;
+                            }
+                        }
+                    }
                 }
             }
         }
+
+        if (!is_null($found_url_active_key)) {
+            $sidebar_menu[$found_url_active_key]["is_active_menu"] = 1;
+        } else if (!is_null($found_special_active_key)) {
+            $sidebar_menu[$found_special_active_key]["is_active_menu"] = 1;
+        } else if (!is_null($found_controller_active_key)) {
+            $sidebar_menu[$found_controller_active_key]["is_active_menu"] = 1;
+        }
+
+        return $sidebar_menu;
     }
 
 }
@@ -374,7 +434,12 @@ if (!function_exists('check_required_hidden_fields')) {
 if (!function_exists('link_it')) {
 
     function link_it($text) {
-        return preg_replace('@(https?://([-\w\.]+[-\w])+(:\d+)?(/([\w/_\.#-]*(\?\S+)?[^\.\s]?[^\s]+)?)?)@', '<a href="$1" target="_blank">$1</a>', $text);
+        if ($text != strip_tags($text)) {
+            //contains HTML, return the actual text
+            return $text;
+        } else {
+            return preg_replace('@(https?://([-\w\.]+[-\w])+(:\d+)?(/([\w/_\.#-]*(\?\S+)?[^\.\s]?[^\s]+)?)?)@', '<a href="$1" target="_blank">$1</a>', $text);
+        }
     }
 
 }
@@ -474,7 +539,7 @@ if (!function_exists('send_app_mail')) {
             $email_config["smtp_host"] = get_setting("email_smtp_host");
             $email_config["smtp_port"] = get_setting("email_smtp_port");
             $email_config["smtp_user"] = get_setting("email_smtp_user");
-            $email_config["smtp_pass"] = get_setting("email_smtp_pass");
+            $email_config["smtp_pass"] = decode_password(get_setting('email_smtp_pass'), "email_smtp_pass");
             $email_config["smtp_crypto"] = get_setting("email_smtp_security_type");
 
             if (!$email_config["smtp_crypto"]) {
@@ -490,6 +555,7 @@ if (!function_exists('send_app_mail')) {
         $ci->load->library('email', $email_config);
         $ci->email->clear(true); //clear previous message and attachment
         $ci->email->set_newline("\r\n");
+        $ci->email->set_crlf("\r\n");
         $ci->email->from(get_setting("email_sent_from_address"), get_setting("email_sent_from_name"));
         $ci->email->to($to);
         $ci->email->subject($subject);
@@ -503,6 +569,12 @@ if (!function_exists('send_app_mail')) {
                 $file_name = get_array_value($value, "file_name");
                 $ci->email->attach(trim($file_path), "attachment", $file_name);
             }
+        }
+
+        //check reply-to
+        $reply_to = get_array_value($optoins, "reply_to");
+        if ($reply_to) {
+            $ci->email->reply_to($reply_to);
         }
 
         //check cc
@@ -616,6 +688,23 @@ if (!function_exists('validate_submitted_data')) {
 
 }
 
+
+/**
+ * validate post data using the codeigniter's form validation method
+ * 
+ * @param string $address
+ * @return throw error if foind any inconsistancy
+ */
+if (!function_exists('validate_numeric_value')) {
+
+    function validate_numeric_value($value = 0) {
+        if ($value && !is_numeric($value)) {
+            die("Invalid value");
+        }
+    }
+
+}
+
 /**
  * team members profile anchor. only clickable to team members
  * client's will see a none clickable link
@@ -673,7 +762,10 @@ if (!function_exists('get_invoice_status_label')) {
         //ignore the hidden value. check only 2 decimal place.
         $invoice_info->invoice_value = floor($invoice_info->invoice_value * 100) / 100;
 
-        if ($invoice_info->status != "draft" && $invoice_info->due_date < $now && $invoice_info->payment_received < $invoice_info->invoice_value) {
+        if ($invoice_info->status == "cancelled") {
+            $invoice_status_class = "label-danger";
+            $status = "cancelled";
+        } else if ($invoice_info->status != "draft" && $invoice_info->due_date < $now && $invoice_info->payment_received < $invoice_info->invoice_value) {
             $invoice_status_class = "label-danger";
             $status = "overdue";
         } else if ($invoice_info->status !== "draft" && $invoice_info->payment_received <= 0) {
@@ -690,7 +782,7 @@ if (!function_exists('get_invoice_status_label')) {
             $status = "draft";
         }
 
-        $invoice_status = "<span class='label $invoice_status_class large'>" . lang($status) . "</span>";
+        $invoice_status = "<span class='mt0 label $invoice_status_class large'>" . lang($status) . "</span>";
         if ($return_html) {
             return $invoice_status;
         } else {
@@ -821,6 +913,51 @@ if (!function_exists('prepare_estimate_pdf')) {
 }
 
 /**
+ * get all data to make an order
+ * 
+ * @param emtimate making data $order_data
+ * @return array
+ */
+if (!function_exists('prepare_order_pdf')) {
+
+    function prepare_order_pdf($order_data, $mode = "download") {
+        $ci = get_instance();
+        $ci->load->library('pdf');
+        $ci->pdf->setPrintHeader(false);
+        $ci->pdf->setPrintFooter(false);
+        $ci->pdf->SetCellPadding(1.5);
+        $ci->pdf->setImageScale(1.42);
+        $ci->pdf->AddPage();
+
+        if ($order_data) {
+
+            $order_data["mode"] = $mode;
+
+            $html = $ci->load->view("orders/order_pdf", $order_data, true);
+            if ($mode != "html") {
+                $ci->pdf->writeHTML($html, true, false, true, false, '');
+            }
+
+            $order_info = get_array_value($order_data, "order_info");
+            $pdf_file_name = lang("order") . "-$order_info->id.pdf";
+
+            if ($mode === "download") {
+                $ci->pdf->Output($pdf_file_name, "D");
+            } else if ($mode === "send_email") {
+                $temp_download_path = getcwd() . "/" . get_setting("temp_file_path") . $pdf_file_name;
+                $ci->pdf->Output($temp_download_path, "F");
+                return $temp_download_path;
+            } else if ($mode === "view") {
+                $ci->pdf->Output($pdf_file_name, "I");
+            } else if ($mode === "html") {
+                return $html;
+            }
+        }
+    }
+
+}
+
+/**
  * 
  * get invoice number
  * @param Int $invoice_id
@@ -848,6 +985,22 @@ if (!function_exists('get_estimate_id')) {
         $prefix = get_setting("estimate_prefix");
         $prefix = $prefix ? $prefix : strtoupper(lang("estimate")) . " #";
         return $prefix . $estimate_id;
+    }
+
+}
+
+/**
+ * 
+ * get order number
+ * @param Int $order_id
+ * @return string
+ */
+if (!function_exists('get_order_id')) {
+
+    function get_order_id($order_id) {
+        $prefix = get_setting("order_prefix");
+        $prefix = $prefix ? $prefix : strtoupper(lang("order")) . " #";
+        return $prefix . $order_id;
     }
 
 }
@@ -889,6 +1042,38 @@ if (!function_exists('get_estimate_making_data')) {
             $data['estimate_info']->custom_fields = $ci->Custom_field_values_model->get_details(array("related_to_type" => "estimates", "show_in_estimate" => true, "related_to_id" => $estimate_id))->result();
             return $data;
         }
+    }
+
+}
+
+/**
+ * get all data to make an order
+ * 
+ * @param Int $order_id
+ * @return array
+ */
+if (!function_exists('get_order_making_data')) {
+
+    function get_order_making_data($order_id = 0) {
+        $ci = get_instance();
+        $data = array();
+        if ($order_id) {
+            $order_info = $ci->Orders_model->get_details(array("id" => $order_id))->row();
+            if ($order_info) {
+                $data['order_info'] = $order_info;
+                $data['client_info'] = $ci->Clients_model->get_one($data['order_info']->client_id);
+                $data['order_items'] = $ci->Order_items_model->get_details(array("order_id" => $order_id))->result();
+                $data["order_total_summary"] = $ci->Orders_model->get_order_total_summary($order_id);
+
+                $data['order_info']->custom_fields = $ci->Custom_field_values_model->get_details(array("related_to_type" => "orders", "show_in_order" => true, "related_to_id" => $order_id))->result();
+                return $data;
+            }
+        } else {
+            //order total when it's in cart 
+            //count all items of login user (client)
+            $data["order_total_summary"] = $ci->Orders_model->get_processing_order_total_summary($ci->login_user->id);
+        }
+        return $data;
     }
 
 }
@@ -981,13 +1166,33 @@ if (!function_exists('log_notification')) {
  */
 if (!function_exists('save_custom_fields')) {
 
-    function save_custom_fields($related_to_type, $related_to_id, $is_admin = 0, $user_type = "") {
+    function save_custom_fields($related_to_type, $related_to_id, $is_admin = 0, $user_type = "", $activity_log_id = 0, $save_to_related_type = "", $user_id = 0) {
         $ci = get_instance();
+
         $custom_fields = $ci->Custom_fields_model->get_combined_details($related_to_type, $related_to_id, $is_admin, $user_type)->result();
+
+        // we have to update the activity logs table according to the changes of custom fields
+        $changes = array();
+
+        //for migration, we've to save on new related type
+        if ($save_to_related_type) {
+            $related_to_type = $save_to_related_type;
+        }
 
         //save custom fields
         foreach ($custom_fields as $field) {
             $field_name = "custom_field_" . $field->id;
+
+            //client can't edit the field value if the option is active
+            if ($user_type == "client" && $field->disable_editing_by_clients) {
+                continue; //skip to the next loop
+            }
+
+            //to get the custom field values for per users from the same page, we've to use the user id
+            if ($user_id) {
+                $field_name .= "_" . $user_id;
+            }
+
             //save only submitted fields
             if (array_key_exists($field_name, $_POST)) {
                 $value = $ci->input->post($field_name);
@@ -1000,7 +1205,88 @@ if (!function_exists('save_custom_fields')) {
                 );
 
                 $field_value_data = clean_data($field_value_data);
-                $ci->Custom_field_values_model->upsert($field_value_data);
+
+                $save_data = $ci->Custom_field_values_model->upsert($field_value_data, $save_to_related_type);
+
+                if ($save_data) {
+                    $changed_values = get_array_value($save_data, "changes");
+                    $field_title = get_array_value($changed_values, "title");
+                    $field_type = get_array_value($changed_values, "field_type");
+                    $visible_to_admins_only = get_array_value($changed_values, "visible_to_admins_only");
+                    $hide_from_clients = get_array_value($changed_values, "hide_from_clients");
+
+                    //add changes of custom fields
+                    if (get_array_value($save_data, "operation") == "update") {
+                        //update
+                        $changes[$field_title . "[:" . $field->id . "," . $field_type . "," . $visible_to_admins_only . "," . $hide_from_clients . ":]"] = array("from" => get_array_value($changed_values, "from"), "to" => get_array_value($changed_values, "to"));
+                    } else if (get_array_value($save_data, "operation") == "insert") {
+                        //insert
+                        $changes[$field_title . "[:" . $field->id . "," . $field_type . "," . $visible_to_admins_only . "," . $hide_from_clients . ":]"] = array("from" => "", "to" => $value);
+                    }
+                }
+            }
+        }
+
+        //finally save the changes to activity logs table
+        return update_custom_fields_changes($related_to_type, $related_to_id, $changes, $activity_log_id);
+    }
+
+}
+
+/**
+ * update custom fields changes to activity logs table
+ */
+if (!function_exists('update_custom_fields_changes')) {
+
+    function update_custom_fields_changes($related_to_type, $related_to_id, $changes, $activity_log_id = 0) {
+        if ($changes && count($changes)) {
+            $ci = get_instance();
+
+            $related_to_data = new stdClass();
+
+            $log_type = "";
+            $log_for = "";
+            $log_type_title = "";
+            $log_for_id = "";
+
+            if ($related_to_type == "tasks") {
+                $related_to_data = $ci->Tasks_model->get_one($related_to_id);
+                $log_type = "task";
+                $log_for = "project";
+                $log_type_title = $related_to_data->title;
+                $log_for_id = $related_to_data->project_id;
+            }
+
+            $log_data = array(
+                "action" => "updated",
+                "log_type" => $log_type,
+                "log_type_title" => $log_type_title,
+                "log_type_id" => $related_to_id,
+                "log_for" => $log_for,
+                "log_for_id" => $log_for_id
+            );
+
+
+            if ($activity_log_id) {
+                $before_changes = array();
+
+                //we have to combine with the existing changes of activity logs
+                $activity_log = $ci->Activity_logs_model->get_one($activity_log_id);
+                $activity_logs_changes = unserialize($activity_log->changes);
+                if (is_array($activity_logs_changes)) {
+                    foreach ($activity_logs_changes as $key => $value) {
+                        $before_changes[$key] = array("from" => get_array_value($value, "from"), "to" => get_array_value($value, "to"));
+                    }
+                }
+
+                $log_data["changes"] = serialize(array_merge($before_changes, $changes));
+
+                if ($activity_log->action != "created") {
+                    $ci->Activity_logs_model->update_where($log_data, array("id" => $activity_log_id));
+                }
+            } else {
+                $log_data["changes"] = serialize($changes);
+                return $ci->Activity_logs_model->save($log_data);
             }
         }
     }
@@ -1038,7 +1324,394 @@ if (!function_exists("clean_data")) {
 if (!function_exists("get_logo_url")) {
 
     function get_logo_url() {
-        return get_file_uri(get_setting("system_file_path") . get_setting("site_logo"));
+        return get_file_from_setting("site_logo");
+    }
+
+}
+
+//get logo from setting
+if (!function_exists("get_file_from_setting")) {
+
+    function get_file_from_setting($setting_name = "", $only_file_path_with_slash = false) {
+
+        if ($setting_name) {
+            $setting_value = get_setting($setting_name);
+            if ($setting_value) {
+                $file = @unserialize($setting_value);
+                if (is_array($file)) {
+
+                    //show full size thumbnail for signin page background
+                    $show_full_size_thumbnail = false;
+                    if ($setting_name == "signin_page_background") {
+                        $show_full_size_thumbnail = true;
+                    }
+
+                    return get_source_url_of_file($file, get_setting("system_file_path"), "thumbnail", $only_file_path_with_slash, $only_file_path_with_slash, $show_full_size_thumbnail);
+                } else {
+                    if ($only_file_path_with_slash) {
+                        return "/" . (get_setting("system_file_path") . $setting_value);
+                    } else {
+                        return get_file_uri(get_setting("system_file_path") . $setting_value);
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+//get site favicon
+if (!function_exists("get_favicon_url")) {
+
+    function get_favicon_url() {
+        $favicon_from_setting = get_file_from_setting('favicon');
+        return $favicon_from_setting ? $favicon_from_setting : get_file_uri("assets/images/favicon.png");
+    }
+
+}
+
+
+//get color plate
+if (!function_exists("get_custom_theme_color_list")) {
+
+    function get_custom_theme_color_list() {
+        //scan the css files for theme color and show a list
+        try {
+            $dir = getcwd() . '/assets/css/color/';
+            $files = scandir($dir);
+            if ($files && is_array($files)) {
+
+                echo "<span class='color-tag clickable mr15 change-theme' data-color='1d2632' style='background:#1d2632'> </span>"; //default color
+
+                foreach ($files as $file) {
+                    if ($file != "." && $file != ".." && $file != "index.html") {
+                        $color_code = str_replace(".css", "", $file);
+                        echo "<span class='color-tag clickable mr15 change-theme' style='background:#$color_code' data-color='$color_code'> </span>";
+                    }
+                }
+            }
+        } catch (Exception $exc) {
+            
+        }
+    }
+
+}
+//make random string
+if (!function_exists("make_random_string")) {
+
+    function make_random_string($length = 10) {
+        $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $characters_length = strlen($characters);
+        $random_string = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $random_string .= $characters[rand(0, $characters_length - 1)];
+        }
+
+        return $random_string;
+    }
+
+}
+
+//add custom variable data
+if (!function_exists("get_custom_variables_data")) {
+
+    function get_custom_variables_data($related_to_type = "", $related_to_id = 0, $is_admin = 0) {
+        if ($related_to_type && $related_to_id) {
+            $ci = get_instance();
+            $variables_array = array();
+
+            $options = array("related_to_type" => $related_to_type, "related_to_id" => $related_to_id);
+
+            if ($related_to_type == "leads") {
+                $options["is_admin"] = $is_admin;
+                $options["check_admin_restriction"] = true;
+            }
+
+            $values = $ci->Custom_field_values_model->get_details($options)->result();
+
+            foreach ($values as $value) {
+                if ($related_to_type == "tickets" && $value->example_variable_name && $value->value) {
+                    $variables_array[$value->example_variable_name] = $value->value;
+                } else if ($related_to_type == "leads" && $value->show_on_kanban_card && $value->value) {
+                    $variables_array[] = array(
+                        "custom_field_type" => $value->custom_field_type,
+                        "custom_field_title" => $value->custom_field_title,
+                        "value" => $value->value
+                    );
+                }
+            }
+
+            return $variables_array;
+        }
+    }
+
+}
+
+//make labels view data for different contexts
+if (!function_exists("make_labels_view_data")) {
+
+    function make_labels_view_data($labels_list = "", $clickable = false, $large = false) {
+        $labels = "";
+
+        if ($labels_list) {
+            $labels_array = explode(",", $labels_list);
+
+            foreach ($labels_array as $label) {
+                $label_parts = explode("--::--", $label);
+
+                $label_id = get_array_value($label_parts, 0);
+                $label_title = get_array_value($label_parts, 1);
+                $label_color = get_array_value($label_parts, 2);
+
+                $clickable_class = $clickable ? "clickable" : "";
+                $large_class = $large ? "large" : "";
+
+                $labels .= "<span class='mt0 label $large_class $clickable_class' style='background-color:$label_color;' title=" . lang("label") . ">" . $label_title . "</span> ";
+            }
+        }
+
+        return $labels;
+    }
+
+}
+
+//get update task info anchor data
+if (!function_exists("get_update_task_info_anchor_data")) {
+
+    function get_update_task_info_anchor_data($model_info, $type = "", $can_edit_tasks = false, $extra_data = "", $extra_condition = false) {
+        if ($model_info && $type) {
+
+            $start_date = "<span class='text-off'>" . lang("add") . " " . lang("start_date") . "<span>";
+            if ($model_info->start_date) {
+                $start_date = format_to_date($model_info->start_date, false);
+            }
+
+            $deadline = "<span class='text-off'>" . lang("add") . " " . lang("deadline") . "<span>";
+            if ($model_info->deadline) {
+                $deadline = format_to_date($model_info->deadline, false);
+            }
+
+            $labels = "<span class='text-off'>" . lang("add") . " " . lang("label") . "<span>";
+            if ($model_info->labels) {
+                $labels = $extra_data;
+            }
+
+            $collaborators = "<span class='text-off'>" . lang("add") . " " . lang("collaborators") . "<span>";
+            if ($model_info->collaborators) {
+                $collaborators = $extra_data;
+            }
+
+            if ($type == "status") {
+
+                return $can_edit_tasks ? js_anchor($model_info->status_key_name ? lang($model_info->status_key_name) : $model_info->status_title, array('title' => "", "class" => "white-link", "data-id" => $model_info->id, "data-value" => $model_info->status_id, "data-act" => "update-task-info", "data-act-type" => "status_id")) : ($model_info->status_key_name ? lang($model_info->status_key_name) : $model_info->status_title);
+            } else if ($type == "milestone") {
+
+                return $can_edit_tasks ? js_anchor($model_info->milestone_title ? $model_info->milestone_title : "<span class='text-off'>" . lang("add") . " " . lang("milestone") . "<span>", array('title' => "", "class" => "", "data-id" => $model_info->id, "data-value" => $model_info->milestone_id, "data-act" => "update-task-info", "data-act-type" => "milestone_id")) : $model_info->milestone_title;
+            } else if ($type == "user") {
+
+                return ($can_edit_tasks && $extra_condition) ? js_anchor($model_info->assigned_to_user ? $model_info->assigned_to_user : "<span class='text-off'>" . lang("add") . " " . lang("assignee") . "<span>", array('title' => "", "class" => "", "data-id" => $model_info->id, "data-value" => $model_info->assigned_to, "data-act" => "update-task-info", "data-act-type" => "assigned_to")) : $model_info->assigned_to_user;
+            } else if ($type == "labels") {
+
+                return $can_edit_tasks ? js_anchor($labels, array('title' => "", "class" => "", "data-id" => $model_info->id, "data-value" => $model_info->labels, "data-act" => "update-task-info", "data-act-type" => "labels")) : $extra_data;
+            } else if ($type == "points") {
+
+                return $can_edit_tasks ? js_anchor($model_info->points, array('title' => "", "class" => "", "data-id" => $model_info->id, "data-value" => $model_info->points, "data-act" => "update-task-info", "data-act-type" => "points")) : $model_info->points;
+            } else if ($type == "collaborators") {
+
+                return $can_edit_tasks ? js_anchor($collaborators, array('title' => "", "class" => "", "data-id" => $model_info->id, "data-value" => $model_info->collaborators, "data-act" => "update-task-info", "data-act-type" => "collaborators")) : $extra_data;
+            } else if ($type == "start_date") {
+
+                return $can_edit_tasks ? js_anchor($start_date, array('title' => "", "class" => "", "data-id" => $model_info->id, "data-value" => $model_info->start_date, "data-act" => "update-task-info", "data-act-type" => "start_date")) : format_to_date($model_info->start_date, false);
+            } else if ($type == "deadline") {
+
+                return $can_edit_tasks ? js_anchor($deadline, array('title' => "", "class" => "", "data-id" => $model_info->id, "data-value" => $model_info->deadline, "data-act" => "update-task-info", "data-act-type" => "deadline")) : format_to_date($model_info->deadline, false);
+            }
+        }
+    }
+
+}
+
+if (!function_exists('get_lead_contact_profile_link')) {
+
+    function get_lead_contact_profile_link($id = 0, $name = "", $attributes = array()) {
+        return anchor("leads/contact_profile/" . $id, $name, $attributes);
+    }
+
+}
+
+if (!function_exists('decode_password')) {
+
+    function decode_password($data = "", $salt = "") {
+        if ($data && $salt) {
+            if (strlen($data) > 100) {
+                //encoded data with encode_id
+                //return with decode
+                return decode_id($data, $salt);
+            } else {
+                //old data, return as is
+                return $data;
+            }
+        }
+    }
+
+}
+
+if (!function_exists('validate_invoice_verification_code')) {
+
+    function validate_invoice_verification_code($code = "", $given_invoice_data = array()) {
+        if ($code) {
+            $ci = get_instance();
+            $options = array("code" => $code, "type" => "invoice_payment");
+            $verification_info = $ci->Verification_model->get_details($options)->row();
+
+            if ($verification_info && $verification_info->id) {
+                $existing_invoice_data = unserialize($verification_info->params);
+
+                //existing data
+                $existing_invoice_id = get_array_value($existing_invoice_data, "invoice_id");
+                $existing_client_id = get_array_value($existing_invoice_data, "client_id");
+                $existing_contact_id = get_array_value($existing_invoice_data, "contact_id");
+
+                //given data 
+                $given_invoice_id = get_array_value($given_invoice_data, "invoice_id");
+                $given_client_id = get_array_value($given_invoice_data, "client_id");
+                $given_contact_id = get_array_value($given_invoice_data, "contact_id");
+
+                if ($existing_invoice_id === $given_invoice_id && $existing_client_id === $given_client_id && $existing_contact_id === $given_contact_id) {
+                    return true;
+                }
+            }
+        }
+    }
+
+}
+
+if (!function_exists('can_edit_this_task_status')) {
+
+    function can_edit_this_task_status($assigned_to = 0) {
+        $ci = get_instance();
+
+        if (get_array_value($ci->login_user->permissions, "can_update_only_assigned_tasks_status")) {
+            //user can change only assigned tasks
+            if ($assigned_to == $ci->login_user->id) {
+                return true;
+            }
+        } else {
+            return true;
+        }
+    }
+
+}
+
+if (!function_exists('send_message_via_pusher')) {
+
+    function send_message_via_pusher($to_user_id, $message_data, $message_id, $message_type = "message") {
+        $ci = get_instance();
+
+        $pusher_app_id = get_setting("pusher_app_id");
+        $pusher_key = get_setting("pusher_key");
+        $pusher_secret = get_setting("pusher_secret");
+        $pusher_cluster = get_setting("pusher_cluster");
+
+        if (!$pusher_app_id || !$pusher_key || !$pusher_secret || !$pusher_cluster) {
+            return false;
+        }
+
+        require_once(APPPATH . "third_party/Pusher/vendor/autoload.php");
+
+        $options = array(
+            'cluster' => $pusher_cluster,
+            'encrypted' => true
+        );
+
+        $pusher = new Pusher\Pusher(
+                $pusher_key, $pusher_secret, $pusher_app_id, $options
+        );
+
+        if ($message_type == "message") {
+            //send message
+            $data = array(
+                "message" => $message_data
+            );
+
+            if ($pusher->trigger('user_' . $to_user_id . '_message_id_' . $message_id . '_channel', 'rise-chat-event', $data)) {
+                return true;
+            }
+        } else {
+            //send typing indicator
+            $message = lang("typing");
+            $message_info = $ci->Messages_model->get_one($message_id);
+
+            $user_info = $ci->Users_model->get_one($ci->login_user->id);
+            $avatar = " <img alt='...' src='" . get_avatar($user_info->image) . "' class='dark strong' /> ";
+
+            $message_data = array(
+                "<div class='chat-other'>
+                            <div class='row'>
+                                <div class='col-md-12'>
+                                    <div class='avatar-xs avatar mr10'>" . $avatar . "</div>
+                                    <div class='chat-msg typing-indicator' data-message_id='$message_info->id'>" . lang("typing") . "<span></span><span></span><span></span></div>
+                                </div>
+                            </div>
+                        </div>"
+            );
+
+            if ($pusher->trigger('user_' . $to_user_id . '_message_id_' . $message_id . '_channel', 'rise-chat-typing-event', $message_data)) {
+                return true;
+            }
+        }
+    }
+
+}
+
+if (!function_exists('can_access_messages_module')) {
+
+    function can_access_messages_module() {
+        $ci = get_instance();
+
+        $can_chat = false;
+
+        $client_message_users = get_setting("client_message_users");
+        $client_message_users_array = explode(",", $client_message_users);
+
+        if (($ci->login_user->user_type === "staff" && ($ci->login_user->is_admin || get_array_value($ci->login_user->permissions, "message_permission") !== "no" || in_array($ci->login_user->id, $client_message_users_array))) || ($ci->login_user->user_type === "client" && $client_message_users)) {
+            $can_chat = true;
+        }
+
+        return $can_chat;
+    }
+
+}
+
+if (!function_exists('add_auto_reply_to_ticket')) {
+
+    function add_auto_reply_to_ticket($ticket_id = 0) {
+        $auto_reply_to_tickets = get_setting("auto_reply_to_tickets");
+        $auto_reply_to_tickets_message = get_setting('auto_reply_to_tickets_message');
+
+        if (!($ticket_id && $auto_reply_to_tickets && $auto_reply_to_tickets_message)) {
+            return false;
+        }
+
+        $ci = get_instance();
+        $now = get_current_utc_time();
+
+        $data = array(
+            "description" => $auto_reply_to_tickets_message,
+            "created_by" => 999999999, //because there will be 0 for imap ticket's comments too
+            "created_at" => $now,
+            "ticket_id" => $ticket_id,
+            "files" => "a:0:{}"
+        );
+
+        $data = clean_data($data);
+        $comment_id = $ci->Ticket_comments_model->save($data);
+
+        //send notification
+        if ($comment_id) {
+            log_notification("ticket_commented", array("ticket_id" => $ticket_id, "ticket_comment_id" => $comment_id), "0");
+        }
     }
 
 }

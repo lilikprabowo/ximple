@@ -1,72 +1,111 @@
-<?php foreach ($activity_logs as $log) { ?>
-    <div class="media b-b mb15">
-        <div class="media-left">
-            <span class="avatar avatar-xs">
-                <img src="<?php echo get_avatar($log->created_by_avatar); ?>" alt="..." />
-            </span>
-        </div>
-        <div class="media-body">
-            <div class="media-heading">
-                <?php
-                if ($log->user_type === "staff") {
-                    echo get_team_member_profile_link($log->created_by, $log->created_by_user, array("class" => "dark strong"));
-                } else {
-                    echo get_client_contact_profile_link($log->created_by, $log->created_by_user, array("class" => "dark strong"));
-                }
-                ?>
-                <small><span class="text-off"><?php echo format_to_relative_time($log->created_at); ?></span></small>
+<?php
+foreach ($activity_logs as $log) {
+    $changes_array = get_change_logs_array($log->changes, $log->log_type, $log->action);
+
+    if ($log->action !== "updated" || (count($changes_array) && $log->changes !== "" && ($log->action === "updated" || $log->action === "bitbucket_notification_received" || $log->action === "github_notification_received"))) {
+        ?>
+        <div class="media b-b mb15">
+            <div class="media-left">
+                <span class="avatar avatar-xs">
+                    <?php if ($log->created_by_user) { ?>
+                        <img src="<?php echo get_avatar($log->created_by_avatar); ?>" alt="..." />
+                    <?php } else if ($log->action === "bitbucket_notification_received") { ?>
+                        <img src="<?php echo get_avatar("bitbucket"); ?>" alt="..." />
+                    <?php } else if ($log->action === "github_notification_received") { ?>
+                        <img src="<?php echo get_avatar("github"); ?>" alt="..." />
+                    <?php } else { ?>
+                        <img src="<?php echo get_avatar("system_bot"); ?>" alt="..." />
+                    <?php } ?>
+                </span>
             </div>
-            <p>
-                <?php
-                $label_class = 'default';
-                if ($log->action === "created") {
-                    $label_class = "success";
-                    $log->action = "added";
-                } else if ($log->action === "updated") {
-                    $label_class = "warning";
-                } else if ($log->action === "deleted") {
-                    $label_class = "danger";
-                }
-                ?>
-                <span class="label label-<?php echo $label_class; ?>"><?php echo lang($log->action); ?></span>
-                <span><?php
-                    if ($log->log_type === "project_file") {
-                        echo lang($log->log_type) . ": " . remove_file_prefix(convert_mentions($log->log_type_title));
-                    } else if ($log->log_type === "task") {
-                        echo lang($log->log_type) . ": " . modal_anchor(get_uri("projects/task_view"), " #" . $log->log_type_id . " - " . convert_mentions($log->log_type_title), array("title" => lang('task_info') . " #$log->log_type_id", "class" => "dark", "data-post-id" => $log->log_type_id));
-                    } else {
-                        echo lang($log->log_type) . ": " . convert_mentions($log->log_type_title);
-                    }
-                    ?></span>
-                <?php
-                if ($log->action === "updated" && $log->changes !== "") {
-                    $changes = unserialize($log->changes);
-                    echo "<ul>";
-                    foreach ($changes as $field => $value) {
-                        ?>
-                    <li><?php echo get_change_logs($log->log_type, $field, $value); ?></li>
+            <div class="media-body">
+                <div class="media-heading">
                     <?php
-                } echo "</ul>";
-            }
-            ?>
-            </p>
-            <?php if ($log->log_for2 && $log->log_for2 != "customer_feedback") { ?>
-                <p> <?php
-                    if ($log->log_for2 === "task") {
-                        echo lang($log->log_for2) . ": " . modal_anchor(get_uri("projects/task_view"), " #" . $log->log_for_id2, array("title" => lang('task_info') . " #$log->log_for_id2", "class" => "dark", "data-post-id" => $log->log_for_id2));
+                    if ($log->created_by_user) {
+                        if ($log->user_type === "staff") {
+                            echo get_team_member_profile_link($log->created_by, $log->created_by_user, array("class" => "dark strong"));
+                        } else {
+                            echo get_client_contact_profile_link($log->created_by, $log->created_by_user, array("class" => "dark strong"));
+                        }
+                    } else if ($log->action === "bitbucket_notification_received") {
+                        echo "<strong>Bitbucket</strong>";
+                    } else if ($log->action === "github_notification_received") {
+                        echo "<strong>GitHub</strong>";
                     } else {
-                        echo lang($log->log_for2) . ": #" . $log->log_for_id2;
+                        echo "<strong>" . get_setting("app_title") . "</strong>";
+                    }
+                    ?>
+                    <small><span class="text-off"><?php echo format_to_relative_time($log->created_at); ?></span></small>
+                </div>
+
+                <p>
+                    <?php
+                    $label_class = 'default';
+                    if ($log->action === "created") {
+                        $label_class = "success";
+                        $log->action = "added";
+                    } else if ($log->action === "updated") {
+                        $label_class = "warning";
+                    } else if ($log->action === "deleted") {
+                        $label_class = "danger";
+                    }
+
+                    $log_caption = lang($log->action);
+
+                    if ($log->action === "bitbucket_notification_received" || $log->action === "github_notification_received") {
+                        $log_caption = lang("code_reference");
+                        $label_class = "info";
+                    }
+                    ?>
+                    <span class="label label-<?php echo $label_class; ?>"><?php echo $log_caption; ?></span>
+                    <span><?php
+                        if ($log->log_type === "project_file") {
+                            echo lang($log->log_type) . ": " . remove_file_prefix(convert_mentions($log->log_type_title));
+                        } else if ($log->action != "bitbucket_notification_received" && $log->action != "github_notification_received") {
+                            if ($log->log_type === "task") {
+                                echo lang($log->log_type) . ": " . modal_anchor(get_uri("projects/task_view"), " #" . $log->log_type_id . " - " . convert_mentions($log->log_type_title), array("title" => lang('task_info') . " #$log->log_type_id", "class" => "dark", "data-post-id" => $log->log_type_id, "data-modal-lg" => "1"));
+                            } else {
+                                echo lang($log->log_type) . ": " . convert_mentions($log->log_type_title);
+                            }
+                        }
+                        ?></span>
+                    <?php
+                    if (count($changes_array)) {
+                        if ($log->action === "bitbucket_notification_received" || $log->action === "github_notification_received") {
+                            echo get_array_value($changes_array, 0);
+                            unset($changes_array[0]);
+                        }
+
+                        echo "<ul>";
+                        foreach ($changes_array as $change) {
+                            echo $change;
+                        }
+                        echo "</ul>";
                     }
                     ?>
                 </p>
-            <?php } ?>
+                <?php if ($log->log_for2 && $log->log_for2 != "customer_feedback") { ?>
+                    <p> <?php
+                        if ($log->log_for2 === "task") {
+                            echo lang($log->log_for2) . ": " . modal_anchor(get_uri("projects/task_view"), " #" . $log->log_for_id2, array("title" => lang('task_info') . " #$log->log_for_id2", "class" => "dark", "data-post-id" => $log->log_for_id2, "data-modal-lg" => "1"));
+                        } else {
+                            echo lang($log->log_for2) . ": #" . $log->log_for_id2;
+                        }
+                        ?>
+                    </p>
+                <?php } ?>
 
-            <?php if (isset($log->log_for_title)) { ?>
-                <p> <?php echo lang($log->log_for) . ": " . anchor("projects/view/" . $log->log_for_id, $log->log_for_title, array("class" => "dark")); ?></p>
-            <?php } ?>
+                <?php if ($log->action === "bitbucket_notification_received" || $log->action === "github_notification_received") { ?>
+                    <p> <?php echo lang($log->log_type) . ": " . modal_anchor(get_uri("projects/task_view"), " #" . $log->log_type_id . " - " . convert_mentions($log->log_type_title), array("title" => lang('task_info') . " #$log->log_type_id", "class" => "dark", "data-post-id" => $log->log_type_id, "data-modal-lg" => "1")); ?></p>
+                <?php } ?>
+
+                <?php if (isset($log->log_for_title)) { ?>
+                    <p> <?php echo lang($log->log_for) . ": " . anchor("projects/view/" . $log->log_for_id, $log->log_for_title, array("class" => "dark")); ?></p>
+                <?php } ?>
+            </div>
         </div>
-    </div>
-    <?php
+        <?php
+    }
 }
 
 $log_for = $log_for ? $log_for : 0;

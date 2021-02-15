@@ -54,7 +54,9 @@ class roles extends MY_Controller {
             $view_data['invoice'] = get_array_value($permissions, "invoice");
             $view_data['estimate'] = get_array_value($permissions, "estimate");
             $view_data['expense'] = get_array_value($permissions, "expense");
+            $view_data['order'] = get_array_value($permissions, "order");
             $view_data['client'] = get_array_value($permissions, "client");
+            $view_data['lead'] = get_array_value($permissions, "lead");
 
             $view_data['ticket'] = get_array_value($permissions, "ticket");
             $view_data['ticket_specific'] = get_array_value($permissions, "ticket_specific");
@@ -73,6 +75,8 @@ class roles extends MY_Controller {
             $view_data['can_edit_tasks'] = get_array_value($permissions, "can_edit_tasks");
             $view_data['can_delete_tasks'] = get_array_value($permissions, "can_delete_tasks");
             $view_data['can_comment_on_tasks'] = get_array_value($permissions, "can_comment_on_tasks");
+            $view_data['show_assigned_tasks_only'] = get_array_value($permissions, "show_assigned_tasks_only");
+            $view_data['can_update_only_assigned_tasks_status'] = get_array_value($permissions, "can_update_only_assigned_tasks_status");
 
             $view_data['can_create_milestones'] = get_array_value($permissions, "can_create_milestones");
             $view_data['can_edit_milestones'] = get_array_value($permissions, "can_edit_milestones");
@@ -93,6 +97,9 @@ class roles extends MY_Controller {
             $view_data['hide_team_members_list'] = get_array_value($permissions, "hide_team_members_list");
 
             $view_data['can_delete_leave_application'] = get_array_value($permissions, "can_delete_leave_application");
+
+            $view_data['message_permission'] = get_array_value($permissions, "message_permission");
+            $view_data['message_permission_specific'] = get_array_value($permissions, "message_permission_specific");
 
             $this->load->view("roles/permissions", $view_data);
         }
@@ -146,7 +153,9 @@ class roles extends MY_Controller {
         $invoice = $this->input->post('invoice_permission');
         $estimate = $this->input->post('estimate_permission');
         $expense = $this->input->post('expense_permission');
+        $order = $this->input->post('order_permission');
         $client = $this->input->post('client_permission');
+        $lead = $this->input->post('lead_permission');
 
 
         $ticket = $this->input->post('ticket_permission');
@@ -168,6 +177,8 @@ class roles extends MY_Controller {
         $can_edit_tasks = $this->input->post('can_edit_tasks');
         $can_delete_tasks = $this->input->post('can_delete_tasks');
         $can_comment_on_tasks = $this->input->post('can_comment_on_tasks');
+        $show_assigned_tasks_only = $this->input->post('show_assigned_tasks_only');
+        $can_update_only_assigned_tasks_status = $this->input->post('can_update_only_assigned_tasks_status');
 
         $can_create_milestones = $this->input->post('can_create_milestones');
         $can_edit_milestones = $this->input->post('can_edit_milestones');
@@ -192,6 +203,14 @@ class roles extends MY_Controller {
 
         $can_delete_leave_application = $this->input->post('can_delete_leave_application');
 
+        $message_permission = "";
+        $message_permission_specific = "";
+        if ($this->input->post('message_permission_no')) {
+            $message_permission = "no";
+        } else if ($this->input->post('message_permission_specific_checkbox')) {
+            $message_permission = "specific";
+            $message_permission_specific = $this->input->post("message_permission_specific");
+        }
 
         $permissions = array(
             "leave" => $leave,
@@ -201,7 +220,9 @@ class roles extends MY_Controller {
             "invoice" => $invoice,
             "estimate" => $estimate,
             "expense" => $expense,
+            "order" => $order,
             "client" => $client,
+            "lead" => $lead,
             "ticket" => $ticket,
             "ticket_specific" => $ticket_specific,
             "announcement" => $announcement,
@@ -215,6 +236,8 @@ class roles extends MY_Controller {
             "can_edit_tasks" => $can_edit_tasks,
             "can_delete_tasks" => $can_delete_tasks,
             "can_comment_on_tasks" => $can_comment_on_tasks,
+            "show_assigned_tasks_only" => $show_assigned_tasks_only,
+            "can_update_only_assigned_tasks_status" => $can_update_only_assigned_tasks_status,
             "can_create_milestones" => $can_create_milestones,
             "can_edit_milestones" => $can_edit_milestones,
             "can_delete_milestones" => $can_delete_milestones,
@@ -228,6 +251,8 @@ class roles extends MY_Controller {
             "disable_event_sharing" => $disable_event_sharing,
             "hide_team_members_list" => $hide_team_members_list,
             "can_delete_leave_application" => $can_delete_leave_application,
+            "message_permission" => $message_permission,
+            "message_permission_specific" => $message_permission_specific,
         );
 
         $data = array(

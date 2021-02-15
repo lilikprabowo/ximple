@@ -4,7 +4,9 @@
             <h1><?php echo lang('users'); ?></h1>
             <div class="title-button-group">
                 <?php
-                echo modal_anchor(get_uri("clients/invitation_modal"), "<i class='fa fa-envelope-o'></i> " . lang('send_invitation'), array("class" => "btn btn-default", "title" => lang('send_invitation'), "data-post-client_id" => $client_id));
+                if (!get_setting("disable_user_invitation_option_by_clients")) {
+                    echo modal_anchor(get_uri("clients/invitation_modal"), "<i class='fa fa-envelope-o'></i> " . lang('send_invitation'), array("class" => "btn btn-default", "title" => lang('send_invitation'), "data-post-client_id" => $client_id));
+                }
                 ?>
             </div>
         </div>
@@ -23,6 +25,7 @@
             columns: [
                 {title: '', "class": "w50 text-center"},
                 {title: "<?php echo lang("name") ?>"},
+                {visible: false, searchable: false},
                 {title: "<?php echo lang("job_title") ?>", "class": "w15p"},
                 {title: "<?php echo lang("email") ?>", "class": "w20p"},
                 {title: "<?php echo lang("phone") ?>", "class": "w15p"},

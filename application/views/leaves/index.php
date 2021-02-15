@@ -7,7 +7,7 @@
                 <?php echo modal_anchor(get_uri("leaves/assign_leave_modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('assign_leave'), array("class" => "btn btn-default", "title" => lang('assign_leave'))); ?>
             </div>
         </div>
-        <ul data-toggle="ajax-tab" class="nav nav-tabs bg-white inner" role="tablist">
+        <ul id="leaves-tabs" data-toggle="ajax-tab" class="nav nav-tabs bg-white inner" role="tablist">
             <li><a  role="presentation" class="active" href="<?php echo_uri("leaves/pending_approval/"); ?>" data-target="#leave-pending-approval"><?php echo lang("pending_approval"); ?></a></li>
             <li><a  role="presentation" href="<?php echo_uri("leaves/all_applications/"); ?>" data-target="#leave-all-applications"><?php echo lang("all_applications"); ?></a></li>
             <li><a  role="presentation" href="<?php echo_uri("leaves/summary/"); ?>" data-target="#leave-summary"><?php echo lang("summary"); ?></a></li>

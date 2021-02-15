@@ -1,6 +1,7 @@
 <script type="text/javascript">
     AppLanugage = {};
     AppLanugage.locale = "<?php echo lang('language_locale'); ?>";
+    AppLanugage.localeLong = "<?php echo lang('language_locale_long'); ?>";
 
     AppLanugage.days = <?php echo json_encode(array(lang("sunday"), lang("monday"), lang("tuesday"), lang("wednesday"), lang("thursday"), lang("friday"), lang("saturday"))); ?>;
     AppLanugage.daysShort = <?php echo json_encode(array(lang("short_sunday"), lang("short_monday"), lang("short_tuesday"), lang("short_wednesday"), lang("short_thursday"), lang("short_friday"), lang("short_saturday"))); ?>;
@@ -29,5 +30,10 @@
     AppLanugage.totalOfAllPages = "<?php echo lang('total_of_all_pages'); ?>";
 
     AppLanugage.all = "<?php echo lang('all'); ?>";
+
+    AppLanugage.preview_next_key = "<?php echo lang('preview_next_key'); ?>";
+    AppLanugage.preview_previous_key = "<?php echo lang('preview_previous_key'); ?>";
+    
+    AppLanugage.filters = "<?php echo lang('filters'); ?>";
 
 </script>

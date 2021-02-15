@@ -7,6 +7,7 @@ class Messages extends MY_Controller {
 
     function __construct() {
         parent::__construct();
+        $this->init_permission_checker("message_permission");
     }
 
     private function is_my_message($message_info) {
@@ -15,60 +16,48 @@ class Messages extends MY_Controller {
         }
     }
 
-    private function check_clients_permission(){
-        if($this->login_user->user_type=="client" && !get_setting("client_message_users")){
+    private function check_message_user_permission() {
+        if (!$this->check_access_on_messages_for_this_user()) {
             redirect("forbidden");
         }
     }
-            
-    
+
+    private function check_validate_sending_message($to_user_id) {
+        if (!$this->validate_sending_message($to_user_id)) {
+            echo json_encode(array("success" => false, 'message' => lang("message_sending_error_message")));
+            exit;
+        }
+    }
+
     function index() {
-        $this->check_clients_permission();
+        $this->check_message_user_permission();
         redirect("messages/inbox");
     }
 
     /* show new message modal */
 
     function modal_form($user_id = 0) {
-        /*
-         * team members can send message to all team members
-         * clients can only send message to team members (as defined on Client settings)
-         * team members can send message to clients (as defined on Client settings)
-         */
-        $client_message_users = get_setting("client_message_users");
-        if ($this->login_user->user_type === "staff") {
-            //user is team member
-            $client_message_users_array = explode(",", $client_message_users);
-            if (in_array($this->login_user->id, $client_message_users_array)) {
-                //user can send message to clients
-                $users = $this->Users_model->get_team_members_and_clients("", "", $this->login_user->id)->result();
-            } else {
-                //user can send message only to team members
-                $users = $this->Users_model->get_team_members_and_clients("staff", "", $this->login_user->id)->result();
-            }
-        } else {
-            //user is a client contact
-            if ($client_message_users) {
-                $users = $this->Users_model->get_team_members_and_clients("staff", $client_message_users)->result();
-            } else {
-                //client can't send message to any team members
-                redirect("forbidden");
-            }
-        }
-
-
+        $this->check_message_user_permission();
         $view_data['users_dropdown'] = array("" => "-");
+
         if ($user_id) {
             $view_data['message_user_info'] = $this->Users_model->get_one($user_id);
         } else {
+            $users = $this->Messages_model->get_users_for_messaging($this->get_user_options_for_query())->result();
+
             foreach ($users as $user) {
-                $client_tag = "";
-                if ($user->user_type === "client" && $user->company_name) {
-                    $client_tag = "  - " . lang("client") . ": " . $user->company_name . "";
+                $user_name = $user->first_name . " " . $user->last_name;
+
+                if ($user->user_type === "client" && $user->company_name) { //user is a client contact
+                    if ($this->login_user->user_type == "staff") {
+                        $user_name .= " - " . lang("client") . ": " . $user->company_name . "";
+                    } else {
+                        $user_name = lang("contact") . ": " . $user_name;
+                    }
                 }
-                $view_data['users_dropdown'][$user->id] = $user->first_name . " " . $user->last_name . $client_tag;
+
+                $view_data['users_dropdown'][$user->id] = $user_name;
             }
-            /// $view_data['users_dropdown'] = array("" => "-") + $this->Users_model->get_dropdown_list(array("first_name", "last_name"), "id", array("user_type" => "staff", "id !=" => $this->login_user->id));
         }
 
         $this->load->view('messages/modal_form', $view_data);
@@ -77,7 +66,7 @@ class Messages extends MY_Controller {
     /* show inbox */
 
     function inbox($auto_select_index = "") {
-        $this->check_clients_permission();
+        $this->check_message_user_permission();
         $this->check_module_availability("module_message");
 
         $view_data['mode'] = "inbox";
@@ -88,7 +77,7 @@ class Messages extends MY_Controller {
     /* show sent items */
 
     function sent_items($auto_select_index = "") {
-        $this->check_clients_permission();
+        $this->check_message_user_permission();
         $this->check_module_availability("module_message");
 
         $view_data['mode'] = "sent_items";
@@ -96,15 +85,21 @@ class Messages extends MY_Controller {
         $this->template->rander("messages/index", $view_data);
     }
 
+    private function get_allowed_user_ids() {
+        $users = $this->Messages_model->get_users_for_messaging($this->get_user_options_for_query())->result();
+        $users = json_decode(json_encode($users), true); //convert to array
+        return implode(',', array_column($users, "id"));
+    }
+
     /* list of messages, prepared for datatable  */
 
     function list_data($mode = "inbox") {
-        $this->check_clients_permission();
+        $this->check_message_user_permission();
         if ($mode !== "inbox") {
             $mode = "sent_items";
         }
 
-        $options = array("user_id" => $this->login_user->id, "mode" => $mode);
+        $options = array("user_id" => $this->login_user->id, "mode" => $mode, "user_ids" => $this->get_allowed_user_ids());
         $list_data = $this->Messages_model->get_list($options)->result();
 
         $result = array();
@@ -119,7 +114,7 @@ class Messages extends MY_Controller {
     /* return a message details */
 
     function view($message_id = 0, $mode = "", $reply = 0) {
-
+        $this->check_message_user_permission();
 
         $message_mode = $mode;
         if ($reply == 1 && $mode == "inbox") {
@@ -210,23 +205,24 @@ class Messages extends MY_Controller {
     /* send new message */
 
     function send_message() {
+        $this->check_message_user_permission();
 
         validate_submitted_data(array(
             "message" => "required",
             "to_user_id" => "required|numeric"
         ));
- 
+
         $to_user_id = $this->input->post('to_user_id');
-        
+
         //team member can send message to any team member
         //client can send messages to only allowed members
-       
-        $this->validate_client_message($to_user_id);
-        
+
+        $this->check_validate_sending_message($to_user_id);
+
         $target_path = get_setting("timeline_file_path");
         $files_data = move_files_from_temp_dir_to_permanent_dir($target_path, "message");
- 
-        
+
+
         $message_data = array(
             "from_user_id" => $this->login_user->id,
             "to_user_id" => $to_user_id,
@@ -249,40 +245,11 @@ class Messages extends MY_Controller {
             echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
         }
     }
-    
-    //check messages between client and team members.
-    private function validate_client_message($to_user_id){
-        if ($this->login_user->user_type === "client") {
-            //sending message from client
-            $this->check_message_sending_permission($to_user_id);
-            
-        }else {
-            //from team member to client messages, check who can communicate with client
-            $to_user_info = $this->Users_model->get_one($to_user_id);
-            if($to_user_info && $to_user_info->user_type=="client"){
-                //sending message from team mebers to client. check the permission
-                $this->check_message_sending_permission($this->login_user->id); //check login user
-            }
-        }
-    }
-    
-    //we have to check permission between clent and team members message.
-    private function check_message_sending_permission($user_id){
-        $client_message_users = get_setting("client_message_users");
-        if(!$client_message_users){
-            redirect("forbidden");
-        }
-
-        $client_message_users_array = explode(",", $client_message_users);
-
-        if (!in_array($user_id, $client_message_users_array)) {
-             redirect("forbidden");
-        }
-    }
 
     /* reply to an existing message */
 
     function reply($is_chat = 0) {
+        $this->check_message_user_permission();
         $message_id = $this->input->post('message_id');
 
         validate_submitted_data(array(
@@ -307,18 +274,19 @@ class Messages extends MY_Controller {
                 $to_user_id = $message_info->from_user_id;
             }
 
-            $this->validate_client_message($to_user_id);
-            
-            
+            $this->check_validate_sending_message($to_user_id);
+
             $target_path = get_setting("timeline_file_path");
             $files_data = move_files_from_temp_dir_to_permanent_dir($target_path, "message");
+
+            $message = $this->input->post('reply_message');
 
             $message_data = array(
                 "from_user_id" => $this->login_user->id,
                 "to_user_id" => $to_user_id,
                 "message_id" => $message_id,
                 "subject" => "",
-                "message" => $this->input->post('reply_message'),
+                "message" => $message,
                 "created_at" => get_current_utc_time(),
                 "deleted_by_users" => "",
             );
@@ -331,6 +299,10 @@ class Messages extends MY_Controller {
 
             if ($save_id) {
 
+                //if chat via pusher is enabled, then send message data to pusher
+                if (get_setting('enable_chat_via_pusher') && get_setting("enable_push_notification")) {
+                    send_message_via_pusher($to_user_id, $message_data, $message_id);
+                }
 
                 //we'll not send notification, if the user is online
 
@@ -357,8 +329,8 @@ class Messages extends MY_Controller {
 
     //load messages right panel when clicking load more button
     function view_messages() {
-    
-        $this->check_clients_permission();
+
+        $this->check_message_user_permission();
         validate_submitted_data(array(
             "message_id" => "required|numeric",
             "last_message_id" => "numeric",
@@ -390,10 +362,10 @@ class Messages extends MY_Controller {
             "active_message_id" => "numeric"
         ));
 
-          
+
         $notifiations = $this->Messages_model->get_notifications($this->login_user->id, $this->login_user->message_checked_at, $this->input->post("active_message_id"));
         $view_data['notifications'] = $notifiations->result();
-        echo json_encode(array("success" => true, "active_message_id"=>$this->input->post("active_message_id"), 'total_notifications' => $notifiations->num_rows(), 'notification_list' => $this->load->view("messages/notifications", $view_data, true)));
+        echo json_encode(array("success" => true, "active_message_id" => $this->input->post("active_message_id"), 'total_notifications' => $notifiations->num_rows(), 'notification_list' => $this->load->view("messages/notifications", $view_data, true)));
     }
 
     function update_notification_checking_status() {
@@ -441,6 +413,7 @@ class Messages extends MY_Controller {
 
     //prepare chat inbox list
     function chat_list() {
+        $this->check_message_user_permission();
 
         $view_data['show_users_list'] = false;
         $view_data['show_clients_list'] = false;
@@ -454,17 +427,23 @@ class Messages extends MY_Controller {
                 $view_data['show_clients_list'] = true;
             }
 
-            //user can send message to team members
-            $view_data['show_users_list'] = true;
+            if (get_array_value($this->login_user->permissions, "message_permission") !== "no") {
+                //user can send message to team members
+                $view_data['show_users_list'] = true;
+            }
         } else {
-             $this->check_clients_permission();
             //user is a client contact and can send messages
             if ($client_message_users) {
                 $view_data['show_users_list'] = true;
             }
+
+            //user can send message to own client contacts
+            if (get_setting("client_message_own_contacts")) {
+                $view_data['show_clients_list'] = true;
+            }
         }
 
-        $options = array("login_user_id" => $this->login_user->id);
+        $options = array("login_user_id" => $this->login_user->id, "user_ids" => $this->get_allowed_user_ids());
 
         $view_data['messages'] = $this->Messages_model->get_chat_list($options)->result();
 
@@ -472,33 +451,7 @@ class Messages extends MY_Controller {
     }
 
     function users_list($type) {
-
-        /*
-         * team members can send message to all team members
-         * clients can only send message to team members (as defined on Client settings)
-         * team members can send message to clients (as defined on Client settings)
-         */
-
-        $users = "";
-        $client_message_users = get_setting("client_message_users");
-        if ($this->login_user->user_type === "staff") {
-            //user is team member
-            $client_message_users_array = explode(",", $client_message_users);
-            if (in_array($this->login_user->id, $client_message_users_array) && $type === "client") {
-                //user can send message to clients
-                $users = $this->Users_model->get_team_members_and_clients("client", "", $this->login_user->id)->result();
-            } else if ($type === "staff") {
-                //user can send message only to team members
-                $users = $this->Users_model->get_team_members_and_clients("staff", "", $this->login_user->id)->result();
-            }
-        } else if ($this->login_user->user_type === "client" && $type === "staff") {
-            //user is a client contact
-            if ($client_message_users) {
-                $users = $this->Users_model->get_team_members_and_clients("staff", $client_message_users)->result();
-            }
-        }
-
-        $view_data["users"] = $users;
+        $view_data["users"] = $this->Messages_model->get_users_for_messaging($this->get_user_options_for_query($type))->result();
 
         $page_type = "";
         if ($type === "staff") {
@@ -515,8 +468,8 @@ class Messages extends MY_Controller {
     //load messages in chat view
     function view_chat() {
 
-        $this->check_clients_permission();
-         
+        $this->check_message_user_permission();
+
         validate_submitted_data(array(
             "message_id" => "required|numeric",
             "last_message_id" => "numeric",
@@ -582,8 +535,8 @@ class Messages extends MY_Controller {
 
     function get_chatlist_of_user() {
 
-        $this->check_clients_permission();
-         
+        $this->check_message_user_permission();
+
         validate_submitted_data(array(
             "user_id" => "required|numeric"
         ));
@@ -603,7 +556,37 @@ class Messages extends MY_Controller {
         $this->load->view("messages/chat/get_chatlist_of_user", $view_data);
     }
 
+    function send_typing_indicator_to_pusher() {
+        $message_id = $this->input->post("message_id");
+        if (!$message_id) {
+            show_404();
+        }
+
+        $message_info = $this->Messages_model->get_one($message_id);
+        if (!$this->is_my_message($message_info)) {
+            redirect("forbidden");
+        }
+
+        if ($message_info->id) {
+            //check, where we have to send this message
+            $to_user_id = 0;
+            if ($message_info->from_user_id === $this->login_user->id) {
+                $to_user_id = $message_info->to_user_id;
+            } else {
+                $to_user_id = $message_info->from_user_id;
+            }
+
+            $this->check_validate_sending_message($to_user_id);
+
+            if (get_setting('enable_chat_via_pusher') && get_setting("enable_push_notification")) {
+                send_message_via_pusher($to_user_id, "", $message_id, "typing");
+            }
+        } else {
+            show_404();
+        }
+    }
+
 }
 
 /* End of file messages.php */
-/* Location: ./application/controllers/messages.php */
+    /* Location: ./application/controllers/messages.php */    

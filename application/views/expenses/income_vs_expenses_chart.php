@@ -1,9 +1,10 @@
 <div id="page-content" class="clearfix p20">
     <div class="panel clearfix">
-        <ul data-toggle="ajax-tab" class="nav nav-tabs bg-white inner" role="tablist">
+        <ul id="income-vs-expenses-chart-tabs" data-toggle="ajax-tab" class="nav nav-tabs bg-white inner clearfix" role="tablist">
             <li class="title-tab"><h4 class="pl15 pt5 pr15"><?php echo lang("income_vs_expenses"); ?></h4></li>
             <li><a id="income-vs-expenses-chart-button" role="presentation" class="active" href="javascript:;" data-target="#income-vs-expenses-chart-tab"><?php echo lang("chart"); ?></a></li>
             <li><a role="presentation" href="<?php echo_uri("expenses/income_vs_expenses_summary/"); ?>" data-target="#income-vs-expenses-summary"><?php echo lang("summary"); ?></a></li>
+            <span class="help pull-right p15" data-toggle="tooltip" data-placement="left" title="<?php echo lang('income_expenses_widget_help_message') ?>"><i class="fa fa-question-circle"></i></span>
         </ul>
 
         <div class="tab-content">
@@ -12,8 +13,18 @@
                     <div class="panel-heading clearfix">
                         <i class="fa fa-bar-chart pt10"></i>&nbsp; <?php echo lang("chart"); ?>
                         <div class="pull-right">
-                            <div id="yearly-chart-date-range-selector">
-                            </div>
+                            <?php
+                            if ($projects_dropdown) {
+                                echo form_input(array(
+                                    "id" => "projects-dropdown",
+                                    "name" => "projects-dropdown",
+                                    "class" => "select2 w200 reload-chart font-normal",
+                                    "placeholder" => lang('project')
+                                ));
+                            }
+                            ?>
+
+                            <div class="inline-block" id="yearly-chart-date-range-selector"></div>
                         </div>
                     </div>
                     <div class="panel-body">
@@ -21,7 +32,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div role="tabpanel" class="tab-pane fade" id="income-vs-expenses-summary"></div>
         </div>
 
@@ -131,7 +142,11 @@
             }
         });
     };
+
     var prepareExpensesFlotChart = function (data) {
+        var project_id = $("#projects-dropdown").val() || "0";
+        data.project_id = project_id;
+
         appLoader.show();
         $.ajax({
             url: "<?php echo_uri("expenses/income_vs_expenses_chart_data") ?>",
@@ -145,17 +160,34 @@
             }
         });
     };
+
     $(document).ready(function () {
         $("#income-vs-expenses-chart-button").trigger("click");
+        var $projectsDropdown = $("#projects-dropdown"),
+                data = {};
+
+<?php if ($projects_dropdown) { ?>
+            $projectsDropdown.select2({
+                data: <?php echo $projects_dropdown; ?>
+            });
+<?php } ?>
+
+        $(".reload-chart").change(function () {
+            prepareExpensesFlotChart(data);
+        });
 
         $("#yearly-chart-date-range-selector").appDateRange({
             dateRangeType: "yearly",
             onChange: function (dateRange) {
+                data = dateRange;
                 prepareExpensesFlotChart(dateRange);
             },
             onInit: function (dateRange) {
+                data = dateRange;
                 prepareExpensesFlotChart(dateRange);
             }
         });
+
+        $('[data-toggle="tooltip"]').tooltip();
     });
 </script>

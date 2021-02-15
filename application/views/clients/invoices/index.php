@@ -11,7 +11,11 @@
             <div class="tab-title clearfix">
                 <h4><?php echo lang('invoices'); ?></h4>
                 <div class="title-button-group">
-                    <?php echo modal_anchor(get_uri("invoices/modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('add_invoice'), array("class" => "btn btn-default mb0", "data-post-client_id" => $client_id, "title" => lang('add_invoice'))); ?>
+                    <?php
+                    if ($can_edit_invoices) {
+                        echo modal_anchor(get_uri("invoices/modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('add_invoice'), array("class" => "btn btn-default mb0", "data-post-client_id" => $client_id, "title" => lang('add_invoice')));
+                    }
+                    ?>
                 </div>
             </div>
         <?php } ?>
@@ -42,7 +46,7 @@
                 {title: "<?php echo lang("invoice_value") ?>", "class": "w10p text-right"},
                 {title: "<?php echo lang("payment_received") ?>", "class": "w10p text-right"},
                 {title: '<?php echo lang("status") ?>', "class": "w10p text-center"}
-                <?php echo $custom_field_headers; ?>
+<?php echo $custom_field_headers; ?>
             ],
             printColumns: combineCustomFieldsColumns([0, 2, 4, 6, 7, 8, 9], '<?php echo $custom_field_headers; ?>'),
             xlsColumns: combineCustomFieldsColumns([0, 2, 4, 6, 7, 8, 9], '<?php echo $custom_field_headers; ?>'),

@@ -1,4 +1,4 @@
-<div class="modal-body">
+<div class="modal-body event-view">
     <div class="table-responsive mb15">
         <div class="col-md-12">
             <h4 class="mt0">
@@ -35,15 +35,17 @@
             <?php echo $labels; ?>
         </div>
 
-        <div class="col-md-12">
-            <blockquote class="font-14 text-justify" style="<?php echo "border-color:" . $model_info->color; ?>"><?php echo nl2br($model_info->description); ?></blockquote>
-        </div>
+        <?php if ($model_info->description) { ?>
+            <div class="col-md-12">
+                <blockquote class="font-14 text-justify" style="<?php echo "border-color:" . $model_info->color; ?>"><?php echo nl2br($model_info->description); ?></blockquote>
+            </div>
+        <?php } ?>
 
         <?php if ($model_info->company_name && $this->login_user->user_type != "client") { ?>
             <div class="col-md-12 pb10 pt10 ">
-                <i class="fa fa-briefcase"></i>
+                <i class="fa <?php echo $model_info->is_lead ? "fa-cubes" : "fa-briefcase"; ?>"></i>
                 <?php
-                echo anchor("clients/view/" . $model_info->client_id, $model_info->company_name);
+                echo $model_info->is_lead ? anchor("leads/view/" . $model_info->client_id, $model_info->company_name) : anchor("clients/view/" . $model_info->client_id, $model_info->company_name);
                 ?>
             </div>
         <?php } ?>
@@ -62,7 +64,7 @@
             ?>
         </div>
 
-       
+
         <?php if ($confirmed_by) { ?>
             <div class="col-md-12 clearfix">
                 <div class="col-md-1 p0">
@@ -84,7 +86,7 @@
                 </div>
             </div>
         <?php } ?>
-       
+
 
         <?php
         if (count($custom_fields_list)) {
@@ -141,7 +143,9 @@
             btnOkLabel: "<?php echo lang('yes'); ?>",
             btnCancelLabel: "<?php echo lang('no'); ?>",
             onConfirm: function () {
+                appLoader.show();
                 $('.close-modal').trigger("click");
+
                 $.ajax({
                     url: "<?php echo get_uri('events/delete') ?>",
                     type: 'POST',
@@ -154,6 +158,8 @@
                         } else {
                             appAlert.error(result.message);
                         }
+                        
+                        appLoader.hide();
                     }
                 });
 

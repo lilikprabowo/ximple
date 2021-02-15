@@ -7,7 +7,8 @@
             "name" => "note",
             "value" => $model_info->note ? $model_info->note : "",
             "class" => "form-control",
-            "placeholder" => lang('note')
+            "placeholder" => lang('note'),
+            "data-rich-text-editor" => true
         ));
         ?>
     </div>

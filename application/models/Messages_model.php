@@ -31,11 +31,11 @@ class Messages_model extends Crud_model {
         }
 
         $user_id = get_array_value($options, "user_id");
-        if($user_id){
-              $where .= " AND ($messages_table.from_user_id=$user_id OR $messages_table.to_user_id=$user_id) ";
+        if ($user_id) {
+            $where .= " AND ($messages_table.from_user_id=$user_id OR $messages_table.to_user_id=$user_id) ";
         }
-        
-        
+
+
         $join_with = "$messages_table.from_user_id";
         $join_another = "$messages_table.to_user_id";
         if ($user_id && $mode === "inbox") {
@@ -104,6 +104,12 @@ class Messages_model extends Crud_model {
             $select_user = "to_user_id";
         }
 
+        $where = "";
+        $user_ids = get_array_value($options, "user_ids");
+        if ($user_ids) {
+            $where .= " AND $messages_table.$select_user IN($user_ids)";
+        }
+
         //ignor sql mode here 
         $this->db->query("SET sql_mode = ''");
 
@@ -114,7 +120,7 @@ class Messages_model extends Crud_model {
                     SELECT max(x.id) as id, main_message_id,  subject, IF(subject='', (SELECT subject FROM $messages_table WHERE id=main_message_id) ,'') as reply_subject, $select_user
                         FROM (SELECT id, IF(message_id=0,id,message_id) as main_message_id, subject, $select_user 
                                 FROM $messages_table
-                              WHERE deleted=0 AND $where_user=$user_id  AND FIND_IN_SET($user_id, $messages_table.deleted_by_users) = 0) x
+                              WHERE deleted=0 AND $where_user=$user_id $where AND FIND_IN_SET($user_id, $messages_table.deleted_by_users) = 0) x
                     GROUP BY main_message_id) y
                 LEFT JOIN $users_table ON $users_table.id= y.$select_user
                 LEFT JOIN $messages_table ON $messages_table.id= y.id";
@@ -133,6 +139,11 @@ class Messages_model extends Crud_model {
         $user_id = get_array_value($options, "user_id");
         if ($user_id) {
             $where .= " AND ($messages_table.to_user_id=$user_id OR $messages_table.from_user_id=$user_id) ";
+        }
+
+        $user_ids = get_array_value($options, "user_ids");
+        if ($user_ids) {
+            $where .= " AND ($messages_table.to_user_id IN($user_ids) OR $messages_table.from_user_id IN($user_ids))";
         }
 
         $this->db->query("SET sql_mode = ''"); //ignor sql mode here
@@ -202,6 +213,65 @@ class Messages_model extends Crud_model {
 
         $sql = "UPDATE $messages_table SET $messages_table.deleted_by_users = ''
         WHERE $messages_table.id=$message_id OR $messages_table.message_id=$message_id";
+        return $this->db->query($sql);
+    }
+
+    function get_users_for_messaging($options = array()) {
+        $users_table = $this->db->dbprefix('users');
+        $clients_table = $this->db->dbprefix('clients');
+
+        $where = "";
+
+        $login_user_id = get_array_value($options, "login_user_id");
+
+        $all_members = get_array_value($options, "all_members");
+        $specific_members = get_array_value($options, "specific_members");
+        $member_to_clients = get_array_value($options, "member_to_clients");
+        if ($all_members) {
+            if ($member_to_clients) {
+                $where .= " AND ($users_table.user_type='staff' OR $users_table.user_type='client')";
+            } else {
+                $where .= " AND $users_table.user_type='staff'";
+            }
+        } else if ($specific_members) {
+            if (is_array($specific_members) && count($specific_members)) {
+                $specific_members = join(",", $specific_members);
+            } else {
+                $specific_members = '0';
+            }
+
+            if ($member_to_clients) {
+                $where .= " AND ($users_table.id IN($specific_members) OR $users_table.user_type='client')";
+            } else {
+                $where .= " AND $users_table.id IN($specific_members)";
+            }
+        }
+
+        if ($member_to_clients && !$all_members && !$specific_members) {
+            $where .= " AND $users_table.user_type='client'";
+        }
+
+        $client_to_members = get_array_value($options, "client_to_members");
+        $client_id = get_array_value($options, "client_id");
+        if ($client_to_members) {
+            if ($client_id) {
+                $where .= " AND (FIND_IN_SET($users_table.id, '$client_to_members') OR $users_table.client_id=$client_id)";
+            } else {
+                $where .= " AND FIND_IN_SET($users_table.id, '$client_to_members')";
+            }
+        }
+
+        if ($client_id && !$client_to_members) {
+            $where .= " AND $users_table.client_id=$client_id";
+        }
+
+        $sql = "SELECT $users_table.id, $users_table.client_id, $users_table.user_type, $users_table.first_name, $users_table.last_name, $clients_table.company_name,
+            $users_table.image,  $users_table.job_title, $users_table.last_online
+        FROM $users_table
+        LEFT JOIN $clients_table ON $clients_table.id = $users_table.client_id AND $clients_table.deleted=0
+        WHERE $users_table.deleted=0 AND $users_table.status='active' AND $users_table.id!=$login_user_id $where
+        ORDER BY $users_table.user_type, $users_table.first_name ASC";
+
         return $this->db->query($sql);
     }
 

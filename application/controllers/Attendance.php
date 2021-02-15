@@ -42,10 +42,11 @@ class Attendance extends MY_Controller {
     }
 
     //show attendance list view
-    function index() {
+    function index($tab = "") {
         $this->check_module_availability("module_attendance");
 
         $view_data['team_members_dropdown'] = json_encode($this->_get_members_dropdown_list_for_filter());
+        $view_data['tab'] = $tab; //selected tab
         $this->template->rander("attendance/index", $view_data);
     }
 
@@ -87,13 +88,13 @@ class Attendance extends MY_Controller {
     }
 
     //show attendance note modal
-    function note_modal_form() {
-
+    function note_modal_form($user_id = 0) {
         validate_submitted_data(array(
             "id" => "numeric|required"
         ));
 
         $view_data["clock_out"] = $this->input->post("clock_out"); //trigger clockout after submit?
+        $view_data["user_id"] = $user_id;
 
         $view_data['model_info'] = $this->Attendance_model->get_one($this->input->post('id'));
         $this->load->view('attendance/note_modal_form', $view_data);
@@ -177,11 +178,19 @@ class Attendance extends MY_Controller {
     }
 
     //clock in / clock out
-    function log_time() {
+    function log_time($user_id = 0) {
         $note = $this->input->post('note');
 
-        $this->Attendance_model->log_time($this->login_user->id, $note);
-        if ($this->input->post("clock_out")) {
+        if ($user_id && $user_id != $this->login_user->id) {
+            //check if the login user has permission to clock in/out this user
+            $this->access_only_allowed_members($user_id);
+        }
+
+        $this->Attendance_model->log_time($user_id ? $user_id : $this->login_user->id, $note);
+
+        if ($user_id) {
+            echo json_encode(array("success" => true, "data" => $this->_clock_in_out_row_data($user_id), 'id' => $user_id, 'message' => lang('record_saved'), "isUpdate" => true));
+        } else if ($this->input->post("clock_out")) {
             echo json_encode(array("success" => true, "clock_widget" => clock_widget(true)));
         } else {
             clock_widget();
@@ -238,6 +247,8 @@ class Attendance extends MY_Controller {
         $this->check_module_availability("module_attendance");
 
         $view_data['user_id'] = $this->login_user->id;
+        $view_data['show_clock_in_out'] = true;
+
         if ($this->input->is_ajax_request()) {
             $this->load->view("team_members/attendance_info", $view_data);
         } else {
@@ -278,10 +289,17 @@ class Attendance extends MY_Controller {
             }
         }
 
+        //if the rich text editor is enabled, don't show the note as title
+        $note_title = $data->note;
+        if (get_setting('enable_rich_text_editor')) {
+            $note_title = "";
+        }
+
         $note_link = modal_anchor(get_uri("attendance/note_modal_form"), "<i class='fa fa-comment-o p10'></i>", array("class" => "edit text-muted", "title" => lang("note"), "data-post-id" => $data->id));
         if ($data->note) {
-            $note_link = modal_anchor(get_uri("attendance/note_modal_form"), "<i class='fa fa-comment p10'></i>", array("class" => "edit text-muted", "title" => $data->note, "data-modal-title" => lang("note"), "data-post-id" => $data->id));
+            $note_link = modal_anchor(get_uri("attendance/note_modal_form"), "<i class='fa fa-comment p10'></i>", array("class" => "edit text-muted", "title" => $note_title, "data-modal-title" => lang("note"), "data-post-id" => $data->id));
         }
+
 
         return array(
             get_team_member_profile_link($data->user_id, $user),
@@ -309,23 +327,9 @@ class Attendance extends MY_Controller {
     }
 
     private function _get_members_dropdown_list_for_filter() {
-
         //prepare the dropdown list of members
         //don't show none allowed members in dropdown
-
-        if ($this->access_type === "all") {
-            $where = array("user_type" => "staff");
-        } else {
-            if (!count($this->allowed_members)) {
-                $where = array("user_type" => "nothing"); //don't show any users in dropdown
-            } else {
-                //add login user in dropdown list
-                $allowed_members = $this->allowed_members;
-                $allowed_members[] = $this->login_user->id;
-
-                $where = array("user_type" => "staff", "where_in" => array("id" => $allowed_members));
-            }
-        }
+        $where = $this->_get_members_query_options();
 
         $members = $this->Users_model->get_dropdown_list(array("first_name", "last_name"), "id", $where);
 
@@ -333,7 +337,27 @@ class Attendance extends MY_Controller {
         foreach ($members as $id => $name) {
             $members_dropdown[] = array("id" => $id, "text" => $name);
         }
+
         return $members_dropdown;
+    }
+
+    //get members query options
+    private function _get_members_query_options($type = "") {
+        if ($this->access_type === "all") {
+            $where = array("user_type" => "staff");
+        } else {
+            if (!count($this->allowed_members) && $type != "data") {
+                $where = array("user_type" => "nothing"); //don't show any users in dropdown
+            } else {
+                //add login user in dropdown list
+                $allowed_members = $this->allowed_members;
+                $allowed_members[] = $this->login_user->id;
+
+                $where = array("user_type" => "staff", "where_in" => ($type == "data") ? $allowed_members : array("id" => $allowed_members));
+            }
+        }
+
+        return $where;
     }
 
     //load the custom date view of attendance list 
@@ -469,6 +493,52 @@ class Attendance extends MY_Controller {
             $result[] = $this->_make_row($data);
         }
         echo json_encode(array("data" => $result));
+    }
+
+    //load the clock in / out tab view of attendance list 
+    function clock_in_out() {
+        $this->load->view("attendance/clock_in_out");
+    }
+
+    /* get data the attendance clock In / Out tab */
+
+    function clock_in_out_list_data() {
+        $options = $this->_get_members_query_options("data");
+        $list_data = $this->Attendance_model->get_clock_in_out_details_of_all_users($options)->result();
+
+        $result = array();
+        foreach ($list_data as $data) {
+            $result[] = $this->_make_clock_in_out_row($data);
+        }
+
+        echo json_encode(array("data" => $result));
+    }
+
+    private function _clock_in_out_row_data($user_id) {
+        $options = array("id" => $user_id);
+        $data = $this->Attendance_model->get_clock_in_out_details_of_all_users($options)->row();
+        return $this->_make_clock_in_out_row($data);
+    }
+
+    private function _make_clock_in_out_row($data) {
+        if (isset($data->attendance_id)) {
+            $in_time = format_to_time($data->in_time);
+            $in_datetime = format_to_datetime($data->in_time);
+            $status = "<div class='mb15' title='$in_datetime'>" . lang('clock_started_at') . " : $in_time</div>";
+            $view_data = modal_anchor(get_uri("attendance/note_modal_form/$data->id"), "<i class='fa fa-sign-out'></i> " . lang('clock_out'), array("class" => "btn btn-default", "title" => lang('clock_out'), "id" => "timecard-clock-out", "data-post-id" => $data->attendance_id, "data-post-clock_out" => 1, "data-post-id" => $data->id));
+        } else {
+            $status = "<div class='mb15'>" . lang('not_clocked_id_yet') . "</div>";
+            $view_data = js_anchor("<i class='fa fa-sign-in'></i> " . lang('clock_in'), array('title' => lang('clock_in'), "class" => "btn btn-default", "data-action-url" => get_uri("attendance/log_time/$data->id"), "data-action" => "update", "data-inline-loader" => "1", "data-post-id" => $data->id));
+        }
+
+        $image_url = get_avatar($data->image);
+        $user_avatar = "<span class='avatar avatar-xs mr10'><img src='$image_url' alt='...'></span>";
+
+        return array(
+            get_team_member_profile_link($data->id, $user_avatar . $data->member_name),
+            $status,
+            $view_data
+        );
     }
 
 }

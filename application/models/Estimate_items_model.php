@@ -26,8 +26,9 @@ class Estimate_items_model extends Crud_model {
         $sql = "SELECT $estimate_items_table.*, (SELECT $clients_table.currency_symbol FROM $clients_table WHERE $clients_table.id=$estimates_table.client_id limit 1) AS currency_symbol
         FROM $estimate_items_table
         LEFT JOIN $estimates_table ON $estimates_table.id=$estimate_items_table.estimate_id
-        WHERE $estimate_items_table.deleted=0 $where";
-        return $this->db->query($sql);  
+        WHERE $estimate_items_table.deleted=0 $where
+        ORDER BY $estimate_items_table.sort ASC";
+        return $this->db->query($sql);
     }
 
 }

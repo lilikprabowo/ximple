@@ -1,4 +1,4 @@
-<div class="panel panel-default">
+<div class="panel panel-default <?php echo $custom_class; ?>">
     <div class="panel-heading">
         <i class="fa fa-tasks"></i>&nbsp;<?php echo lang("task_status"); ?>
     </div>
@@ -15,6 +15,10 @@ foreach ($task_statuses as $status) {
 <script type="text/javascript">
     $(document).ready(function () {
         var taskData = <?php echo json_encode($task_data) ?>;
+
+        if (!taskData.length) {
+            taskData = [{data: 0}];
+        }
 
         $.plot('#my-task-status-pai', taskData, {
             series: {

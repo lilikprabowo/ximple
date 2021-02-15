@@ -1,11 +1,7 @@
 <?php
 //load chat ui if chat module is enabled
 
-$can_chat = true;
-
-if($this->login_user->user_type === "client" && !get_setting("client_message_users")){
-   $can_chat = false; 
-}
+$can_chat = can_access_messages_module();
 
 if (get_setting("module_chat") && $can_chat) {
     ?>
@@ -49,6 +45,14 @@ if (get_setting("module_chat") && $can_chat) {
 
             };
 
+            changeChatIconPosition = function (type) {
+                if (type === "close") {
+                    $("#js-init-chat-icon").addClass("move-chat-icon");
+                } else if (type === "open") {
+                    $("#js-init-chat-icon").removeClass("move-chat-icon");
+                }
+            };
+
             //is there any active chat? open the popup
             //otherwise show the chat icon only
             var activeChatId = getCookie("active_chat_id"),
@@ -72,6 +76,7 @@ if (get_setting("module_chat") && $can_chat) {
                     }, 11000);
                 }
 
+                var windowSize = window.matchMedia("(max-width: 767px)");
 
                 if ($chatIcon.attr("data-type") !== "close") {
                     //have to reload
@@ -80,16 +85,25 @@ if (get_setting("module_chat") && $can_chat) {
                     }, 200);
                     setChatIcon("close"); //show close icon
                     setCookie("chatbox_open", "1");
-
+                    if (windowSize.matches) {
+                        changeChatIconPosition("close");
+                    }
                 } else {
                     //have to close the chat box
                     setChatIcon("open"); //show open icon
                     setCookie("chatbox_open", "");
                     setCookie("active_chat_id", "");
+                    if (windowSize.matches) {
+                        changeChatIconPosition("open");
+                    }
                 }
 
                 if (window.activeChatChecker) {
                     window.clearInterval(window.activeChatChecker);
+                }
+
+                if (typeof window.placeCartBox === "function") {
+                    window.placeCartBox();
                 }
 
             });
@@ -101,6 +115,13 @@ if (get_setting("module_chat") && $can_chat) {
                     getActiveChat(activeChatId);
                 } else {
                     loadChatTabs();
+                }
+            }
+
+            var windowSize = window.matchMedia("(max-width: 767px)");
+            if (windowSize.matches) {
+                if (isChatBoxOpen) {
+                    $("#js-init-chat-icon").addClass("move-chat-icon");
                 }
             }
 

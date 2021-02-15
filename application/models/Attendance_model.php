@@ -92,10 +92,11 @@ class Attendance_model extends Crud_model {
             $where .= " AND $attendnace_table.status = 'incomplete'";
         }
 
-        $sql = "SELECT $attendnace_table.*,  CONCAT($users_table.first_name, ' ',$users_table.last_name) AS created_by_user, $users_table.image as created_by_avatar
+        $sql = "SELECT $attendnace_table.*,  CONCAT($users_table.first_name, ' ',$users_table.last_name) AS created_by_user, $users_table.image as created_by_avatar, $users_table.id as user_id, $users_table.job_title as user_job_title
         FROM $attendnace_table
         LEFT JOIN $users_table ON $users_table.id = $attendnace_table.user_id
-        WHERE $attendnace_table.deleted=0 $where";
+        WHERE $attendnace_table.deleted=0 $where
+        ORDER BY $attendnace_table.in_time DESC";
         return $this->db->query($sql);
     }
 
@@ -215,45 +216,56 @@ class Attendance_model extends Crud_model {
         return $this->db->query($sql);
     }
 
-    function count_total_time($options = array()) {
+    function get_clocked_out_members($options = array()) {
         $attendnace_table = $this->db->dbprefix('attendance');
-        $timesheet_table = $this->db->dbprefix('project_time');
+        $users_table = $this->db->dbprefix('users');
 
+        $where = "";
+        $access_type = get_array_value($options, "access_type");
+        if ($access_type !== "all") {
 
-        $attendance_where = "";
-        $timesheet_where = "";
-        $offset = convert_seconds_to_time_format(get_timezone_offset());
-
-        $start_date = get_array_value($options, "start_date");
-        if ($start_date) {
-            $attendance_where .= " AND DATE(ADDTIME($attendnace_table.in_time,'$offset'))>='$start_date'";
-            $timesheet_where .= " AND DATE(ADDTIME($timesheet_table.start_time,'$offset'))>='$start_date'";
-        }
-        $end_date = get_array_value($options, "end_date");
-        if ($end_date) {
-            $attendance_where .= " AND DATE(ADDTIME($attendnace_table.in_time,'$offset'))<='$end_date'";
-            $timesheet_where .= " AND DATE(ADDTIME($timesheet_table.start_time,'$offset'))<='$end_date'";
-        }
-
-        $user_id = get_array_value($options, "user_id");
-        if ($user_id) {
-            $attendance_where .= " AND $attendnace_table.user_id=$user_id";
-            $timesheet_where .= " AND $timesheet_table.user_id=$user_id";
+            $allowed_members = get_array_value($options, "allowed_members");
+            if (is_array($allowed_members) && count($allowed_members)) {
+                $allowed_members = join(",", $allowed_members);
+            } else {
+                $allowed_members = '0';
+            }
+            $login_user_id = get_array_value($options, "login_user_id");
+            if ($login_user_id) {
+                $allowed_members .= "," . $login_user_id;
+            }
+            $where .= " AND $users_table.id IN ($allowed_members)";
         }
 
-        $info = new stdClass();
-        $attendance_sql = "SELECT  SUM(TIME_TO_SEC(TIMEDIFF($attendnace_table.out_time,$attendnace_table.in_time))) total_sec
-                FROM $attendnace_table 
-                WHERE $attendnace_table.deleted=0 AND $attendnace_table.status!='incomplete' $attendance_where";
-        $info->timecard_total = $this->db->query($attendance_sql)->row()->total_sec;
+        $sql = "SELECT CONCAT($users_table.first_name, ' ',$users_table.last_name) AS member_name, $users_table.last_online, $users_table.image, $users_table.id, $users_table.job_title
+        FROM $users_table
+        WHERE $users_table.deleted=0 AND $users_table.status='active' AND $users_table.user_type='staff' AND $users_table.id NOT IN (SELECT user_id from $attendnace_table WHERE $attendnace_table.deleted=0 AND $attendnace_table.status='incomplete') $where
+        ORDER BY $users_table.first_name DESC";
+        return $this->db->query($sql);
+    }
 
-        $timesheet_sql = "SELECT SUM(TIME_TO_SEC(TIMEDIFF($timesheet_table.end_time,$timesheet_table.start_time))) total_sec
-                FROM $timesheet_table 
-                WHERE $timesheet_table.deleted=0 AND $timesheet_table.status='logged' $timesheet_where";
+    function get_clock_in_out_details_of_all_users($options = array()) {
+        $attendnace_table = $this->db->dbprefix('attendance');
+        $users_table = $this->db->dbprefix('users');
 
-        $info->timesheet_total = $this->db->query($timesheet_sql)->row()->total_sec;
+        $where = "";
 
-        return $info;
+        $id = get_array_value($options, "id");
+        if ($id) {
+            $where .= " AND $users_table.id=$id";
+        }
+
+        $where_in = get_array_value($options, "where_in");
+        if ($where_in) {
+            $where_in_implode = implode(',', $where_in);
+            $where .= " AND $users_table.id IN($where_in_implode)";
+        }
+
+        $sql = "SELECT CONCAT($users_table.first_name, ' ',$users_table.last_name) AS member_name, $users_table.image, $users_table.id, attendance_table.id AS attendance_id, attendance_table.in_time
+        FROM $users_table
+        LEFT JOIN (SELECT user_id, id, in_time FROM $attendnace_table WHERE $attendnace_table.deleted=0 AND $attendnace_table.status='incomplete') AS attendance_table ON attendance_table.user_id=$users_table.id
+        WHERE $users_table.deleted=0 AND $users_table.status='active' AND $users_table.user_type='staff' $where";
+        return $this->db->query($sql);
     }
 
 }

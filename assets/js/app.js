@@ -5,7 +5,6 @@ $(document).ready(function () {
     moment.locale(AppLanugage.locale);
 
     //set locale for datepicker
-    ;
     (function ($) {
         $.fn.datepicker.dates['custom'] = {
             days: AppLanugage.days,
@@ -34,6 +33,14 @@ $(document).ready(function () {
             $("#ajaxModalTitle").html($("#ajaxModalTitle").attr('data-title'));
         }
 
+        if ($(this).attr("data-post-hide-header")) {
+            $("#ajaxModal .modal-header").addClass("hide");
+            $("#ajaxModal .modal-footer").addClass("hide");
+        } else {
+            $("#ajaxModal .modal-header").removeClass("hide");
+            $("#ajaxModal .modal-footer").removeClass("hide");
+        }
+
         $("#ajaxModalContent").html($("#ajaxModalOriginalContent").html());
         $("#ajaxModalContent").find(".original-modal-body").removeClass("original-modal-body").addClass("modal-body");
         $("#ajaxModal").modal('show');
@@ -58,15 +65,12 @@ $(document).ready(function () {
                 }
                 $("#ajaxModalContent").html(response);
 
-                var $scroll = $("#ajaxModalContent").find(".modal-body"),
-                        height = $scroll.height(),
-                        maxHeight = $(window).height() - 200;
-                if (height > maxHeight) {
-                    height = maxHeight;
-                    if ($.fn.mCustomScrollbar) {
-                        $scroll.mCustomScrollbar({setHeight: height, theme: "minimal-dark", autoExpandScrollbar: true});
-                    }
-                }
+                setSummernoteToAll(true);
+
+                setTimeout(function () {
+                    setModalScrollbar();
+                }, 400);
+
             },
             statusCode: {
                 404: function () {
@@ -193,13 +197,14 @@ $(document).ready(function () {
             appLoader.show({container: target, css: "right:50%; bottom:auto;"});
             $.get(loadurl, function (data) {
                 $(target).html(data);
+                selectLastlySelectedTab(target);
             });
         }
         $this.tab('show');
         return false;
     });
-    //auto load first tab
-    $('[data-toggle="ajax-tab"] a').first().trigger("click");
+
+    selectLastlySelectedTab();
 
     $('body').on('click', '[data-toggle="app-modal"]', function () {
         var sidebar = true;
@@ -211,8 +216,55 @@ $(document).ready(function () {
         appContentModal.init({url: $(this).attr("data-url"), sidebar: sidebar});
         return false;
     });
+
+
+
+
+    //prepare common delete confimation
+    var recordDeleteHandler = function (result, $target) {
+        var callbackFunction = $target.attr("data-success-callback");
+
+        if (callbackFunction && typeof window[callbackFunction] != 'undefined') {
+            window[callbackFunction](result, $target);
+
+            if (result.message) {
+                appAlert.warning(result.message, {duration: 20000});
+            }
+
+        }
+    };
+
+    var linkDeleteConfirmationHandler = function (e) {
+        deleteConfirmationHandler(e, recordDeleteHandler);
+    };
+
+
+    //bind the delete confimation modal which links are not in tables. because there is an another logic for datatable.
+    $('body').on('click', 'a[data-action=delete-confirmation]:not(table a)', linkDeleteConfirmationHandler);
+
 });
 
+//select the lastly selected ajax-tab automatically if it exists user-wise
+function selectLastlySelectedTab(target) {
+    if (!target) {
+        target = "";
+    }
+
+    $(target + " [data-toggle='ajax-tab']").each(function () {
+        var tabList = $(this).attr("id"),
+                lastTab = getCookie("user_" + AppHelper.userId + "_" + tabList),
+                $specificTab = $(this).find("[data-target='" + lastTab + "']");
+
+        if (lastTab && $specificTab.attr("data-target")) {
+            setTimeout(function () {
+                $specificTab.trigger("click");
+            }, 200);
+        } else {
+            //load first tab
+            $(this).find("a").first().trigger("click");
+        }
+    });
+}
 
 //custom app form controller
 (function ($) {
@@ -223,6 +275,7 @@ $(document).ready(function () {
             isModal: true,
             closeModalOnSuccess: true,
             dataType: "json",
+            showLoader: true,
             onModalClose: function () {
             },
             onSuccess: function () {
@@ -242,12 +295,49 @@ $(document).ready(function () {
             if (settings.ajaxSubmit) {
                 validateForm($(this), function (form) {
                     settings.onSubmit();
+
+
                     if (settings.isModal) {
                         maskModal($("#ajaxModalContent").find(".modal-body"));
+                    } else {
+                        $(form).find('[type="submit"]').attr('disabled', 'disabled');
                     }
+
+                    //set empty value to all textarea, if they are empty
+                    if (AppHelper.settings.enableRichTextEditor === "1") {
+                        $("textarea").each(function () {
+                            var $instance = $(this);
+                            if ($instance.attr("data-rich-text-editor")) {
+                                if ($instance.val() === '<p><br></p>' || $instance.val() === "") {
+                                    $instance.val('');
+                                } else {
+                                    $instance.val($instance.summernote('code'));
+                                }
+                            }
+                        });
+                    }
+
                     $(form).ajaxSubmit({
                         dataType: settings.dataType,
                         beforeSubmit: function (data, self, options) {
+
+                            //Modified \assets\js\jquery-validation\jquery.form.js #1015.
+                            //Added data  a.push({name: n, value: v, type: el.type, required: el.required, data: $(el).data()});
+
+                            //to set the convertDateFormat with the input fields, we used the setDatePicker function.
+                            //it is the easiest way to regognize the date fields.
+
+                            $.each(data, function (index, obj) {
+                                if (obj.data && obj.data.convertDateFormat && obj.value) {
+                                    data[index]["value"] = convertDateToYMD(obj.value);
+                                }
+                            });
+
+                            if (!settings.isModal && settings.showLoader) {
+                                appLoader.show({container: form, css: "top:2%; right:46%;"});
+                            }
+
+
                             settings.beforeAjaxSubmit(data, self, options);
                         },
                         success: function (result) {
@@ -258,6 +348,17 @@ $(document).ready(function () {
                                 if (settings.isModal && settings.closeModalOnSuccess) {
                                     closeAjaxModal(true);
                                 }
+
+                                //remove summernote from all existing summernote field
+                                if (!settings.isModal) {
+                                    $(form).find("textarea").each(function () {
+                                        if ($(this).attr("data-rich-text-editor")) {
+                                            $(this).summernote('destroy');
+                                        }
+                                    });
+                                }
+
+                                appLoader.hide();
                             } else {
                                 if (settings.onError(result)) {
                                     if (settings.isModal) {
@@ -270,6 +371,8 @@ $(document).ready(function () {
                                     }
                                 }
                             }
+
+                            $(form).find('[type="submit"]').removeAttr('disabled');
                         }
                     });
                 });
@@ -282,6 +385,42 @@ $(document).ready(function () {
          * @customSubmit : execute custom js function insted of form submission. 
          * don't pass the 2nd parameter for regular form submission
          */
+
+        function convertDateToYMD(date) {
+            if (date) {
+                var dateFormat = AppHelper.settings.dateFormat || "Y.m.d",
+                        dateFormat = dateFormat.toLowerCase(),
+                        separator = dateFormat.charAt("1"),
+                        dateFormatArray = dateFormat.split(separator),
+                        yearIndex = 0,
+                        monthIndex = 1,
+                        dayIndex = 2;
+
+                if (dateFormatArray[1] === "y") {
+                    yearIndex = 1;
+                } else if (dateFormatArray[2] === "y") {
+                    yearIndex = 2;
+                }
+
+                if (dateFormatArray[0] === "m") {
+                    monthIndex = 0;
+                } else if (dateFormatArray[2] === "m") {
+                    monthIndex = 2;
+                }
+
+                if (dateFormatArray[0] === "d") {
+                    dayIndex = 0;
+                } else if (dateFormatArray[1] === "d") {
+                    dayIndex = 1;
+                }
+
+                var dateValue = date.split(separator);
+
+                return dateValue[yearIndex] + "-" + dateValue[monthIndex] + "-" + dateValue[dayIndex];
+            }
+
+        }
+
         function validateForm(form, customSubmit) {
             //add custom method
             $.validator.addMethod("greaterThanOrEqual",
@@ -290,12 +429,31 @@ $(document).ready(function () {
                         if (params && (params.indexOf("#") === 0 || params.indexOf(".") === 0)) {
                             paramsVal = $(params).val();
                         }
-                        if (!/Invalid|NaN/.test(new Date(value))) {
-                            return new Date(value) >= new Date(paramsVal);
+
+                        if (typeof $(element).attr("data-rule-required") === 'undefined' && !value) {
+                            return true;
+                        }
+
+                        if (!/Invalid|NaN/.test(new Date(convertDateToYMD(value)))) {
+                            return !paramsVal || (new Date(convertDateToYMD(value)) >= new Date(convertDateToYMD(paramsVal)));
                         }
                         return isNaN(value) && isNaN(paramsVal)
                                 || (Number(value) >= Number(paramsVal));
                     }, 'Must be greater than {0}.');
+
+            //add custom method
+            $.validator.addMethod("greaterThan",
+                    function (value, element, params) {
+                        var paramsVal = params;
+                        if (params && (params.indexOf("#") === 0 || params.indexOf(".") === 0)) {
+                            paramsVal = $(params).val();
+                        }
+                        if (!/Invalid|NaN/.test(new Number(value))) {
+                            return new Number((value)) > new Number((paramsVal));
+                        }
+                        return isNaN(value) && isNaN(paramsVal)
+                                || (Number(value) > Number(paramsVal));
+                    }, 'Must be greater than.');
 
             //add custom method
             $.validator.addMethod("mustBeSameYear",
@@ -304,8 +462,8 @@ $(document).ready(function () {
                         if (params && (params.indexOf("#") === 0 || params.indexOf(".") === 0)) {
                             paramsVal = $(params).val();
                         }
-                        if (!/Invalid|NaN/.test(new Date(value))) {
-                            var dateA = new Date(value), dateB = new Date(paramsVal);
+                        if (!/Invalid|NaN/.test(new Date(convertDateToYMD(value)))) {
+                            var dateA = new Date(convertDateToYMD(value)), dateB = new Date(convertDateToYMD(paramsVal));
                             return (dateA && dateB && dateA.getFullYear() === dateB.getFullYear());
                         }
                     }, 'The year must be same for both dates.');
@@ -347,17 +505,19 @@ $(document).ready(function () {
             if (padding > 0) {
                 padding = Math.floor(padding / 2);
             }
-            $maskTarget.append("<div class='modal-mask'><div class='circle-loader'></div></div>");
+            $maskTarget.after("<div class='modal-mask'><div class='circle-loader'></div></div>");
             //check scrollbar
             var height = $maskTarget.outerHeight();
-            $('.modal-mask').css({"width": $maskTarget.width() + 30 + "px", "height": height + "px", "padding-top": padding + "px"});
+            $('.modal-mask').css({"width": $maskTarget.width() + 22 + "px", "height": height + "px", "padding-top": padding + "px"});
             $maskTarget.closest('.modal-dialog').find('[type="submit"]').attr('disabled', 'disabled');
+            $maskTarget.addClass("hide");
         }
 
         //remove loadig mask from modal
         function unmaskModal() {
-            var $maskTarget = $(".modal-body");
+            var $maskTarget = $(".modal-body").removeClass("hide");
             $maskTarget.closest('.modal-dialog').find('[type="submit"]').removeAttr('disabled');
+            $maskTarget.removeClass("hide");
             $(".modal-mask").remove();
         }
 
@@ -557,6 +717,22 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
         });
     }
 
+    //add a collapse panel button for mobile devices
+    if (settings.isMobile) {
+
+        $instanceWrapper.find(".custom-toolbar").addClass("clearfix");
+
+        if (settings.dateRangeType || typeof settings.checkBoxes[0] !== 'undefined' || typeof settings.multiSelect[0] !== 'undefined' || typeof settings.radioButtons[0] !== 'undefined' || typeof settings.singleDatepicker[0] !== 'undefined' || typeof settings.rangeDatepicker[0] !== 'undefined' || typeof settings.filterDropdown[0] !== 'undefined') {
+
+            var collapsePanelDom = "<div class='pull-right'>\
+                        <button title='" + AppLanugage.filters + "' class='dropdown-toggle btn btn-default mt0' data-toggle='collapse' data-target='#table-collapse-filter' aria-expanded='false'><i class='fa fa-sliders'></i></button>\
+                    </div>\
+                    <div id='table-collapse-filter' class='navbar-collapse collapse w100p'></div>";
+
+            $instanceWrapper.find(".custom-toolbar").append(collapsePanelDom);
+        }
+    }
+
     //bind refresh icon
     if (settings.reloadSelector && $(settings.reloadSelector).length) {
         $(settings.reloadSelector).click(function () {
@@ -565,6 +741,15 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
         });
     }
 
+    //append filter dom
+    var appendFilterDom = function (dom) {
+        if (settings.isMobile) {
+            //append to collapse panel on mobile device
+            $instanceWrapper.find("#table-collapse-filter").append(dom);
+        } else {
+            $instanceWrapper.find(".custom-toolbar").append(dom);
+        }
+    };
 
 
     //build date wise filter selectors
@@ -574,7 +759,8 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
                 + '<button data-act="datepicker" class="btn btn-default" style="margin: -1px"></button>'
                 + '<button data-act="next"  class="btn btn-default date-range-selector"><i class="fa fa-chevron-right"></i></button>'
                 + '</div>';
-        $instanceWrapper.find(".custom-toolbar").append(dateRangeFilterDom);
+
+        appendFilterDom(dateRangeFilterDom);
 
         var $datepicker = $instanceWrapper.find("[data-act='datepicker']"),
                 $dateRangeSelector = $instanceWrapper.find(".date-range-selector");
@@ -802,7 +988,8 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
                 + checkboxes
                 + '</div>'
                 + '</div>';
-        $instanceWrapper.find(".custom-toolbar").append(checkboxDom);
+
+        appendFilterDom(checkboxDom);
 
         var $checkbox = $instanceWrapper.find("[data-act='checkbox']");
         $checkbox.click(function () {
@@ -854,7 +1041,7 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
                     + '</span>'
                     + '</div>';
 
-            $instanceWrapper.find(".custom-toolbar").append(multiSelectDom);
+            appendFilterDom(multiSelectDom);
 
             var $multiselect = $instanceWrapper.find("[data-name='" + option.name + "']");
             $multiselect.click(function () {
@@ -902,7 +1089,8 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
                 + radiobuttons
                 + '</div>'
                 + '</div>';
-        $instanceWrapper.find(".custom-toolbar").append(radioDom);
+
+        appendFilterDom(radioDom);
 
         var $radioButtons = $instanceWrapper.find("[data-act='radio']");
         $radioButtons.click(function () {
@@ -976,7 +1164,8 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
                     + getDatePickerText(selectedText)
                     + '</button>'
                     + '</div>';
-            $instanceWrapper.find(".custom-toolbar").append(selectDom);
+
+            appendFilterDom(selectDom);
 
             var $datePicker = $instanceWrapper.find("[name='" + datePicker.name + "']"),
                     showCustomRange = typeof datePicker.options[1] === 'undefined' ? false : true; //don't show custom range if options not > 1
@@ -1060,7 +1249,7 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
                     + '</div>'
                     + '</div>';
 
-            $instanceWrapper.find(".custom-toolbar").append(selectDom);
+            appendFilterDom(selectDom);
 
             var $datePicker = $instanceWrapper.find(".input-daterange"),
                     inputs = $datePicker.find('button').toArray();
@@ -1123,31 +1312,57 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
         $.each(settings.filterDropdown, function (index, dropdown) {
             var optons = "", selectedValue = "";
 
+            var selectHtmlData = [];
+
             $.each(dropdown.options, function (index, option) {
                 var isSelected = "";
                 if (option.isSelected) {
                     isSelected = "selected";
                     selectedValue = option.id;
                 }
-                optons += '<option ' + isSelected + ' value="' + option.id + '">' + option.text + '</option>';
+
+                if (dropdown.showHtml) {
+                    selectHtmlData.push({
+                        id: option.id,
+                        text: option.text
+                    });
+                } else {
+                    optons += '<option ' + isSelected + ' value="' + option.id + '">' + option.text + '</option>';
+                }
             });
 
             if (dropdown.name) {
                 settings.filterParams[dropdown.name] = selectedValue;
             }
 
-            var selectDom = '<div class="mr15 DTTT_container">'
-                    + '<select class="' + dropdown.class + '" name="' + dropdown.name + '">'
+            var selectDomSelector = '<select class="' + dropdown.class + '" name="' + dropdown.name + '">'
                     + optons
-                    + '</select>'
+                    + '</select>';
+
+            if (dropdown.showHtml) {
+                selectDomSelector = '<input class="' + dropdown.class + '" name="' + dropdown.name + '" />';
+            }
+
+            var selectDom = '<div class="mr15 DTTT_container">'
+                    + selectDomSelector
                     + '</div>';
-            $instanceWrapper.find(".custom-toolbar").append(selectDom);
+
+            appendFilterDom(selectDom);
 
             var $dropdown = $instanceWrapper.find("[name='" + dropdown.name + "']");
             if (window.Select2 !== undefined) {
-                $dropdown.select2();
-            }
+                if (dropdown.showHtml) {
+                    $dropdown.select2({
+                        data: selectHtmlData,
+                        escapeMarkup: function (markup) {
+                            return markup;
+                        }
+                    });
+                } else {
+                    $dropdown.select2();
+                }
 
+            }
 
             $dropdown.change(function () {
                 var $selector = $(this),
@@ -1157,7 +1372,7 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
                 //set the new value to settings
                 settings.filterParams[filterName] = value;
 
-                //check is there any dependent files,
+                //check if there any dependent files,
                 //reset the dependent fields if this value is empty
                 //re-load the dependent fields if this value is not empty
 
@@ -1172,7 +1387,7 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
 
     var prepareDependentFilter = function (filterName, filterValue, filterDropdown, $wrapper, filterParams) {
 
-        //check all droplowns and prepre the dependency dropdown list
+        //check all dropdowns and prepre the dependency dropdown list
 
         $.each(filterDropdown, function (index, option) {
 
@@ -1182,7 +1397,7 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
                 var $dependencySelector = $wrapper.find("select[name=" + option.name + "]"); //select box
 
                 //we'll call ajax to get the data list
-                if (filterValue && option.dataSource) {
+                if (((option.selfDependency && !filterValue) || filterValue) && option.dataSource) {
                     $.ajax({
                         url: option.dataSource,
                         data: filterParams,
@@ -1201,7 +1416,7 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
                                         firstValue = value.id; //auto select the first option in select box
                                     }
 
-                                    newOptions += "<option value='" + value.id + "'>" + value.text + "</option>"
+                                    newOptions += "<option value='" + value.id + "'>" + value.text + "</option>";
                                 });
 
                                 //set the new dropdown list in select box
@@ -1217,10 +1432,11 @@ var buildFilterDom = function (settings, $instanceWrapper, $instance) {
                     var $firstOption = $dependencySelector.find("option:first");
                     $dependencySelector.html("<option value='" + $firstOption.val() + "'>" + $firstOption.html() + "</option>");
                     $dependencySelector.select2("val", $firstOption.val());
-
-                    //reset the filter param
-                    filterParams[option.name] = $firstOption.val();
                 }
+
+                //reset the filter param
+                var $firstOption = $dependencySelector.find("option:first");
+                filterParams[option.name] = $firstOption.val();
 
             }
 
@@ -1248,6 +1464,13 @@ if (typeof TableTools != 'undefined') {
             displayLength = 10;
         }
 
+        var responsive = false;
+        if (AppHelper.settings.disableResponsiveDataTable === "1") {
+            responsive = false;
+        } else if ((AppHelper.settings.disableResponsiveDataTableForMobile !== "1") && (window.outerWidth < 800)) {
+            responsive = true;
+        }
+
         var defaults = {
             source: "", //data url
             xlsColumns: [], // array of excel exportable column numbers
@@ -1266,7 +1489,7 @@ if (typeof TableTools != 'undefined') {
             rangeDatepicker: [], // [{startDate:{name:"", value:""},endDate:{name:"", value:""}}] 
             stateSave: true, //save user state
             isMobile: window.outerWidth < 800 ? true : false,
-            responsive: window.outerWidth < 800 ? true : false, //by default, apply the responsive design only on the mobile view
+            responsive: responsive, //by default, apply the responsive design only on the mobile view
             stateDuration: 60 * 60 * 24 * 60, //remember for 60 days
             columnShowHideOption: true, //show a option to show/hide the columns,
             tableRefreshButton: false, //show a option to refresh the table
@@ -1656,6 +1879,39 @@ if (typeof TableTools != 'undefined') {
                     text: settings.customLanguage.excelButtonText,
                     exportOptions: {
                         columns: ':visible:not(.option)'
+                    },
+                    customize: function (xls) {
+                        //append the total of all pages row, if it exists
+                        if ($instance.find("[data-section='all_pages']") && $instance.find("[data-section='all_pages']").css('display') !== "none") {
+                            var sheet = xls.xl.worksheets['sheet1.xml'];
+
+                            var $sheetSelector = $(sheet.childNodes[0].childNodes[1]);
+                            var thisRowNumber = parseInt($sheetSelector.find("row:last-child").attr("r")) + 1;
+
+                            //here should define the actual position of the item using the abc character
+                            var chars = 'abcdefghijklmnopqrstuvwxyz',
+                                    rowCounted = 0;
+
+                            var rowDom = '<row r="' + thisRowNumber + '">';
+
+                            $instance.find("[data-section='all_pages'] th").each(function () {
+                                if ($(this).text()) {
+                                    rowDom += '<c t="inlineStr" r="' + chars[rowCounted].toUpperCase() + thisRowNumber + '" s="2">';
+                                    rowDom += '<is>';
+                                    rowDom += '<t>' + $(this).text() + '</t>';
+                                    rowDom += '</is>';
+                                    rowDom += '</c>';
+                                }
+
+                                //increase the position variable
+                                rowCounted = rowCounted + 1;
+                            });
+
+                            rowDom += '</row>';
+
+                            //add the row finally
+                            sheet.childNodes[0].childNodes[1].innerHTML = sheet.childNodes[0].childNodes[1].innerHTML + rowDom;
+                        }
                     }
                 });
 
@@ -1699,6 +1955,12 @@ if (typeof TableTools != 'undefined') {
                     },
                     customize: function (win) {
                         $(win.document.body).closest("html").addClass("dt-print-view");
+
+                        //append the total of all pages row, if it exists
+                        if ($instance.find("[data-section='all_pages']") && $instance.find("[data-section='all_pages']").css('display') !== "none") {
+                            var totalOfAllPagesClone = $instance.find("[data-section='all_pages']").clone();
+                            $(win.document.body).find("tfoot").append(totalOfAllPagesClone);
+                        }
                     },
                     customizeData: function (a, b, c) {
 
@@ -1844,73 +2106,38 @@ if (typeof TableTools != 'undefined') {
         };
 
 
-        var deleteHandler = function (e) {
-            appLoader.show();
-            var $target = $(e.currentTarget);
+        var rowDeleteHandler = function (result, $target) {
+            var tr = $target.closest('tr'),
+                    table = $instance.DataTable(),
+                    undo = $target.attr('data-undo'),
+                    url = $target.attr('data-action-url'),
+                    id = $target.attr('data-id');
 
-            if (e.data && e.data.target) {
-                $target = e.data.target;
+            oTable.fnDeleteRow(table.row(tr).index(), function () {
+                table.page(table.page()).draw('page');
+            }, false);
+
+            var alertId = appAlert.warning(result.message, {duration: 20000});
+
+            //fire success callback
+            settings.onDeleteSuccess(result);
+
+            //bind undo selector
+            if (undo !== "0") {
+                undoHandler({
+                    alertSelector: alertId,
+                    url: url,
+                    id: id
+                });
             }
-
-            var url = $target.attr('data-action-url'),
-                    id = $target.attr('data-id'),
-                    undo = $target.attr('data-undo');
-            $.ajax({
-                url: url,
-                type: 'POST',
-                dataType: 'json',
-                data: {id: id},
-                success: function (result) {
-                    if (result.success) {
-                        var tr = $target.closest('tr'),
-                                table = $instance.DataTable();
-
-                        oTable.fnDeleteRow(table.row(tr).index(), function () {
-                            table.page(table.page()).draw('page');
-                        }, false);
-
-                        var alertId = appAlert.warning(result.message, {duration: 20000});
-
-                        //fire success callback
-                        settings.onDeleteSuccess(result);
-
-                        //bind undo selector
-                        if (undo !== "0") {
-                            undoHandler({
-                                alertSelector: alertId,
-                                url: url,
-                                id: id
-                            });
-                        }
-                    } else {
-                        appAlert.error(result.message);
-                    }
-                    appLoader.hide();
-                }
-            });
         };
 
-        var deleteConfirmationHandler = function (e) {
-            var $deleteButton = $("#confirmDeleteButton"),
-                    $target = $(e.currentTarget);
-            //copy attributes
+        var appTableDeleteConfirmationHandler = function (e) {
+            deleteConfirmationHandler(e, rowDeleteHandler);
+        };
 
-            $(this).each(function () {
-                $.each(this.attributes, function () {
-                    if (this.specified && this.name.match("^data-")) {
-                        $deleteButton.attr(this.name, this.value);
-                    }
-
-                });
-            });
-
-            $target.attr("data-undo", "0"); //don't show undo
-
-            //bind click event
-            $deleteButton.unbind("click");
-            $deleteButton.on("click", {target: $target}, deleteHandler);
-
-            $("#confirmationModal").modal('show');
+        var appTableSimpleDeleteHandler = function (e) {
+            deleteHandler(e, rowDeleteHandler);
         };
 
         var updateHandler = function (e) {
@@ -1944,8 +2171,8 @@ if (typeof TableTools != 'undefined') {
 
 
 
-        $('body').find($instance).on('click', '[data-action=delete]', deleteHandler);
-        $('body').find($instance).on('click', '[data-action=delete-confirmation]', deleteConfirmationHandler);
+        $('body').find($instance).on('click', 'a[data-action=delete]', appTableSimpleDeleteHandler);
+        $('body').find($instance).on('click', 'a[data-action=delete-confirmation]', appTableDeleteConfirmationHandler);
         $('body').find($instance).on('click', '[data-action=update]', updateHandler);
 
         $.fn.dataTableExt.oApi.getSettings = function (oSettings) {
@@ -1994,6 +2221,71 @@ if (typeof TableTools != 'undefined') {
 
     };
 })(jQuery);
+
+
+deleteHandler = function (e, callback) {
+    appLoader.show();
+    var $target = $(e.currentTarget);
+
+    if (e.data && e.data.target) {
+        $target = e.data.target;
+    }
+
+    var url = $target.attr('data-action-url'),
+            id = $target.attr('data-id'),
+            reloadOnSuccess = $target.attr('data-reload-on-success');
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        dataType: 'json',
+        data: {id: id},
+        success: function (result) {
+            if (result.success) {
+
+                if (callback) {
+                    callback(result, $target);
+                }
+
+                if (reloadOnSuccess) {
+                    location.reload();
+                }
+
+            } else {
+                appAlert.error(result.message);
+            }
+            appLoader.hide();
+        }
+    });
+}
+
+
+deleteConfirmationHandler = function (e, callback) {
+    var $deleteButton = $("#confirmDeleteButton"),
+            $target = $(e.currentTarget);
+    //copy attributes
+
+    $target.each(function () {
+        $.each(this.attributes, function () {
+            if (this.specified && this.name.match("^data-")) {
+                $deleteButton.attr(this.name, this.value);
+            }
+
+        });
+    });
+
+    $target.attr("data-undo", "0"); //don't show undo
+
+    //bind click event
+    $deleteButton.unbind("click");
+    $deleteButton.on("click", {target: $target}, function (e) {
+        deleteHandler(e, callback);
+    });
+
+    $("#confirmationModal").modal('show');
+};
+
+
 
 // appAlert
 (function (define) {
@@ -2254,7 +2546,7 @@ function replaceAll(find, replace, str) {
                                     </div>";
                 var controlIcon = "<i class='fa fa-expand expand hidden-xs'></i>";
 
-                if (settings.sidebar === false) {
+                if (settings.sidebar === false || isMobile()) {
                     sidebar = "";
                     controlIcon = "<div class='app-modal-close app-modal-fixed-close-button'><span>&times;</span></div>";
                 }
@@ -2413,7 +2705,70 @@ function replaceAll(find, replace, str) {
                 });
 
 
+            } else if (settings.dateRangeType === "monthly") {
+
+                var initMonthSelectorText = function ($elector) {
+                    $elector.html(moment(settings.filterParams.start_date).format("MMMM YYYY"));
+                };
+
+                //prepareDefaultDateRangeFilterParams();
+                initMonthSelectorText($datepicker);
+
+                //bind the click events
+                $datepicker.datepicker({
+                    format: "YYYY-MM",
+                    viewMode: "months",
+                    minViewMode: "months",
+                    autoclose: true,
+                    language: "custom",
+                }).on('changeDate', function (e) {
+                    var date = moment(e.date).format(settings._inputDateFormat);
+                    var daysInMonth = moment(date).daysInMonth(),
+                            yearMonth = moment(date).format("YYYY-MM");
+                    settings.filterParams.start_date = yearMonth + "-01";
+                    settings.filterParams.end_date = yearMonth + "-" + daysInMonth;
+                    initMonthSelectorText($datepicker);
+                    settings.onChange(settings.filterParams);
+                });
+
+                //init default date
+                var year = moment().format("YYYY-MM");
+                settings.filterParams.start_date = year + "-01";
+                settings.filterParams.end_date = year + "-31";
+                settings.filterParams.year = year;
+                settings.onInit(settings.filterParams);
+
+                $dateRangeSelector.click(function () {
+                    var type = $(this).attr("data-act"),
+                            startDate = moment(settings.filterParams.start_date),
+                            endDate = moment(settings.filterParams.end_date);
+                    if (type === "next") {
+                        var nextMonth = startDate.add(1, 'months'),
+                                daysInMonth = nextMonth.daysInMonth(),
+                                yearMonth = nextMonth.format("YYYY-MM");
+
+                        startDate = yearMonth + "-01";
+                        endDate = yearMonth + "-" + daysInMonth;
+
+                    } else if (type === "prev") {
+                        var lastMonth = startDate.subtract(1, 'months'),
+                                daysInMonth = lastMonth.daysInMonth(),
+                                yearMonth = lastMonth.format("YYYY-MM");
+
+                        startDate = yearMonth + "-01";
+                        endDate = yearMonth + "-" + daysInMonth;
+                    }
+
+                    settings.filterParams.start_date = startDate;
+                    settings.filterParams.end_date = endDate;
+                    settings.filterParams.year = moment(startDate).format("YYYY-MM");
+
+                    initMonthSelectorText($datepicker);
+                    settings.onChange(settings.filterParams);
+                });
             }
+
+
         });
     };
 })(jQuery);
@@ -2461,6 +2816,7 @@ var loadFilterView = function (settings) {
             filterDropdown: [], // [{id: 10, text:'Caption', isSelected:true}] 
             singleDatepicker: [], // [{name: '', value:'', options:[]}] 
             rangeDatepicker: [], // [{startDate:{name:"", value:""},endDate:{name:"", value:""}}] 
+            isMobile: window.outerWidth < 800 ? true : false,
             filterParams: {customFilter: true}, //will post this vales on source url
             search: {show: false},
             customLanguage: {
@@ -2690,37 +3046,228 @@ showHideAppTableColumn = function (tableInstance, columnIndex, visible) {
     };
 })(jQuery);
 
-//appMention using at.js
+//custom multi-select controller
 (function ($) {
-
-    $.fn.appMention = function (options) {
+    $.fn.appMultiSelect = function (options) {
 
         var defaults = {
-            at: "@",
-            dataType: "json",
-            source: "",
-            data: {}
+            text: "",
+            options: [],
+            onChange: function (values) {
+            },
+            onInit: function (values) {
+            }
+        };
+        var settings = $.extend({}, defaults, options);
+
+        this.each(function () {
+
+            var $instance = $(this);
+
+            var multiSelect = "", values = [];
+
+            $.each(settings.options, function (index, listOption) {
+                var active = "";
+
+                if (listOption.isChecked) {
+                    active = " active";
+                    values.push(listOption.id);
+                }
+                //<li class=" list-group-item clickable toggle-table-column" data-column="1">ID</li>
+                multiSelect += '<li class="list-group-item clickable ' + active + '" data-name="' + settings.name + '" data-value="' + listOption.id + '">';
+                multiSelect += listOption.text;
+                multiSelect += '</li>';
+            });
+
+            multiSelect = "<ul class='list-group dropdown-menu' data-act='multiselect'>" + multiSelect + "</ul>";
+
+            var dom = '<div class="mr15 DTTT_container custom-toolbar">'
+                    + '<span class="dropdown inline-block filter-multi-select">'
+                    + '<button class="btn btn-default dropdown-toggle " type="button" data-toggle="dropdown" aria-expanded="true">' + settings.text + ' <span class="caret"></span> </button>'
+                    + multiSelect
+                    + '</span>'
+                    + '</div>';
+
+            $instance.append(dom);
+            settings.onInit(values);
+
+            var $multiselect = $instance.find("[data-name='" + settings.name + "']");
+            $multiselect.click(function () {
+                var $selector = $(this);
+                $selector.toggleClass("active");
+                setTimeout(function () {
+                    var values = [];
+                    $selector.parent().find("li").each(function () {
+                        if ($(this).hasClass("active")) {
+                            values.push($(this).attr("data-value"));
+                        }
+                    });
+                    settings.onChange(values);
+                });
+                return false;
+            });
+        });
+    };
+})(jQuery);
+
+//instant popover modifier
+(function ($) {
+    $.fn.appModifier = function (options) {
+
+        var defaults = {
+            actionUrl: "", //the url where the response will go after modification
+            value: "", //existing value
+            actionType: "select2", //action type
+            showbuttons: false, //show submit/cancel button
+            datepicker: {}, //options for datepicker
+            select2Option: {}, //options for select2
+            placement: "auto", //popover placement
+            dataType: 'json',
+            onSuccess: function () {
+            }
         };
 
         var settings = $.extend({}, defaults, options);
 
-        var selector = this;
+        var $instance = $(this);
+        var tempId = getRandomAlphabet(5);
 
-        $.ajax({
-            url: settings.source,
-            data: settings.data,
-            dataType: settings.dataType,
-            method: "POST",
-            success: function (result) {
-                if (result.success) {
-                    $(selector).atwho({
-                        at: settings.at,
-                        data: result.data,
-                        insertTpl: '${content}'
-                    });
+        //prepare submit or close buttons
+        var buttonDom = "";
+        if (settings.showbuttons) {
+            buttonDom = "<div class='custom-popover-button-area mt10 clearfix'>\n\
+                            <div id='custom-popover-submit-btn-" + tempId + "' class='col-md-6 pl0 pr5'><button class='btn btn-primary btn-sm w100p'><i class='fa fa-check'></i></button></div>\n\
+                            <div class='col-md-6 pr0 pl5 custom-popover-close-btn'><button class='btn btn-default btn-sm w100p'><i class='fa fa-close'></i></button></div>\n\
+                        </div>";
+        }
+
+        //prepare container dom
+        var containerDom = "";
+        if (settings.actionType === "select2") {
+            containerDom = "<input id='" + tempId + "' value='" + settings.value + "' type='text' class='form-control' /> " + buttonDom;
+        } else if (settings.actionType === "date") {
+            var dateFormat = getJsDateFormat();
+            var dateArray = settings.value.split("-"),
+                    year = dateArray[0],
+                    month = dateArray[1],
+                    day = dateArray[2];
+            var dateValue = dateFormat.replace("yyyy", year).replace("mm", month).replace("dd", day);
+
+            containerDom = "<div style='height: 240px;' id='" + tempId + "'  data-date='" + dateValue + "' data-date-format='" + dateFormat + "'></div>"; //set height first for right popover position
+        }
+
+        var template = "<div class='popover app-popover out' role='tooltip'>\n\
+                                <div class='arrow'></div>\n\
+                                <div class='popover-body'>\n\
+                                    <div class='loader-container inline-loader hide'>\n\
+                                    </div>\n\
+                                    " + containerDom + "\n\
+                                </div>\n\
+                            </div>";
+
+        $instance.on('shown.bs.popover', function () {
+            var $currentInstance = $(this),
+                    currentId = $currentInstance.attr("aria-describedby"),
+                    firstLoad = false;
+
+            if ($currentInstance.attr("data-hasppover") !== "1") {
+                firstLoad = true;
+                $currentInstance.attr("data-hasppover", "1");
+                $(".popover").popover("hide");
+
+                setTimeout(function () {
+                    $currentInstance.popover("show");
+                    $(".app-popover").removeClass("out");
+                }, 200);
+            }
+
+            $(".popover").each(function () {
+                if ($(this).attr("id") === currentId && !firstLoad) {
+                    $(this).removeClass("out");
+                } else {
+                    $(this).addClass("out");
                 }
+            });
+        });
+
+        $instance.popover({
+            html: true,
+            template: template,
+            placement: settings.placement,
+            content: function () {
+                return " ";
             }
         });
 
+        if (!$instance.attr("popover-opened")) {
+            $instance.popover('show');
+        }
+
+        var $inputField = $("#" + tempId);
+
+        if (settings.actionType === "select2") {
+            //select2 
+            if (settings.showbuttons) {
+                //submit with buttons
+                $inputField.select2(settings.select2Option);
+            } else {
+                $inputField.select2(settings.select2Option).change(function (action) {
+                    initAjaxAction($instance, $(this).val(), settings, action["added"]["text"]);
+                });
+            }
+        } else if (settings.actionType === "date") {
+            settings.datepicker.onChangeDate = function (response) {
+                initAjaxAction($instance, response, settings);
+            };
+
+            setDatePicker("#" + tempId, settings.datepicker);
+        }
+
+        //submit button
+        $("div#custom-popover-submit-btn-" + tempId).click(function () {
+            initAjaxAction($instance, $inputField.val(), settings);
+        });
+
+        //close button
+        $(".custom-popover-close-btn").click(function () {
+            $instance.popover('hide'); //hide popover
+        });
+
+        //flag that first popover is opened for this
+        $instance.attr("popover-opened", true);
+
+        function initAjaxAction($instance, value, settings, changedText) {
+            var popoverContentHeight = $inputField.closest(".popover-body").height();
+            var popoverContentWidth = $inputField.closest(".popover-body").width();
+            $inputField.closest(".popover-body").find(".loader-container").removeClass("hide").css({"height": popoverContentHeight, "width": popoverContentWidth});
+            $inputField.closest(".popover-body").find(".custom-popover-button-area").addClass("hide");
+            $inputField.addClass("hide");
+
+            $.ajax({
+                url: settings.actionUrl,
+                type: 'POST',
+                dataType: settings.dataType,
+                data: {value: value},
+                success: function (result) {
+                    $instance.popover('hide'); //hide popover
+                    setTimeout(function () {
+                        $inputField.closest(".popover-body").find(".loader-container").addClass("hide");
+                        $inputField.closest(".popover-body").find(".custom-popover-button-area").removeClass("hide");
+                        $inputField.removeClass("hide");
+                    }, 200);
+
+                    if (result.success) {
+                        settings.onSuccess(result);
+
+                        //update for select2
+                        if (changedText) {
+                            $instance.text(changedText);
+                        }
+                    } else {
+                        appAlert.error(result.message);
+                    }
+                }
+            });
+        }
     };
 })(jQuery);

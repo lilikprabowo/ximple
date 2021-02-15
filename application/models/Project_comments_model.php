@@ -7,7 +7,6 @@ class Project_comments_model extends Crud_model {
     function __construct() {
         $this->table = 'project_comments';
         parent::__construct($this->table);
-        parent::init_activity_log("project_comment", "description", "project", "project_id");
     }
 
     function schema() {
@@ -69,6 +68,7 @@ class Project_comments_model extends Crud_model {
 
     function get_details($options = array()) {
         $project_comments_table = $this->db->dbprefix('project_comments');
+        $likes_table = $this->db->dbprefix('likes');
         $users_table = $this->db->dbprefix('users');
         $where = "";
         $id = get_array_value($options, "id");
@@ -96,6 +96,12 @@ class Project_comments_model extends Crud_model {
             $where .= " AND $project_comments_table.customer_feedback_id=$customer_feedback_id";
         }
 
+        $extra_select = "";
+        $login_user_id = get_array_value($options, "login_user_id");
+        if ($login_user_id) {
+            $extra_select = ", (SELECT count($likes_table.id) FROM $likes_table WHERE $likes_table.project_comment_id=$project_comments_table.id AND $likes_table.deleted=0 AND $likes_table.created_by=$login_user_id) as like_status";
+        }
+
 
         //show the main comments in descending mode
         //but show the replies in ascedning mode
@@ -109,7 +115,11 @@ class Project_comments_model extends Crud_model {
         }
 
         $sql = "SELECT $project_comments_table.*, $project_comments_table.id AS parent_commment_id, CONCAT($users_table.first_name, ' ',$users_table.last_name) AS created_by_user, $users_table.image as created_by_avatar, $users_table.user_type,
-            (SELECT COUNT($project_comments_table.id) as total_replies FROM $project_comments_table WHERE $project_comments_table.comment_id=parent_commment_id) AS total_replies
+            (SELECT COUNT($project_comments_table.id) as total_replies FROM $project_comments_table WHERE $project_comments_table.comment_id=parent_commment_id) AS total_replies,
+            (SELECT GROUP_CONCAT(' ', $users_table.first_name, ' ', $users_table.last_name) 
+                    FROM $users_table
+                    WHERE $users_table.deleted=0 AND $users_table.user_type!='lead' AND $users_table.id IN(SELECT $likes_table.created_by FROM $likes_table WHERE $likes_table.deleted=0 AND $likes_table.project_comment_id=$project_comments_table.id)) AS comment_likers,
+            (SELECT COUNT($likes_table.id) as total_likes FROM $likes_table WHERE $likes_table.project_comment_id=$project_comments_table.id AND $likes_table.deleted=0) AS total_likes $extra_select
         FROM $project_comments_table
         LEFT JOIN $users_table ON $users_table.id= $project_comments_table.created_by
         WHERE $project_comments_table.deleted=0 $where
@@ -124,6 +134,11 @@ class Project_comments_model extends Crud_model {
         $file_id = get_array_value($data, "file_id");
         $task_id = get_array_value($data, "task_id");
         $customer_feedback_id = get_array_value($data, "customer_feedback_id");
+
+        if (get_array_value($data, "description")) {
+            parent::init_activity_log("project_comment", "description", "project", "project_id");
+        }
+
         if ($comment_id) {
             $comment_info = parent::get_one($comment_id);
             $reply_type = "project_comment_reply";
@@ -154,7 +169,10 @@ class Project_comments_model extends Crud_model {
         } else if ($task_id) {
             $task_info = $this->Tasks_model->get_one($task_id);
             $data["project_id"] = $task_info->project_id;
-            parent::init_activity_log("task_comment", "description", "project", "project_id", "task", "task_id");
+
+            if (get_array_value($data, "description")) {
+                parent::init_activity_log("task_comment", "description", "project", "project_id", "task", "task_id");
+            }
         } else if ($customer_feedback_id) {
             $data["project_id"] = $customer_feedback_id;
             parent::init_activity_log("customer_feedback", "description", "project", "project_id", "customer_feedback", "customer_feedback_id");

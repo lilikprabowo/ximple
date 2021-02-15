@@ -34,6 +34,7 @@ class Paypal_ipn extends CI_Controller {
                 }
             }
 
+            $this->login_user = new stdClass();
 
             //set login user id = contact id for future processing
             $this->login_user->id = get_array_value($custom_array, "contact_user_id");
@@ -57,7 +58,7 @@ class Paypal_ipn extends CI_Controller {
 
             if ($invoice_payment_id) {
                 //As receiving payment for the invoice, we'll remove the 'draft' status from the invoice 
-                $this->Invoices_model->set_invoice_status_to_not_paid($invoice_id);
+                $this->Invoices_model->update_invoice_status($invoice_id);
 
                 log_notification("invoice_payment_confirmation", array("invoice_payment_id" => $invoice_payment_id, "invoice_id" => $invoice_id), "0");
                 log_notification("invoice_online_payment_received", array("invoice_payment_id" => $invoice_payment_id, "invoice_id" => $invoice_id), $this->login_user->id);

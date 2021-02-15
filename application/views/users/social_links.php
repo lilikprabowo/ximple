@@ -2,10 +2,17 @@
     <?php
     $reload_url = get_uri("team_members/view/" . $user_id . "/social");
     $save_url = get_uri("team_members/save_social_links/" . $user_id);
-    if (isset($user_type) && $user_type === "client") {
-        $reload_url = "";
-        $save_url = get_uri("clients/save_contact_social_links/" . $user_id);
+
+    if (isset($user_type)) {
+        if ($user_type === "client") {
+            $reload_url = "";
+            $save_url = get_uri("clients/save_contact_social_links/" . $user_id);
+        } else if ($user_type === "lead") {
+            $reload_url = "";
+            $save_url = get_uri("leads/save_contact_social_links/" . $user_id);
+        }
     }
+
     echo form_open($save_url, array("id" => "social-links-form", "class" => "general-form dashed-row white", "role" => "form"));
     ?>
     <div class="panel">
@@ -84,7 +91,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="youtube" class=" col-md-2">youtube</label>
+                <label for="youtube" class=" col-md-2">Youtube</label>
                 <div class=" col-md-10">
                     <?php
                     echo form_input(array(

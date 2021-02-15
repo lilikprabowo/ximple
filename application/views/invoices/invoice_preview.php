@@ -39,6 +39,8 @@
                             $this->load->view("invoices/_stripe_payment_form", $pass_variables);
                         } else if ($method_type == "paypal_payments_standard") {
                             $this->load->view("invoices/_paypal_payments_standard_form", $pass_variables);
+                        } else if ($method_type == "paytm") {
+                            $this->load->view("invoices/_paytm_payment_form", $pass_variables);
                         }
                     }
                 }
@@ -56,11 +58,12 @@
         }
 
 
-        if ($show_close_preview)
-            echo "<div class='text-center'>" . anchor("invoices/view/" . $invoice_info->id, lang("close_preview"), array("class" => "btn btn-default round")) . "</div>"
-            ?>
+        if ($show_close_preview) {
+            echo "<div class='text-center'>" . anchor("invoices/view/" . $invoice_info->id, lang("close_preview"), array("class" => "btn btn-default round")) . "</div>";
+        }
+        ?>
 
-        <div class="bg-white mt15 p30">
+        <div class="invoice-preview-container bg-white mt15">
             <div class="col-md-12">
                 <div class="ribbon"><?php echo $invoice_status_label; ?></div>
             </div>

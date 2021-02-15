@@ -11,8 +11,8 @@
             rangeDatepicker: [{startDate: {name: "start_date", value: moment().format("YYYY-MM-DD")}, endDate: {name: "end_date", value: moment().format("YYYY-MM-DD")}}],
             columns: [
                 {visible: false},
-                {title: "<?php echo lang("duration"); ?>"},
-                {title: "<?php echo lang("hours"); ?>"}
+                {title: "<?php echo lang("duration"); ?>", "class": "text-right"},
+                {title: "<?php echo lang("hours"); ?>",  "class": "text-right"}
             ],
             printColumns: [1, 2],
             xlsColumns: [1, 2]

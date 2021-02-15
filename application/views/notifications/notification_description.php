@@ -1,17 +1,34 @@
 <?php
+
 if ($notification->task_id && $notification->task_title) {
     echo "<div>" . lang("task") . ": #$notification->task_id - " . $notification->task_title . "</div>";
 }
 
 if ($notification->activity_log_changes !== "") {
-    $changes = unserialize($notification->activity_log_changes);
-    if (is_array($changes)) {
+    $final_changes_array = isset($changes_array) ? $changes_array : array();
+
+    if (!count($final_changes_array)) {
+        if ($notification->event === "bitbucket_push_received" || $notification->event === "github_push_received") {
+            $final_changes_array = get_change_logs_array($notification->activity_log_changes, $notification->activity_log_type, $notification->event, true);
+        } else {
+            $final_changes_array = get_change_logs_array($notification->activity_log_changes, $notification->activity_log_type, "all");
+        }
+    }
+
+    if (count($final_changes_array)) {
+        if ($notification->event === "bitbucket_push_received" || $notification->event === "github_push_received") {
+            echo get_array_value($final_changes_array, 0);
+            unset($final_changes_array[0]);
+        }
+
         echo "<ul>";
-        foreach ($changes as $field => $value) {
-            ?>
-            <li><?php echo get_change_logs($notification->activity_log_type, $field, $value); ?></li>
-            <?php
-        } echo "</ul>";
+        foreach ($final_changes_array as $change) {
+            //don't show the change log if there is any anchor tag
+            if (!strpos($change, "</a>")) {
+                echo $change;
+            }
+        }
+        echo "</ul>";
     }
 }
 
@@ -31,7 +48,7 @@ if ($notification->leave_id && $notification->leave_start_date) {
     echo "<div>" . lang("date") . ": " . $leave_date . "</div>";
 }
 
-if ($notification->project_comment_id && $notification->project_comment_title) {
+if ($notification->project_comment_id && $notification->project_comment_title && !strpos($notification->project_comment_title, "</a>")) {
     echo "<div>" . lang("comment") . ": " . convert_mentions($notification->project_comment_title, false) . "</div>";
 }
 
@@ -48,10 +65,18 @@ if ($notification->estimate_id) {
     echo "<div>" . get_estimate_id($notification->estimate_id) . "</div>";
 }
 
+if ($notification->order_id) {
+    echo "<div>" . get_order_id($notification->order_id) . "</div>";
+}
+
 if ($notification->event_title) {
     echo "<div>" . lang("event") . ": " . $notification->event_title . "</div>";
 }
 
 if ($notification->announcement_title) {
     echo "<div>" . lang("title") . ": " . $notification->announcement_title . "</div>";
+}
+
+if ($notification->post_id && $notification->posts_title) {
+    echo "<div>" . lang("comment") . ": " . $notification->posts_title . "</div>";
 }

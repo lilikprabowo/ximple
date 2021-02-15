@@ -53,26 +53,48 @@ class Estimates extends MY_Controller {
         ));
 
         $client_id = $this->input->post('client_id');
-        $view_data['model_info'] = $this->Estimates_model->get_one($this->input->post('id'));
+        $model_info = $this->Estimates_model->get_one($this->input->post('id'));
 
-
-        $project_client_id = $client_id;
-        if ($view_data['model_info']->client_id) {
-            $project_client_id = $view_data['model_info']->client_id;
+        //check if order_id posted. if found order_id, so, we'll show the order info to copy the order 
+        $order_id = $this->input->post('order_id');
+        $view_data['order_id'] = $order_id;
+        if ($order_id) {
+            $order_info = $this->Orders_model->get_one($order_id);
+            $now = get_my_local_time("Y-m-d");
+            $model_info->estimate_date = $now;
+            $model_info->valid_until = $now;
+            $model_info->client_id = $order_info->client_id;
+            $model_info->tax_id = $order_info->tax_id;
+            $model_info->tax_id2 = $order_info->tax_id2;
         }
+
+        $view_data['model_info'] = $model_info;
+
+        $estimate_request_id = $this->input->post('estimate_request_id');
+        $view_data['estimate_request_id'] = $estimate_request_id;
 
         //make the drodown lists
         $view_data['taxes_dropdown'] = array("" => "-") + $this->Taxes_model->get_dropdown_list(array("title"));
-        $view_data['clients_dropdown'] = array("" => "-") + $this->Clients_model->get_dropdown_list(array("company_name"));
+        $view_data['clients_dropdown'] = $this->get_clients_and_leads_dropdown();
+
+        //don't show clients dropdown for lead's estimate editing
+        $client_info = $this->Clients_model->get_one($view_data['model_info']->client_id);
+        if ($client_info->is_lead) {
+            $client_id = $client_info->id;
+        }
 
         $view_data['client_id'] = $client_id;
+
+        //clone estimate data
+        $is_clone = $this->input->post('is_clone');
+        $view_data['is_clone'] = $is_clone;
 
         $view_data["custom_fields"] = $this->Custom_fields_model->get_combined_details("estimates", $view_data['model_info']->id, $this->login_user->is_admin, $this->login_user->user_type)->result();
 
         $this->load->view('estimates/modal_form', $view_data);
     }
 
-    /* add or edit an estimate */
+    /* add, edit or clone an estimate */
 
     function save() {
         $this->access_only_allowed_members();
@@ -81,7 +103,8 @@ class Estimates extends MY_Controller {
             "id" => "numeric",
             "estimate_client_id" => "required|numeric",
             "estimate_date" => "required",
-            "valid_until" => "required"
+            "valid_until" => "required",
+            "estimate_request_id" => "numeric"
         ));
 
         $client_id = $this->input->post('estimate_client_id');
@@ -96,10 +119,67 @@ class Estimates extends MY_Controller {
             "note" => $this->input->post('estimate_note')
         );
 
+        $is_clone = $this->input->post('is_clone');
+        $estimate_request_id = $this->input->post('estimate_request_id');
+
+        //estimate creation from estimate request
+        //store the estimate request id for the first time only
+        //don't copy estimate request id on cloning too
+        if ($estimate_request_id && !$id && !$is_clone) {
+            $estimate_data["estimate_request_id"] = $estimate_request_id;
+        }
+
+        $main_estimate_id = "";
+        if ($is_clone && $id) {
+            $main_estimate_id = $id; //store main estimate id to get items later
+            $id = ""; //on cloning estimate, save as new
+            //save discount when cloning
+            $estimate_data["discount_amount"] = $this->input->post('discount_amount') ? $this->input->post('discount_amount') : 0;
+            $estimate_data["discount_amount_type"] = $this->input->post('discount_amount_type') ? $this->input->post('discount_amount_type') : "percentage";
+            $estimate_data["discount_type"] = $this->input->post('discount_type') ? $this->input->post('discount_type') : "before_tax";
+        }
+
         $estimate_id = $this->Estimates_model->save($estimate_data, $id);
         if ($estimate_id) {
 
-            save_custom_fields("estimates", $estimate_id, $this->login_user->is_admin, $this->login_user->user_type);
+            if ($is_clone && $main_estimate_id) {
+                //add estimate items
+
+                save_custom_fields("estimates", $estimate_id, 1, "staff"); //we have to keep this regarding as an admin user because non-admin user also can acquire the access to clone a estimate
+
+                $estimate_items = $this->Estimate_items_model->get_all_where(array("estimate_id" => $main_estimate_id, "deleted" => 0))->result();
+
+                foreach ($estimate_items as $estimate_item) {
+                    //prepare new estimate item data
+                    $estimate_item_data = (array) $estimate_item;
+                    unset($estimate_item_data["id"]);
+                    $estimate_item_data['estimate_id'] = $estimate_id;
+
+                    $estimate_item = $this->Estimate_items_model->save($estimate_item_data);
+                }
+            } else {
+                save_custom_fields("estimates", $estimate_id, $this->login_user->is_admin, $this->login_user->user_type);
+            }
+
+            //submitted copy_items_from_order? copy all items from order
+            $copy_items_from_order = $this->input->post("copy_items_from_order");
+            if ($copy_items_from_order) {
+                $order_items = $this->Order_items_model->get_details(array("order_id" => $copy_items_from_order))->result();
+
+                foreach ($order_items as $data) {
+                    $estimate_item_data = array(
+                        "estimate_id" => $estimate_id,
+                        "title" => $data->title ? $data->title : "",
+                        "description" => $data->description ? $data->description : "",
+                        "quantity" => $data->quantity ? $data->quantity : 0,
+                        "unit_type" => $data->unit_type ? $data->unit_type : "",
+                        "rate" => $data->rate ? $data->rate : 0,
+                        "total" => $data->total ? $data->total : 0,
+                    );
+
+                    $this->Estimate_items_model->save($estimate_item_data);
+                }
+            }
 
             echo json_encode(array("success" => true, "data" => $this->_row_data($estimate_id), 'id' => $estimate_id, 'message' => lang('record_saved')));
         } else {
@@ -125,6 +205,11 @@ class Estimates extends MY_Controller {
                     //create notification
                     if ($status == "accepted") {
                         log_notification("estimate_accepted", array("estimate_id" => $estimate_id));
+
+                        //estimate accepted, create a new project
+                        if (get_setting("create_new_projects_automatically_when_estimates_gets_accepted")) {
+                            $this->_create_project_from_estimate($estimate_id);
+                        }
                     } else if ($status == "declined") {
                         log_notification("estimate_rejected", array("estimate_id" => $estimate_id));
                     }
@@ -132,15 +217,41 @@ class Estimates extends MY_Controller {
             } else {
                 //updating by team members
 
-                if ($status == "sent" || $status == "accepted" || $status == "declined") {
+                if ($status == "accepted" || $status == "declined") {
                     $estimate_data = array("status" => $status);
                     $estimate_id = $this->Estimates_model->save($estimate_data, $estimate_id);
 
-                    //create notification
-                    if ($status == "sent") {
-                        log_notification("estimate_sent", array("estimate_id" => $estimate_id));
+                    //estimate accepted, create a new project
+                    if (get_setting("create_new_projects_automatically_when_estimates_gets_accepted")) {
+                        if ($status == "accepted") {
+                            $this->_create_project_from_estimate($estimate_id);
+                        }
                     }
                 }
+            }
+        }
+    }
+
+    /* create new project from accepted estimate */
+
+    private function _create_project_from_estimate($estimate_id) {
+        if ($estimate_id) {
+            $estimate_info = $this->Estimates_model->get_one($estimate_id);
+
+            //don't create new project if there has already been created a new project with this estimate
+            if (!$this->Projects_model->get_one_where(array("estimate_id" => $estimate_id))->id) {
+                $data = array(
+                    "title" => get_estimate_id($estimate_info->id),
+                    "client_id" => $estimate_info->client_id,
+                    "start_date" => $estimate_info->estimate_date,
+                    "deadline" => $estimate_info->valid_until,
+                    "estimate_id" => $estimate_id
+                );
+                $save_id = $this->Projects_model->save($data);
+
+                //save the project id
+                $data = array("project_id" => $save_id);
+                $this->Estimates_model->save($data, $estimate_id);
             }
         }
     }
@@ -236,9 +347,14 @@ class Estimates extends MY_Controller {
             $estimate_url = anchor(get_uri("estimates/preview/" . $data->id), get_estimate_id($data->id));
         }
 
+        $client = anchor(get_uri("clients/view/" . $data->client_id), $data->company_name);
+        if ($data->is_lead) {
+            $client = anchor(get_uri("leads/view/" . $data->client_id), $data->company_name);
+        }
+
         $row_data = array(
             $estimate_url,
-            anchor(get_uri("clients/view/" . $data->client_id), $data->company_name),
+            $client,
             $data->estimate_date,
             format_to_date($data->estimate_date, false),
             to_currency($data->estimate_value, $data->currency_symbol),
@@ -282,7 +398,7 @@ class Estimates extends MY_Controller {
             $estimate_status_class = "label-warning";
         }
 
-        $estimate_status = "<span class='label $estimate_status_class large'>" . lang($estimate_info->status) . "</span>";
+        $estimate_status = "<span class='mt0 label $estimate_status_class large'>" . lang($estimate_info->status) . "</span>";
         if ($return_html) {
             return $estimate_status;
         } else {
@@ -306,6 +422,10 @@ class Estimates extends MY_Controller {
                 $access_info = $this->get_access_info("invoice");
                 $view_data["show_invoice_option"] = (get_setting("module_invoice") && $access_info->access_type == "all") ? true : false;
 
+                $view_data["can_create_projects"] = $this->can_create_projects();
+
+                $view_data["estimate_id"] = $estimate_id;
+
                 $this->template->rander("estimates/view", $view_data);
             } else {
                 show_404();
@@ -317,7 +437,54 @@ class Estimates extends MY_Controller {
 
     private function _get_estimate_total_view($estimate_id = 0) {
         $view_data["estimate_total_summary"] = $this->Estimates_model->get_estimate_total_summary($estimate_id);
+        $view_data["estimate_id"] = $estimate_id;
         return $this->load->view('estimates/estimate_total_section', $view_data, true);
+    }
+
+    /* load discount modal */
+
+    function discount_modal_form() {
+        $this->access_only_allowed_members();
+
+        validate_submitted_data(array(
+            "estimate_id" => "required|numeric"
+        ));
+
+        $estimate_id = $this->input->post('estimate_id');
+
+        $view_data['model_info'] = $this->Estimates_model->get_one($estimate_id);
+
+        $this->load->view('estimates/discount_modal_form', $view_data);
+    }
+
+    /* save discount */
+
+    function save_discount() {
+        $this->access_only_allowed_members();
+
+        validate_submitted_data(array(
+            "estimate_id" => "required|numeric",
+            "discount_type" => "required",
+            "discount_amount" => "numeric",
+            "discount_amount_type" => "required"
+        ));
+
+        $estimate_id = $this->input->post('estimate_id');
+
+        $data = array(
+            "discount_type" => $this->input->post('discount_type'),
+            "discount_amount" => $this->input->post('discount_amount'),
+            "discount_amount_type" => $this->input->post('discount_amount_type')
+        );
+
+        $data = clean_data($data);
+
+        $save_data = $this->Estimates_model->save($data, $estimate_id);
+        if ($save_data) {
+            echo json_encode(array("success" => true, "estimate_total_view" => $this->_get_estimate_total_view($estimate_id), 'message' => lang('record_saved'), "estimate_id" => $estimate_id));
+        } else {
+            echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
+        }
     }
 
     /* load item modal */
@@ -435,13 +602,14 @@ class Estimates extends MY_Controller {
     /* prepare a row of estimate item list table */
 
     private function _make_item_row($data) {
-        $item = "<b>$data->title</b>";
+        $item = "<div class='item-row strong mb5' data-id='$data->id'><i class='fa fa-bars pull-left move-icon'></i> $data->title</div>";
         if ($data->description) {
-            $item .= "<br /><span>" . nl2br($data->description) . "</span>";
+            $item .= "<span style='margin-left:25px'>" . nl2br($data->description) . "</span>";
         }
         $type = $data->unit_type ? $data->unit_type : "";
 
         return array(
+            $data->sort,
             $item,
             to_decimal_format($data->quantity) . " " . $type,
             to_currency($data->rate, $data->currency_symbol),
@@ -504,7 +672,7 @@ class Estimates extends MY_Controller {
         }
     }
 
-    function download_pdf($estimate_id = 0) {
+    function download_pdf($estimate_id = 0, $mode = "download") {
         if ($estimate_id) {
             $estimate_data = get_estimate_making_data($estimate_id);
             $this->_check_estimate_access_permission($estimate_data);
@@ -513,7 +681,7 @@ class Estimates extends MY_Controller {
                 @ob_clean();
             //so, we have a valid estimate data. Prepare the view.
 
-            prepare_estimate_pdf($estimate_data, "download");
+            prepare_estimate_pdf($estimate_data, $mode);
         } else {
             show_404();
         }
@@ -542,6 +710,130 @@ class Estimates extends MY_Controller {
         $view_data["estimate_info"] = $this->Estimates_model->get_details(array("id" => $estimate_id))->row();
         $view_data['estimate_status_label'] = $this->_get_estimate_status_label($view_data["estimate_info"]);
         $this->load->view('estimates/estimate_status_bar', $view_data);
+    }
+
+    function send_estimate_modal_form($estimate_id) {
+        $this->access_only_allowed_members();
+
+        if ($estimate_id) {
+            $options = array("id" => $estimate_id);
+            $estimate_info = $this->Estimates_model->get_details($options)->row();
+            $view_data['estimate_info'] = $estimate_info;
+
+            $is_lead = $this->input->post('is_lead');
+            if ($is_lead) {
+                $contacts_options = array("user_type" => "lead", "client_id" => $estimate_info->client_id);
+            } else {
+                $contacts_options = array("user_type" => "client", "client_id" => $estimate_info->client_id);
+            }
+
+            $contacts = $this->Users_model->get_details($contacts_options)->result();
+            $contact_first_name = "";
+            $contact_last_name = "";
+            $contacts_dropdown = array();
+            foreach ($contacts as $contact) {
+                if ($contact->is_primary_contact) {
+                    $contact_first_name = $contact->first_name;
+                    $contact_last_name = $contact->last_name;
+                    $contacts_dropdown[$contact->id] = $contact->first_name . " " . $contact->last_name . " (" . lang("primary_contact") . ")";
+                }
+            }
+
+            foreach ($contacts as $contact) {
+                if (!$contact->is_primary_contact) {
+                    $contacts_dropdown[$contact->id] = $contact->first_name . " " . $contact->last_name;
+                }
+            }
+
+            $view_data['contacts_dropdown'] = $contacts_dropdown;
+
+            $email_template = $this->Email_templates_model->get_final_template("estimate_sent");
+
+            $parser_data["ESTIMATE_ID"] = $estimate_info->id;
+            $parser_data["CONTACT_FIRST_NAME"] = $contact_first_name;
+            $parser_data["CONTACT_LAST_NAME"] = $contact_last_name;
+            $parser_data["PROJECT_TITLE"] = $estimate_info->project_title;
+            $parser_data["ESTIMATE_URL"] = get_uri("estimates/preview/" . $estimate_info->id);
+            $parser_data['SIGNATURE'] = $email_template->signature;
+            $parser_data["LOGO_URL"] = get_logo_url();
+
+            $view_data['message'] = $this->parser->parse_string($email_template->message, $parser_data, TRUE);
+            $view_data['subject'] = $email_template->subject;
+
+            $this->load->view('estimates/send_estimate_modal_form', $view_data);
+        } else {
+            show_404();
+        }
+    }
+
+    function send_estimate() {
+        $this->access_only_allowed_members();
+
+        validate_submitted_data(array(
+            "id" => "required|numeric"
+        ));
+
+        $estimate_id = $this->input->post('id');
+
+        $contact_id = $this->input->post('contact_id');
+        $cc = $this->input->post('estimate_cc');
+
+        $custom_bcc = $this->input->post('estimate_bcc');
+        $subject = $this->input->post('subject');
+        $message = decode_ajax_post_data($this->input->post('message'));
+
+        $contact = $this->Users_model->get_one($contact_id);
+
+        $estimate_data = get_estimate_making_data($estimate_id);
+        $attachement_url = prepare_estimate_pdf($estimate_data, "send_email");
+
+        $default_bcc = get_setting('send_estimate_bcc_to');
+        $bcc_emails = "";
+
+        if ($default_bcc && $custom_bcc) {
+            $bcc_emails = $default_bcc . "," . $custom_bcc;
+        } else if ($default_bcc) {
+            $bcc_emails = $default_bcc;
+        } else if ($custom_bcc) {
+            $bcc_emails = $custom_bcc;
+        }
+
+        if (send_app_mail($contact->email, $subject, $message, array("attachments" => array(array("file_path" => $attachement_url)), "cc" => $cc, "bcc" => $bcc_emails))) {
+            // change email status
+            $status_data = array("status" => "sent", "last_email_sent_date" => get_my_local_time());
+            if ($this->Estimates_model->save($status_data, $estimate_id)) {
+                echo json_encode(array('success' => true, 'message' => lang("estimate_sent_message"), "estimate_id" => $estimate_id));
+            }
+            // delete the temp estimate
+            if (file_exists($attachement_url)) {
+                unlink($attachement_url);
+            }
+        } else {
+            echo json_encode(array('success' => false, 'message' => lang('error_occurred')));
+        }
+    }
+
+    //update the sort value for estimate item
+    function update_item_sort_values($id = 0) {
+
+        $sort_values = $this->input->post("sort_values");
+        if ($sort_values) {
+
+            //extract the values from the comma separated string
+            $sort_array = explode(",", $sort_values);
+
+
+            //update the value in db
+            foreach ($sort_array as $value) {
+                $sort_item = explode("-", $value); //extract id and sort value
+
+                $id = get_array_value($sort_item, 0);
+                $sort = get_array_value($sort_item, 1);
+
+                $data = array("sort" => $sort);
+                $this->Estimate_items_model->save($data, $id);
+            }
+        }
     }
 
 }

@@ -13,6 +13,7 @@
                     "class" => "form-control",
                     "placeholder" => lang('note'),
                     "value" => $model_info->note,
+                    "data-rich-text-editor" => true
                 ));
                 ?>
             </div>

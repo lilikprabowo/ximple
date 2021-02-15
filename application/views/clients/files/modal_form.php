@@ -3,8 +3,8 @@
     <input type="hidden" name="client_id" value="<?php echo $client_id; ?>" />
     <?php
     $this->load->view("includes/multi_file_uploader", array(
-        "upload_url" =>get_uri("clients/upload_file"),
-        "validation_url" =>get_uri("clients/validate_file"),
+        "upload_url" => get_uri("clients/upload_file"),
+        "validation_url" => get_uri("clients/validate_file"),
     ));
     ?>
 </div>

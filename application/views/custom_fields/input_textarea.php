@@ -8,4 +8,5 @@ echo form_textarea(array(
     "placeholder" => $field_info->placeholder,
     "data-rule-required" => $field_info->required ? true : false,
     "data-msg-required" => lang("field_required"),
+    "data-rich-text-editor" => true
 ));

@@ -38,7 +38,7 @@
             ],
             printColumns: [0, 1, 2, 3, 4],
             xlsColumns: [0, 1, 2, 3, 4],
-            summation: [{column: 4, dataType: 'currency', currencySymbol: currencySymbol}]
+            summation: [{column: 5, dataType: 'currency', currencySymbol: currencySymbol}]
         });
 
     });

@@ -39,6 +39,11 @@ class Custom_fields_model extends Crud_model {
             $where .= " AND $custom_fields_table.show_in_estimate=1";
         }
 
+        $show_in_order = get_array_value($options, "show_in_order");
+        if ($show_in_order) {
+            $where .= " AND $custom_fields_table.show_in_order=1";
+        }
+
         $sql = "SELECT $custom_fields_table.*
         FROM $custom_fields_table
         WHERE $custom_fields_table.deleted=0 $where 
@@ -127,6 +132,19 @@ class Custom_fields_model extends Crud_model {
                 ORDER BY $custom_fields_table.sort ASC";
 
         return $this->db->query($sql)->result();
+    }
+
+    function get_email_template_variables_array($related_to, $related_to_id = 0, $is_admin = 0, $user_type = "") {
+        $tickets_template_variables = $this->get_combined_details($related_to, $related_to_id, $is_admin, $user_type)->result();
+        $variables_array = array();
+
+        foreach ($tickets_template_variables as $variable) {
+            if ($variable->example_variable_name) {
+                array_push($variables_array, $variable->example_variable_name);
+            }
+        }
+
+        return $variables_array;
     }
 
 }

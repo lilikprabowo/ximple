@@ -30,6 +30,7 @@
                 "placeholder" => lang('description'),
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required"),
+                "data-rich-text-editor" => true
             ));
             ?>
         </div>
@@ -45,6 +46,7 @@
                 "value" => $model_info->start_date,
                 "class" => "form-control",
                 "placeholder" => lang('start_date'),
+                "autocomplete" => "off",
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required"),
             ));
@@ -83,6 +85,7 @@
                 "value" => $model_info->end_date,
                 "class" => "form-control",
                 "placeholder" => lang('end_date'),
+                "autocomplete" => "off",
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required"),
                 "data-rule-greaterThanOrEqual" => "#start_date",
@@ -215,7 +218,7 @@
                             "name" => "share_with",
                             "value" => "specific_client_contacts",
                             "class" => "toggle_specific",
-                                ), $model_info->share_with, ($model_info->share_with && $model_info->share_with != "all" && $model_info->share_with_specific != "member") ? true : false);
+                                ), $model_info->share_with, ($model_info->share_with && $model_info->share_with != "all" && $model_info->share_with_specific != "member" && $model_info->share_with_specific != "team") ? true : false);
                         ?>
                         <label for="share_with_client_contact_radio_button"><?php echo lang("specific_client_contacts"); ?>:</label>
                         <div class="specific_dropdown" style="display: none;">
@@ -229,8 +232,8 @@
     <?php } ?>
 
     <div class="form-group">
-        <label for="event_recurring" class=" col-md-3"><?php echo lang('repeat'); ?></label>
-        <div class=" col-md-9">
+        <label for="event_recurring" class=" col-md-3 col-xs-5 col-sm-4"><?php echo lang('repeat'); ?></label>
+        <div class=" col-md-9 col-xs-7 col-sm-8">
             <?php
             echo form_checkbox("recurring", "1", $model_info->recurring ? true : false, "id='event_recurring'");
             ?>                       
@@ -239,8 +242,8 @@
 
     <div id="recurring_fields" class="<?php if (!$model_info->recurring) echo "hide"; ?>"> 
         <div class="form-group">
-            <label for="repeat_every" class=" col-md-3"><?php echo lang('repeat_every'); ?></label>
-            <div class="col-md-4">
+            <label for="repeat_every" class=" col-md-3 col-xs-12"><?php echo lang('repeat_every'); ?></label>
+            <div class="col-md-4 col-xs-6">
                 <?php
                 echo form_input(array(
                     "id" => "repeat_every",
@@ -255,7 +258,7 @@
                 ));
                 ?>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-5 col-xs-6">
                 <?php
                 echo form_dropdown(
                         "repeat_type", array(
@@ -312,7 +315,9 @@
     $(document).ready(function () {
         $("#event-form").appForm({
             onSuccess: function (result) {
-                $("#event-calendar").fullCalendar('refetchEvents');
+                if ($("#event-calendar").length) {
+                    $("#event-calendar").fullCalendar('refetchEvents');
+                }
             }
         });
         setDatePicker("#start_date, #end_date");
@@ -324,9 +329,10 @@
 
         get_specific_dropdown($("#share_with_specific"), <?php echo ($members_and_teams_dropdown); ?>);
 
-        var shareWithType = "<?php echo $model_info->share_with_specific; ?>";
+
         var clientId = "<?php echo $model_info->client_id; ?>";
-        if (shareWithType === "contact") {
+
+        if (clientId && clientId != "0") {
             prepareShareWithClientContactsDropdown(clientId);
         }
 
@@ -342,18 +348,19 @@
                     url: "<?php echo get_uri("events/get_all_contacts_of_client") ?>" + "/" + clientId,
                     dataType: "json",
                     success: function (result) {
-                       
-                        if(result.length){
+
+                        if (result.length) {
                             get_specific_dropdown($("#share_with_specific_client_contact"), result);
-                        }else{
+                        } else {
                             //if no client contact exists, then don't show the share with client contacts option
-                           $("#share-with-client-contact").addClass("hide");
-                           prepareShareWithClientContactsDropdown();
+                            $("#share-with-client-contact").addClass("hide");
+                            prepareShareWithClientContactsDropdown();
                         }
-                        
+
                     }
                 });
             } else {
+                $("#share-with-client-contact").addClass("hide");
                 var $element = $(".toggle_specific:checked");
                 if ($element.val() === "specific_client_contacts") {
                     //unselect the specific_client_contacts
@@ -390,9 +397,7 @@
             }
         }
 
-        $("#event_labels").select2({
-            tags: <?php echo json_encode($label_suggestions); ?>
-        });
+        $("#event_labels").select2({multiple: true, data: <?php echo json_encode($label_suggestions); ?>});
 
         $("#event-form .select2").select2();
 

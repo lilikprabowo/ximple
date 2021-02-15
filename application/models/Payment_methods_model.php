@@ -15,7 +15,7 @@ class Payment_methods_model extends Crud_model {
             "stripe" => array(
                 array("name" => "pay_button_text", "text" => lang("pay_button_text"), "type" => "text", "default" => "Stripe"),
                 array("name" => "secret_key", "text" => "Secret Key", "type" => "text", "default" => ""),
-                array("name" => "publishable_key", "text" => "Publishable Key", "type" => "text", "default" => "")
+                array("name" => "publishable_key", "text" => "Publishable Key", "type" => "text", "default" => ""),
             ),
             "paypal_payments_standard" => array(
                 array("name" => "pay_button_text", "text" => lang("pay_button_text"), "type" => "text", "default" => "PayPal Standard"),
@@ -30,7 +30,15 @@ class Payment_methods_model extends Crud_model {
                 array("name" => "api_password", "text" => "API Password", "type" => "text", "default" => ""),
                 array("name" => "api_signature", "text" => "API Signature", "type" => "text", "default" => ""),
                 array("name" => "paypal_live", "text" => "Paypal Live", "type" => "boolean", "default" => "0")
-            )
+            ),
+            "paytm" => array(
+                array("name" => "pay_button_text", "text" => lang("pay_button_text"), "type" => "text", "default" => "Paytm"),
+                array("name" => "paytm_testing_environment", "text" => lang("testing_environment"), "type" => "boolean", "default" => "0"),
+                array("name" => "merchant_id", "text" => "Merchant ID", "type" => "text", "default" => ""),
+                array("name" => "secret_key", "text" => "Secret Key", "type" => "text", "default" => ""),
+                array("name" => "merchant_website", "text" => "Merchant Website", "type" => "text", "default" => ""),
+                array("name" => "industry_type", "text" => "Industry Type", "type" => "text", "default" => ""),
+            ),
         );
         if ($type) {
             return get_array_value($settings, $type);

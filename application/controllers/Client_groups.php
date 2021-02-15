@@ -12,7 +12,7 @@ class Client_groups extends MY_Controller {
 
     //load client groups list view
     function index() {
-        $this->load->view("client_groups/index");
+        $this->template->rander("client_groups/index");
     }
 
     //load client groups add/edit modal form
@@ -20,7 +20,7 @@ class Client_groups extends MY_Controller {
         validate_submitted_data(array(
             "id" => "numeric"
         ));
-        
+
         $view_data['model_info'] = $this->Client_groups_model->get_one($this->input->post('id'));
         $this->load->view('client_groups/modal_form', $view_data);
     }

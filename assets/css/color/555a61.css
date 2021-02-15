@@ -81,6 +81,8 @@ a:active{
     background: #363a3f; 
 }
 
-.atwho-view .cur{
-    background-color: #555a61;
+.atwho-view .cur, 
+.note-hint-group .active, 
+.note-hint-item:hover{
+    background-color: #555a61 !important;
 }

@@ -33,7 +33,7 @@
             echo "<div class='text-center'>" . anchor("estimates/view/" . $estimate_info->id, lang("close_preview"), array("class" => "btn btn-default round")) . "</div>"
             ?>
 
-        <div class="bg-white mt15 p30">
+        <div class="invoice-preview-container bg-white mt15">
             <div class="col-md-12">
                 <div class="ribbon"><?php echo $estimate_status_label; ?></div>
             </div>

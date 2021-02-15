@@ -2,7 +2,7 @@
 $url = "attendance/save_note";
 
 if ($clock_out == "1") {
-    $url = "attendance/log_time";
+    $url = "attendance/log_time/$user_id";
 }
 
 echo form_open(get_uri($url), array("id" => "attendance-note-form", "class" => "general-form", "role" => "form"));
@@ -20,6 +20,7 @@ echo form_open(get_uri($url), array("id" => "attendance-note-form", "class" => "
                 "class" => "form-control",
                 "placeholder" => lang('note'),
                 "value" => $model_info->note,
+                "data-rich-text-editor" => true
             ));
             ?>
         </div>
@@ -38,7 +39,7 @@ echo form_open(get_uri($url), array("id" => "attendance-note-form", "class" => "
         $("#attendance-note-form").appForm({
             onSuccess: function (result) {
                 if (result.clock_widget) {
-                   $("#timecard-clock-out").closest(".widget-container").html(result.clock_widget);
+                    $("#timecard-clock-out").closest("#js-clock-in-out").html(result.clock_widget);
                 } else {
                     if (result.isUpdate) {
                         $(".dataTable:visible").appTable({newData: result.data, dataId: result.id});

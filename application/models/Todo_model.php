@@ -30,8 +30,9 @@ class Todo_model extends Crud_model {
             $where .= " AND FIND_IN_SET($todo_table.status,'$status')";
         }
 
+        $select_labels_data_query = $this->get_labels_data_query();
 
-        $sql = "SELECT $todo_table.*
+        $sql = "SELECT $todo_table.*, $select_labels_data_query
         FROM $todo_table
         WHERE $todo_table.deleted=0 $where";
         return $this->db->query($sql);
@@ -43,6 +44,20 @@ class Todo_model extends Crud_model {
         FROM $todo_table
         WHERE $todo_table.deleted=0 AND $todo_table.created_by=$user_id";
         return $this->db->query($sql)->row()->label_groups;
+    }
+
+    function get_search_suggestion($search = "", $created_by = 0) {
+        $todo_table = $this->db->dbprefix('to_do');
+
+        $search = $this->db->escape_str($search);
+
+        $sql = "SELECT $todo_table.id, $todo_table.title
+        FROM $todo_table  
+        WHERE $todo_table.deleted=0 AND $todo_table.created_by=$created_by AND $todo_table.title LIKE '%$search%'
+        ORDER BY $todo_table.title ASC
+        LIMIT 0, 10";
+
+        return $this->db->query($sql);
     }
 
 }

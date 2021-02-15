@@ -8,7 +8,7 @@ echo form_input(array(
     "name" => "search",
     "value" => "",
     "autocomplete" => "false",
-    "class" => "form-control type-$type",
+    "class" => "form-control help-search-box type-$type",
     "placeholder" => lang('search_your_question')
 ));
 ?>

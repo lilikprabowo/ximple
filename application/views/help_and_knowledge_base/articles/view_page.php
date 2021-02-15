@@ -44,5 +44,15 @@
     $(document).ready(function () {
         //load message notifications
         $("#help-page-content").css({"min-height": $(window).height() - 110 + "px"});
+
+<?php if (isset($scroll_to_content)) { ?>
+            if (isMobile()) {
+                //scroll to the content for mobile devices
+                setTimeout(function () {
+                    window.scrollTo(0, $("#help-page-content").offset().top - 60);
+                }, 200);
+            }
+<?php } ?>
+
     });
 </script>

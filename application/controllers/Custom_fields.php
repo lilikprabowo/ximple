@@ -56,12 +56,16 @@ class Custom_fields extends MY_Controller {
         $data = array(
             "title" => $this->input->post('title'),
             "placeholder" => $this->input->post('placeholder'),
+            "example_variable_name" => strtoupper($this->input->post('example_variable_name')),
             "required" => $this->input->post('required') ? 1 : 0,
             "show_in_table" => $this->input->post('show_in_table') ? 1 : 0,
             "show_in_invoice" => $this->input->post('show_in_invoice') ? 1 : 0,
             "show_in_estimate" => $this->input->post('show_in_estimate') ? 1 : 0,
+            "show_in_order" => $this->input->post('show_in_order') ? 1 : 0,
             "visible_to_admins_only" => $this->input->post('visible_to_admins_only') ? 1 : 0,
             "hide_from_clients" => $this->input->post('hide_from_clients') ? 1 : 0,
+            "disable_editing_by_clients" => $this->input->post('disable_editing_by_clients') ? 1 : 0,
+            "show_on_kanban_card" => $this->input->post('show_on_kanban_card') ? 1 : 0,
             "related_to" => $this->input->post('related_to'),
             "options" => $this->input->post('options') ? $this->input->post('options') : ""
         );
@@ -113,7 +117,7 @@ class Custom_fields extends MY_Controller {
             $required = "*";
         }
 
-        $field = "<label data-id='$data->id' class='field-row'>$data->title $required</label>";
+        $field = "<label for='custom_field_$data->id' data-id='$data->id' class='field-row'>$data->title $required</label>";
         $field .= "<div class='form-group'>" . $this->load->view("custom_fields/input_" . $data->field_type, array("field_info" => $data), true) . "</div>";
 
 
@@ -173,8 +177,16 @@ class Custom_fields extends MY_Controller {
         }
     }
 
-    function contacts() {
-        $this->load->view('custom_fields/settings/contacts');
+    function leads() {
+        $this->load->view('custom_fields/settings/leads');
+    }
+
+    function client_contacts() {
+        $this->load->view('custom_fields/settings/client_contacts');
+    }
+
+    function lead_contacts() {
+        $this->load->view('custom_fields/settings/lead_contacts');
     }
 
     function projects() {
@@ -209,6 +221,13 @@ class Custom_fields extends MY_Controller {
         $this->load->view('custom_fields/settings/estimates');
     }
 
+    function orders() {
+        $this->load->view('custom_fields/settings/orders');
+    }
+
+    function timesheets() {
+        $this->load->view('custom_fields/settings/timesheets');
+    }
 }
 
 /* End of file custom_fields.php */

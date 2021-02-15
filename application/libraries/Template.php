@@ -10,10 +10,14 @@ class Template {
 
         $view_data['content_view'] = $view;
         $view_data['topbar'] = "includes/topbar";
-        $view_data['left_menu'] = "includes/left_menu";
-        
+
+        if (!isset($data["left_menu"])) {
+            $ci->load->library("left_menu");
+            $view_data['left_menu'] = $ci->left_menu->rander_left_menu();
+        }
+
         $view_data = array_merge($view_data, $data);
-        
+
         $ci->load->view('layout/index', $view_data);
     }
 

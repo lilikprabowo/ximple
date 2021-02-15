@@ -30,17 +30,6 @@ class Team_members extends MY_Controller {
         }
     }
 
-    private function can_view_team_members_list() {
-        if ($this->login_user->user_type == "staff") {
-            if (get_array_value($this->login_user->permissions, "hide_team_members_list") == "1") {
-                return false;
-            } else {
-                return true; //all members can see team members except the selected roles
-            }
-        }
-        return false;
-    }
-
     private function update_only_allowed_members($user_id) {
         if ($this->can_update_team_members_info($user_id)) {
             return true; //own profile
@@ -133,7 +122,7 @@ class Team_members extends MY_Controller {
 
         $user_data = array(
             "email" => $this->input->post('email'),
-            "password" => md5($this->input->post('password')),
+            "password" => password_hash($this->input->post("password"), PASSWORD_DEFAULT),
             "first_name" => $this->input->post('first_name'),
             "last_name" => $this->input->post('last_name'),
             "is_admin" => $this->input->post('is_admin'),
@@ -230,9 +219,20 @@ class Team_members extends MY_Controller {
         $send_email = array();
 
         foreach ($email_array as $email) {
-            //make the invitation url with 24hrs validity
-            $key = encode_id($this->encryption->encrypt('staff|' . $email . '|' . (time() + (24 * 60 * 60))), "signup");
-            $parser_data['INVITATION_URL'] = get_uri("signup/accept_invitation/" . $key);
+            $verification_data = array(
+                "type" => "invitation",
+                "code" => make_random_string(),
+                "params" => serialize(array(
+                    "email" => $email,
+                    "type" => "staff",
+                    "expire_time" => time() + (24 * 60 * 60) //make the invitation url with 24hrs validity
+                ))
+            );
+
+            $save_id = $this->Verification_model->save($verification_data);
+            $verification_info = $this->Verification_model->get_one($save_id);
+
+            $parser_data['INVITATION_URL'] = get_uri("signup/accept_invitation/" . $verification_info->code);
 
             //send invitation email
             $message = $this->parser->parse_string($email_template->message, $parser_data, TRUE);
@@ -414,10 +414,22 @@ class Team_members extends MY_Controller {
                     $view_data['show_projects'] = true;
                 }
 
+                $view_data['show_projects_count'] = false;
+                if ($this->can_manage_all_projects()) {
+                    $view_data['show_projects_count'] = true;
+                }
 
                 $view_data['tab'] = $tab; //selected tab
                 $view_data['user_info'] = $user_info;
                 $view_data['social_link'] = $this->Social_links_model->get_one($id);
+
+                $hide_send_message_button = true;
+                $this->init_permission_checker("message_permission");
+                if ($this->check_access_on_messages_for_this_user() && $this->validate_sending_message($id)) {
+                    $hide_send_message_button = false;
+                }
+                $view_data['hide_send_message_button'] = $hide_send_message_button;
+
                 $this->template->rander("team_members/view", $view_data);
             } else {
                 show_404();
@@ -580,21 +592,33 @@ class Team_members extends MY_Controller {
     function my_preferences() {
         $view_data["user_info"] = $this->Users_model->get_one($this->login_user->id);
 
+        //language dropdown
+        $view_data['language_dropdown'] = array();
+        if (!get_setting("disable_language_selector_for_team_members")) {
+            $view_data['language_dropdown'] = get_language_list();
+        }
+
+        $view_data["hidden_topbar_menus_dropdown"] = $this->get_hidden_topbar_menus_dropdown();
+        $view_data["recently_meaning_dropdown"] = $this->get_recently_meaning_dropdown();
+
         $this->load->view("team_members/my_preferences", $view_data);
     }
 
     function save_my_preferences() {
         //setting preferences
-        $settings = array("notification_sound_volume");
+        $settings = array("notification_sound_volume", "disable_push_notification", "hidden_topbar_menus", "disable_keyboard_shortcuts", "recently_meaning");
+
+        if (!get_setting("disable_language_selector_for_team_members")) {
+            array_push($settings, "personal_language");
+        }
 
         foreach ($settings as $setting) {
             $value = $this->input->post($setting);
-            if ($value || $value === "0") {
-
-                $value = clean_data($value);
-
-                $this->Settings_model->save_setting("user_" . $this->login_user->id . "_" . $setting, $value, "user");
+            if (is_null($value)) {
+                $value = "";
             }
+
+            $this->Settings_model->save_setting("user_" . $this->login_user->id . "_" . $setting, $value, "user");
         }
 
         //there was 2 settings in users table.
@@ -611,6 +635,15 @@ class Team_members extends MY_Controller {
         $this->Users_model->save($user_data, $this->login_user->id);
 
         echo json_encode(array("success" => true, 'message' => lang('settings_updated')));
+    }
+
+    function save_personal_language($language) {
+        if (!get_setting("disable_language_selector_for_team_members") && ($language || $language === "0")) {
+
+            $language = clean_data($language);
+
+            $this->Settings_model->save_setting("user_" . $this->login_user->id . "_personal_language", strtolower($language), "user");
+        }
     }
 
     //prepare the dropdown list of roles
@@ -658,7 +691,7 @@ class Team_members extends MY_Controller {
 
         //don't reset password if user doesn't entered any password
         if ($this->input->post('password')) {
-            $account_data['password'] = md5($this->input->post('password'));
+            $account_data['password'] = password_hash($this->input->post("password"), PASSWORD_DEFAULT);
         }
 
         if ($this->Users_model->save($account_data, $user_id)) {
@@ -671,12 +704,16 @@ class Team_members extends MY_Controller {
     //save profile image of a team member
     function save_profile_image($user_id = 0) {
         $this->update_only_allowed_members($user_id);
+        $user_info = $this->Users_model->get_one($user_id);
 
         //process the the file which has uploaded by dropzone
         $profile_image = str_replace("~", ":", $this->input->post("profile_image"));
 
         if ($profile_image) {
-            $profile_image = move_temp_file("avatar.png", get_setting("profile_image_path"), "", $profile_image);
+            $profile_image = serialize(move_temp_file("avatar.png", get_setting("profile_image_path"), "", $profile_image));
+
+            //delete old file
+            delete_app_files(get_setting("profile_image_path"), array(@unserialize($user_info->image)));
 
             $image_data = array("image" => $profile_image);
 
@@ -689,7 +726,11 @@ class Team_members extends MY_Controller {
             $profile_image_file = get_array_value($_FILES, "profile_image_file");
             $image_file_name = get_array_value($profile_image_file, "tmp_name");
             if ($image_file_name) {
-                $profile_image = move_temp_file("avatar.png", get_setting("profile_image_path"), "", $image_file_name);
+                $profile_image = serialize(move_temp_file("avatar.png", get_setting("profile_image_path"), "", $image_file_name));
+
+                //delete old file
+                delete_app_files(get_setting("profile_image_path"), array(@unserialize($user_info->image)));
+
                 $image_data = array("image" => $profile_image);
                 $this->Users_model->save($image_data, $user_id);
                 echo json_encode(array("success" => true, 'message' => lang('profile_image_changed')));
@@ -797,11 +838,13 @@ class Team_members extends MY_Controller {
         if ($files && get_array_value($files, 0)) {
             foreach ($files as $file) {
                 $file_name = $this->input->post('file_name_' . $file);
-                $new_file_name = move_temp_file($file_name, $target_path);
-                if ($new_file_name) {
+                $file_info = move_temp_file($file_name, $target_path);
+                if ($file_info) {
                     $data = array(
                         "user_id" => $user_id,
-                        "file_name" => $new_file_name,
+                        "file_name" => get_array_value($file_info, 'file_name'),
+                        "file_id" => get_array_value($file_info, 'file_id'),
+                        "service_type" => get_array_value($file_info, 'service_type'),
                         "description" => $this->input->post('description_' . $file),
                         "file_size" => $this->input->post('file_size_' . $file),
                         "created_at" => $now,
@@ -856,8 +899,9 @@ class Team_members extends MY_Controller {
 
         $options = anchor(get_uri("team_members/download_file/" . $data->id), "<i class='fa fa fa-cloud-download'></i>", array("title" => lang("download")));
 
-        $options .= js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete_file'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("team_members/delete_file"), "data-action" => "delete-confirmation"));
-
+        if ($this->login_user->is_admin || $data->uploaded_by == $this->login_user->id) {
+            $options .= js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete_file'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("team_members/delete_file"), "data-action" => "delete-confirmation"));
+        }
 
         return array($data->id,
             "<div class='fa fa-$file_icon font-22 mr10 pull-left'></div>" . $description,
@@ -881,9 +925,11 @@ class Team_members extends MY_Controller {
 
             $view_data['can_comment_on_files'] = false;
 
-            $view_data["file_url"] = get_file_uri(get_general_file_path("team_members", $file_info->user_id) . $file_info->file_name);
+            $view_data["file_url"] = get_source_url_of_file(make_array_of_file($file_info), get_general_file_path("team_members", $file_info->user_id));
             $view_data["is_image_file"] = is_image_file($file_info->file_name);
             $view_data["is_google_preview_available"] = is_google_preview_available($file_info->file_name);
+            $view_data["is_viewable_video_file"] = is_viewable_video_file($file_info->file_name);
+            $view_data["is_google_drive_file"] = ($file_info->file_id && $file_info->service_type == "google") ? true : false;
 
             $view_data["file_info"] = $file_info;
             $view_data['file_id'] = $file_id;
@@ -905,7 +951,7 @@ class Team_members extends MY_Controller {
         $this->update_only_allowed_members($file_info->user_id);
 
         //serilize the path
-        $file_data = serialize(array(array("file_name" => $file_info->file_name)));
+        $file_data = serialize(array(make_array_of_file($file_info)));
 
         download_app_files(get_general_file_path("team_members", $file_info->user_id), $file_data);
     }
@@ -933,16 +979,51 @@ class Team_members extends MY_Controller {
             redirect("forbidden");
         }
 
-        $this->update_only_allowed_members($info->user_id);
+        if ($info->user_id && ($this->login_user->is_admin || $this->login_user->id === $info->uploaded_by)) {
+            if ($this->General_files_model->delete($id)) {
 
-        if ($this->General_files_model->delete($id)) {
+                //delete the files
+                delete_app_files(get_general_file_path("team_members", $info->user_id), array(make_array_of_file($info)));
 
-            delete_file_from_directory(get_general_file_path("team_members", $info->user_id) . $info->file_name);
-
-            echo json_encode(array("success" => true, 'message' => lang('record_deleted')));
+                echo json_encode(array("success" => true, 'message' => lang('record_deleted')));
+            } else {
+                echo json_encode(array("success" => false, 'message' => lang('record_cannot_be_deleted')));
+            }
         } else {
-            echo json_encode(array("success" => false, 'message' => lang('record_cannot_be_deleted')));
+            redirect("forbidden");
         }
+    }
+
+    /* show keyboard shortcut modal form */
+
+    function keyboard_shortcut_modal_form() {
+        $this->load->view('team_members/keyboard_shortcut_modal_form');
+    }
+
+    private function get_recently_meaning_dropdown() {
+        return array(
+            "2_hours" => lang("in") . " 2 " . strtolower(lang("hours")),
+            "5_hours" => lang("in") . " 5 " . strtolower(lang("hours")),
+            "8_hours" => lang("in") . " 8 " . strtolower(lang("hours")),
+            "1_days" => lang("in") . " 1 " . strtolower(lang("day")),
+            "2_days" => lang("in") . " 2 " . strtolower(lang("days")),
+            "3_days" => lang("in") . " 3 " . strtolower(lang("days")),
+            "5_days" => lang("in") . " 5 " . strtolower(lang("days")),
+            "7_days" => lang("in") . " 7 " . strtolower(lang("days")),
+            "15_days" => lang("in") . " 15 " . strtolower(lang("days")),
+            "1_month" => lang("in") . " 1 " . strtolower(lang("month")),
+        );
+    }
+
+    function recently_meaning_modal_form() {
+        $view_data["recently_meaning_dropdown"] = $this->get_recently_meaning_dropdown();
+        $this->load->view('projects/tasks/recently_meaning_modal_form', $view_data);
+    }
+
+    function save_recently_meaning() {
+        $recently_meaning = $this->input->post("recently_meaning");
+        $this->Settings_model->save_setting("user_" . $this->login_user->id . "_recently_meaning", $recently_meaning, "user");
+        echo json_encode(array("success" => true, 'message' => lang('record_saved')));
     }
 
 }

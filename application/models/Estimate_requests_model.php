@@ -13,7 +13,6 @@ class Estimate_requests_model extends Crud_model {
         $estimate_requests_table = $this->db->dbprefix('estimate_requests');
         $estimate_forms_table = $this->db->dbprefix('estimate_forms');
         $clients_table = $this->db->dbprefix('clients');
-        $leads_table = $this->db->dbprefix('leads');
         $users_table = $this->db->dbprefix('users');
 
         $where = "";
@@ -42,11 +41,10 @@ class Estimate_requests_model extends Crud_model {
             $where .= " AND $estimate_requests_table.status='$status'";
         }
 
-        $sql = "SELECT $estimate_requests_table.*, $clients_table.company_name, $estimate_forms_table.title AS form_title, $leads_table.company_name AS lead_company_name, 
-              CONCAT($users_table.first_name, ' ',$users_table.last_name) AS assigned_to_user, $users_table.image as assigned_to_avatar 
+        $sql = "SELECT $estimate_requests_table.*, $clients_table.company_name, $estimate_forms_table.title AS form_title, $clients_table.is_lead,
+              CONCAT($users_table.first_name, ' ',$users_table.last_name) AS assigned_to_user, $users_table.image as assigned_to_avatar, $clients_table.is_lead 
         FROM $estimate_requests_table
         LEFT JOIN $clients_table ON $clients_table.id = $estimate_requests_table.client_id
-        LEFT JOIN $leads_table ON $leads_table.id = $estimate_requests_table.lead_id    
         LEFT JOIN $users_table ON $users_table.id = $estimate_requests_table.assigned_to
         LEFT JOIN $estimate_forms_table ON $estimate_forms_table.id = $estimate_requests_table.estimate_form_id
         WHERE $estimate_requests_table.deleted=0 $where";

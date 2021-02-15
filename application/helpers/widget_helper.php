@@ -33,9 +33,14 @@ if (!function_exists('activity_logs_widget')) {
 
         $params["user_id"] = $ci->login_user->id;
         $params["is_admin"] = $ci->login_user->is_admin;
+        $params["user_type"] = $ci->login_user->user_type;
+        $params["client_id"] = $ci->login_user->client_id;
 
+        //check if user has restriction to view only assigned tasks
+        $params["show_assigned_tasks_only"] = get_array_value($ci->login_user->permissions, "show_assigned_tasks_only");
 
         $logs = $ci->Activity_logs_model->get_details($params);
+
         $view_data["activity_logs"] = $logs->result;
         $view_data["result_remaining"] = $logs->found_rows - $limit - $offset;
         $view_data["next_page_offset"] = $offset + $limit;
@@ -45,7 +50,7 @@ if (!function_exists('activity_logs_widget')) {
         $view_data["log_type"] = get_array_value($params, "log_type");
         $view_data["log_type_id"] = get_array_value($params, "log_type_id");
 
-        $view_data["result_remaining"] = $ci->load->view("activity_logs/activity_logs_widget", $view_data, $return_as_data);
+        return $view_data["result_remaining"] = $ci->load->view("activity_logs/activity_logs_widget", $view_data, $return_as_data);
     }
 
 }
@@ -76,6 +81,7 @@ if (!function_exists('timeline_widget')) {
 
         $logs = $ci->Posts_model->get_details($params);
         $view_data["posts"] = $logs->result;
+        $view_data['single_post'] = '';
         $view_data["result_remaining"] = $logs->found_rows - $limit - $offset;
         $view_data["next_page_offset"] = $offset + $limit;
 
@@ -84,7 +90,7 @@ if (!function_exists('timeline_widget')) {
             //show a no post found message to user's wall for empty post list
             $ci->load->view("timeline/no_post_message");
         } else {
-            $ci->load->view("timeline/post_list", $view_data, $return_as_data);
+            return $ci->load->view("timeline/post_list", $view_data, $return_as_data);
         }
     }
 
@@ -102,7 +108,7 @@ if (!function_exists('announcements_alert_widget')) {
         $ci = get_instance();
         $announcements = $ci->Announcements_model->get_unread_announcements($ci->login_user->id, $ci->login_user->user_type)->result();
         $view_data["announcements"] = $announcements;
-        $ci->load->view("announcements/alert", $view_data, $return_as_data);
+        return $ci->load->view("announcements/alert", $view_data, $return_as_data);
     }
 
 }
@@ -118,7 +124,7 @@ if (!function_exists('my_open_tasks_widget')) {
     function my_open_tasks_widget($return_as_data = false) {
         $ci = get_instance();
         $view_data["total"] = $ci->Tasks_model->count_my_open_tasks($ci->login_user->id);
-        $ci->load->view("projects/tasks/open_tasks_widget", $view_data, $return_as_data);
+        return $ci->load->view("projects/tasks/open_tasks_widget", $view_data, $return_as_data);
     }
 
 }
@@ -131,12 +137,12 @@ if (!function_exists('my_open_tasks_widget')) {
  */
 if (!function_exists('my_task_stataus_widget')) {
 
-    function my_task_stataus_widget($return_as_data = false) {
+    function my_task_stataus_widget($custom_class = "", $return_as_data = false) {
         $ci = get_instance();
         $view_data["task_statuses"] = $ci->Tasks_model->get_task_statistics(array("user_id" => $ci->login_user->id));
-        $task_statuses = $ci->Tasks_model->get_task_statistics(array("user_id" => $ci->login_user->id));
+        $view_data["custom_class"] = $custom_class;
 
-        $ci->load->view("projects/tasks/my_task_status_widget", $view_data, $return_as_data);
+        return $ci->load->view("projects/tasks/my_task_status_widget", $view_data, $return_as_data);
     }
 
 }
@@ -151,8 +157,18 @@ if (!function_exists('events_today_widget')) {
 
     function events_today_widget($return_as_data = false) {
         $ci = get_instance();
-        $view_data["total"] = $ci->Events_model->count_events_today($ci->login_user->id);
-        $ci->load->view("events/events_today", $view_data, $return_as_data);
+
+        $options = array(
+            "user_id" => $ci->login_user->id,
+            "team_ids" => $ci->login_user->team_ids
+        );
+
+        if ($ci->login_user->user_type == "client") {
+            $options["is_client"] = true;
+        }
+
+        $view_data["total"] = $ci->Events_model->count_events_today($options);
+        return $ci->load->view("events/events_today", $view_data, $return_as_data);
     }
 
 }
@@ -168,7 +184,7 @@ if (!function_exists('new_posts_widget')) {
     function new_posts_widget($return_as_data = false) {
         $ci = get_instance();
         $view_data["total"] = $ci->Posts_model->count_new_posts();
-        $ci->load->view("timeline/new_posts_widget", $view_data, $return_as_data);
+        return $ci->load->view("timeline/new_posts_widget", $view_data, $return_as_data);
     }
 
 }
@@ -183,10 +199,16 @@ if (!function_exists('events_widget')) {
 
     function events_widget($return_as_data = false) {
         $ci = get_instance();
-       
+
         $options = array("user_id" => $ci->login_user->id, "limit" => 10, "team_ids" => $ci->login_user->team_ids);
+
+        if ($ci->login_user->user_type == "client") {
+            $options["is_client"] = true;
+        }
+
         $view_data["events"] = $ci->Events_model->get_upcomming_events($options);
-        $ci->load->view("events/events_widget", $view_data, $return_as_data);
+
+        return $ci->load->view("events/events_widget", $view_data, $return_as_data);
     }
 
 }
@@ -219,13 +241,12 @@ if (!function_exists('get_event_icon')) {
  * @param boolean $return_as_data
  * @return html
  */
-if (!function_exists('my_open_timers')) {
+if (!function_exists('has_my_open_timers')) {
 
-    function my_open_timers($return_as_data = false) {
+    function has_my_open_timers() {
         $ci = get_instance();
         $timers = $ci->Timesheets_model->get_open_timers($ci->login_user->id);
-        $view_data["timers"] = $timers->result();
-        $ci->load->view("projects/open_timers", $view_data, $return_as_data);
+        return $timers->num_rows();
     }
 
 }
@@ -238,12 +259,13 @@ if (!function_exists('my_open_timers')) {
  */
 if (!function_exists('income_vs_expenses_widget')) {
 
-    function income_vs_expenses_widget($return_as_data = false) {
+    function income_vs_expenses_widget($custom_class = "", $return_as_data = false) {
         $ci = get_instance();
         $info = $ci->Expenses_model->get_income_expenses_info();
         $view_data["income"] = $info->income ? $info->income : 0;
         $view_data["expenses"] = $info->expneses ? $info->expneses : 0;
-        $ci->load->view("expenses/income_expenses_widget", $view_data, $return_as_data);
+        $view_data["custom_class"] = $custom_class;
+        return $ci->load->view("expenses/income_expenses_widget", $view_data, $return_as_data);
     }
 
 }
@@ -273,7 +295,7 @@ if (!function_exists('ticket_status_widget')) {
             }
         }
 
-        $ci->load->view("tickets/ticket_status_widget", $view_data, $return_as_data);
+        return $ci->load->view("tickets/ticket_status_widget", $view_data, $return_as_data);
     }
 
 }
@@ -286,9 +308,21 @@ if (!function_exists('ticket_status_widget')) {
  */
 if (!function_exists('invoice_statistics_widget')) {
 
-    function invoice_statistics_widget($return_as_data = false) {
+    function invoice_statistics_widget($return_as_data = false, $options = array()) {
         $ci = get_instance();
-        $info = $ci->Invoices_model->invoice_statistics();
+
+        $currency_symbol = get_array_value($options, "currency");
+
+        if ($ci->login_user->user_type == "client") {
+            $options["client_id"] = $ci->login_user->client_id;
+            $client_info = $ci->Clients_model->get_one($ci->login_user->client_id);
+            $currency_symbol = $client_info->currency_symbol;
+        }
+
+        $currency_symbol = $currency_symbol ? $currency_symbol : get_setting("default_currency");
+
+        $options["currency_symbol"] = $currency_symbol;
+        $info = $ci->Invoices_model->invoice_statistics($options);
 
         $payments = array();
         $payments_array = array();
@@ -318,21 +352,23 @@ if (!function_exists('invoice_statistics_widget')) {
 
         $view_data["payments"] = json_encode($payments_array);
         $view_data["invoices"] = json_encode($invoices_array);
+        $view_data["currencies"] = $info->currencies;
+        $view_data["currency_symbol"] = $currency_symbol;
 
-        $ci->load->view("invoices/invoice_statistics_widget", $view_data, $return_as_data);
+        return $ci->load->view("invoices/invoice_statistics_widget/index", $view_data, $return_as_data);
     }
 
 }
 
 
 /**
- * get projects statustics widget
+ * get projects statistics widget
  * @param boolean $return_as_data
  * @return html
  */
 if (!function_exists('project_timesheet_statistics_widget')) {
 
-    function project_timesheet_statistics_widget($return_as_data = false) {
+    function project_timesheet_statistics_widget($type = "", $return_as_data = false) {
         $ci = get_instance();
 
         $timesheets = array();
@@ -344,7 +380,15 @@ if (!function_exists('project_timesheet_statistics_widget')) {
         $start_date = date("Y-m-", strtotime($today)) . "01";
         $end_date = date("Y-m-t", strtotime($today));
 
-        $timesheets_result = $ci->Timesheets_model->get_timesheet_statistics(array("start_date" => $start_date, "end_date" => $end_date, "user_id" => $ci->login_user->id))->result();
+        $options = array("start_date" => $start_date, "end_date" => $end_date);
+
+        if ($type == "my_timesheet_statistics") {
+            $options["user_id"] = $ci->login_user->id;
+        }
+
+        $timesheets_result = $ci->Timesheets_model->get_timesheet_statistics($options)->result();
+
+
         $days_of_month = date("t", strtotime($today));
 
         for ($i = 0; $i <= $days_of_month; $i++) {
@@ -380,8 +424,9 @@ if (!function_exists('project_timesheet_statistics_widget')) {
         }
 
         $view_data["timesheets"] = json_encode($timesheets_array);
+        $view_data["timesheet_type"] = $type;
         $view_data["ticks"] = json_encode($ticks);
-        $ci->load->view("projects/timesheets/timesheet_wedget", $view_data, $return_as_data);
+        return $ci->load->view("projects/timesheets/timesheet_wedget", $view_data, $return_as_data);
     }
 
 }
@@ -443,7 +488,7 @@ if (!function_exists('timecard_statistics_widget')) {
 
         $view_data["timecards"] = json_encode($timecards_array);
         $view_data["ticks"] = json_encode($ticks);
-        $ci->load->view("attendance/timecard_statistics", $view_data, $return_as_data);
+        return $ci->load->view("attendance/timecard_statistics", $view_data, $return_as_data);
     }
 
 }
@@ -461,7 +506,7 @@ if (!function_exists('count_clock_status_widget')) {
         $info = $ci->Attendance_model->count_clock_status();
         $view_data["members_clocked_in"] = $info->members_clocked_in ? $info->members_clocked_in : 0;
         $view_data["members_clocked_out"] = $info->members_clocked_out ? $info->members_clocked_out : 0;
-        $ci->load->view("attendance/count_clock_status_widget", $view_data, $return_as_data);
+        return $ci->load->view("attendance/count_clock_status_widget", $view_data, $return_as_data);
     }
 
 }
@@ -483,7 +528,7 @@ if (!function_exists('count_project_status_widget')) {
         $info = $ci->Projects_model->count_project_status($options);
         $view_data["project_open"] = $info->open;
         $view_data["project_completed"] = $info->completed;
-        $ci->load->view("projects/project_status_widget", $view_data, $return_as_data);
+        return $ci->load->view("projects/widgets/project_status_widget", $view_data, $return_as_data);
     }
 
 }
@@ -499,14 +544,51 @@ if (!function_exists('count_total_time_widget')) {
 
     function count_total_time_widget($user_id = 0, $return_as_data = false) {
         $ci = get_instance();
-        $today = get_my_local_time("Y-m-d");
-        $start_date = date("Y-m-", strtotime($today)) . "01";
-        $end_date = date("Y-m-t", strtotime($today));
-        $options = array("start_date" => $start_date, "end_date" => $end_date, "user_id" => $user_id ? $user_id : $ci->login_user->id);
-        $info = $ci->Attendance_model->count_total_time($options);
+        $options = array("user_id" => $user_id ? $user_id : $ci->login_user->id);
+        $info = $ci->Timesheets_model->count_total_time($options);
         $view_data["total_hours_worked"] = to_decimal_format($info->timecard_total / 60 / 60);
         $view_data["total_project_hours"] = to_decimal_format($info->timesheet_total / 60 / 60);
-        $ci->load->view("attendance/total_time_widget", $view_data, $return_as_data);
+
+        $permissions = $ci->login_user->permissions;
+
+        $view_data["show_total_hours_worked"] = false;
+        if (get_setting("module_attendance") == "1" && ($ci->login_user->is_admin || get_array_value($permissions, "attendance"))) {
+            $view_data["show_total_hours_worked"] = true;
+        }
+
+        $view_data["show_projects_count"] = false;
+        if ($ci->login_user->is_admin || get_array_value($permissions, "can_manage_all_projects") == "1") {
+            $view_data["show_projects_count"] = true;
+        }
+
+        $view_data["show_total_project_hours"] = false;
+        if (get_setting("module_project_timesheet") == "1" && ($ci->login_user->is_admin || get_array_value($permissions, "timesheet_manage_permission"))) {
+            $view_data["show_total_project_hours"] = true;
+        }
+
+        return $ci->load->view("attendance/total_time_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * count total time widget
+ * @param integer $user_id
+ * @param string $widget_type
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('count_total_time_widget_small')) {
+
+    function count_total_time_widget_small($user_id = 0, $widget_type = "", $return_as_data = false) {
+        $ci = get_instance();
+        $options = array("user_id" => $user_id ? $user_id : $ci->login_user->id);
+        $info = $ci->Timesheets_model->count_total_time($options);
+        $view_data["total_hours_worked"] = to_decimal_format($info->timecard_total / 60 / 60);
+        $view_data["total_project_hours"] = to_decimal_format($info->timesheet_total / 60 / 60);
+        $view_data["widget_type"] = $widget_type;
+        return $ci->load->view("attendance/total_time_widget_small", $view_data, $return_as_data);
     }
 
 }
@@ -524,7 +606,7 @@ if (!function_exists('social_links_widget')) {
         $ci = get_instance();
         $view_data["weblinks"] = $weblinks;
 
-        $ci->load->view("users/social_links_widget", $view_data, $return_as_data);
+        return $ci->load->view("users/social_links_widget", $view_data, $return_as_data);
     }
 
 }
@@ -558,15 +640,448 @@ if (!function_exists('count_new_tickets')) {
 
 }
 
-/**
- * count new leaves
- * @return number
- */
-if (!function_exists('count_new_leaves')) {
 
-    function count_new_leaves() {
+/**
+ * get all tasks kanban widget
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('all_tasks_kanban_widget')) {
+
+    function all_tasks_kanban_widget($return_as_data = false) {
         $ci = get_instance();
-        return $ci->Leave_applications_model->count_new_leaves();
+
+        $projects = $ci->Tasks_model->get_my_projects_dropdown_list($ci->login_user->id)->result();
+        $projects_dropdown = array(array("id" => "", "text" => "- " . lang("project") . " -"));
+        foreach ($projects as $project) {
+            if ($project->project_id && $project->project_title) {
+                $projects_dropdown[] = array("id" => $project->project_id, "text" => $project->project_title);
+            }
+        }
+
+        $team_members_dropdown = array(array("id" => "", "text" => "- " . lang("team_member") . " -"));
+        $assigned_to_list = $ci->Users_model->get_dropdown_list(array("first_name", "last_name"), "id", array("deleted" => 0, "user_type" => "staff"));
+        foreach ($assigned_to_list as $key => $value) {
+
+            if ($key == $ci->login_user->id) {
+                $team_members_dropdown[] = array("id" => $key, "text" => $value, "isSelected" => true);
+            } else {
+                $team_members_dropdown[] = array("id" => $key, "text" => $value);
+            }
+        }
+
+        $view_data['team_members_dropdown'] = json_encode($team_members_dropdown);
+        $view_data['projects_dropdown'] = json_encode($projects_dropdown);
+        
+        $view_data['task_statuses'] = $ci->Task_status_model->get_details()->result();
+
+        return $ci->load->view("projects/tasks/kanban/all_tasks_kanban_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get todo lists widget
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('todo_list_widget')) {
+
+    function todo_list_widget($return_as_data = false) {
+        $ci = get_instance();
+        return $ci->load->view("todo/todo_lists_widget", "", $return_as_data);
+    }
+
+}
+
+
+/**
+ * get invalid access widget
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('invalid_access_widget')) {
+
+    function invalid_access_widget($return_as_data = false) {
+        $ci = get_instance();
+        return $ci->load->view("dashboards/custom_dashboards/invalid_access_widget", "", $return_as_data);
+    }
+
+}
+
+
+/**
+ * get open projects widget
+ * @param integer $user_id
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('open_projects_widget')) {
+
+    function open_projects_widget($user_id = 0, $return_as_data = false) {
+        $ci = get_instance();
+        $options = array(
+            "user_id" => $user_id ? $user_id : $ci->login_user->id
+        );
+        $view_data["project_open"] = $ci->Projects_model->count_project_status($options)->open;
+        return $ci->load->view("projects/widgets/open_projects_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get completed projects widget
+ * @param integer $user_id
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('completed_projects_widget')) {
+
+    function completed_projects_widget($user_id = 0, $return_as_data = false) {
+        $ci = get_instance();
+        $options = array(
+            "user_id" => $user_id ? $user_id : $ci->login_user->id
+        );
+        $view_data["project_completed"] = $ci->Projects_model->count_project_status($options)->completed;
+        return $ci->load->view("projects/widgets/completed_projects_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get count of clocked in users widget
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('count_clock_in_widget')) {
+
+    function count_clock_in_widget($return_as_data = false) {
+        $ci = get_instance();
+        $info = $ci->Attendance_model->count_clock_status()->members_clocked_in;
+        $view_data["members_clocked_in"] = $info ? $info : 0;
+        return $ci->load->view("attendance/count_clock_in_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get count of clocked out users widget
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('count_clock_out_widget')) {
+
+    function count_clock_out_widget($return_as_data = false) {
+        $ci = get_instance();
+        $info = $ci->Attendance_model->count_clock_status()->members_clocked_out;
+        $view_data["members_clocked_out"] = $info ? $info : 0;
+        return $ci->load->view("attendance/count_clock_out_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get user's open project list widget
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('my_open_projects_widget')) {
+
+    function my_open_projects_widget($client_id = 0, $return_as_data = false) {
+        $ci = get_instance();
+
+        $options = array(
+            "statuses" => "open",
+            "user_id" => $ci->login_user->id
+        );
+
+        if ($ci->login_user->user_type == "client") {
+            $options["client_id"] = $client_id;
+        }
+
+        $view_data["projects"] = $ci->Projects_model->get_details($options)->result();
+        return $ci->load->view("projects/widgets/my_open_projects_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get user's starred project list widget
+ * @param integer $user_id
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('my_starred_projects_widget')) {
+
+    function my_starred_projects_widget($user_id = 0, $return_as_data = false) {
+        $ci = get_instance();
+
+        $options = array(
+            "user_id" => $user_id ? $user_id : $ci->login_user->id,
+            "starred_projects" => true
+        );
+
+        $view_data["projects"] = $ci->Projects_model->get_details($options)->result();
+        return $ci->load->view("projects/widgets/my_starred_projects_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get sticky note widget for logged in user
+ * @param string $custom_class
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('sticky_note_widget')) {
+
+    function sticky_note_widget($custom_class = "", $return_as_data = false) {
+        $ci = get_instance();
+        return $ci->load->view("dashboards/sticky_note_widget", array("custom_class" => $custom_class), $return_as_data);
+    }
+
+}
+
+
+/**
+ * get ticket status small widget for current logged in user
+ * @param integer $user_id
+ * @param string $type ($type should be new/open/closed)
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('ticket_status_widget_small')) {
+
+    function ticket_status_widget_small($data = array(), $return_as_data = false) {
+        $ci = get_instance();
+        $allowed_ticket_types = get_array_value($data, "allowed_ticket_types");
+        $status = get_array_value($data, "status");
+
+        $options = array("status" => $status);
+        if ($ci->login_user->user_type == "staff") {
+            $options["allowed_ticket_types"] = $allowed_ticket_types;
+        } else {
+            $options["client_id"] = $ci->login_user->client_id;
+        }
+
+        $view_data["total_tickets"] = $ci->Tickets_model->count_tickets($options);
+        $view_data["status"] = $status;
+
+        return $ci->load->view("tickets/ticket_status_widget_small", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get all team members widget
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('all_team_members_widget')) {
+
+    function all_team_members_widget($return_as_data = false) {
+        $ci = get_instance();
+        $options = array("status" => "active", "user_type" => "staff");
+        $view_data["members"] = $ci->Users_model->get_details($options)->result();
+        return $ci->load->view("team_members/team_members_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get all clocked in team members widget
+ * @param array $data containing access permissions
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('clocked_in_team_members_widget')) {
+
+    function clocked_in_team_members_widget($data = array(), $return_as_data = false) {
+        $ci = get_instance();
+
+        $options = array(
+            "login_user_id" => $ci->login_user->id,
+            "access_type" => get_array_value($data, "access_type"),
+            "allowed_members" => get_array_value($data, "allowed_members"),
+            "only_clocked_in_members" => true
+        );
+
+        $view_data["users"] = $ci->Attendance_model->get_details($options)->result();
+
+        return $ci->load->view("team_members/clocked_in_team_members_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get all clocked out team members widget
+ * @param array $data containing access permissions
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('clocked_out_team_members_widget')) {
+
+    function clocked_out_team_members_widget($data = array(), $return_as_data = false) {
+        $ci = get_instance();
+
+        $options = array(
+            "login_user_id" => $ci->login_user->id,
+            "access_type" => get_array_value($data, "access_type"),
+            "allowed_members" => get_array_value($data, "allowed_members")
+        );
+
+        $view_data["users"] = $ci->Attendance_model->get_clocked_out_members($options)->result();
+        return $ci->load->view("team_members/clocked_out_team_members_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get active members widget
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('active_members_and_clients_widget')) {
+
+    function active_members_and_clients_widget($user_type = "", $return_as_data = false, $show_own_clients_only_user_id = "") {
+        $ci = get_instance();
+
+        $options = array("user_type" => $user_type, "exclude_user_id" => $ci->login_user->id, "show_own_clients_only_user_id" => $show_own_clients_only_user_id);
+
+        $view_data["users"] = $ci->Users_model->get_active_members_and_clients($options)->result();
+        $view_data["user_type"] = $user_type;
+        return $ci->load->view("team_members/active_members_and_clients_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get total invoices/payments/due value widget
+ * @param string $type
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('get_invoices_value_widget')) {
+
+    function get_invoices_value_widget($type = "", $return_as_data = false) {
+        $ci = get_instance();
+
+        $view_data["invoices_info"] = $ci->Invoices_model->get_invoices_total_and_paymnts();
+        $view_data["type"] = $type;
+        return $ci->load->view("invoices/total_invoices_value_widget", $view_data, $return_as_data);
+    }
+
+}
+
+
+/**
+ * get my tasks list widget
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('my_tasks_list_widget')) {
+
+    function my_tasks_list_widget($return_as_data = false) {
+        $ci = get_instance();
+        $view_data['task_statuses'] = $ci->Task_status_model->get_details()->result();
+        return $ci->load->view("projects/tasks/my_tasks_list_widget", $view_data, $return_as_data);
+    }
+
+}
+
+/**
+ * get pending leave approval widget
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('pending_leave_approval_widget')) {
+
+    function pending_leave_approval_widget($return_as_data = false, $data = array()) {
+        $ci = get_instance();
+
+        $options = array(
+            "login_user_id" => $ci->login_user->id,
+            "access_type" => get_array_value($data, "access_type"),
+            "allowed_members" => get_array_value($data, "allowed_members"),
+            "status" => "pending"
+        );
+        $view_data["total"] = count($ci->Leave_applications_model->get_list($options)->result());
+
+        return $ci->load->view("leaves/pending_leave_approval_widget", $view_data, $return_as_data);
+    }
+
+}
+
+/**
+ * get draft invoices
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('draft_invoices_widget')) {
+
+    function draft_invoices_widget($return_as_data = false) {
+        $ci = get_instance();
+        $view_data["draft_invoices"] = $ci->Invoices_model->count_draft_invoices();
+        return $ci->load->view("invoices/draft_invoices_widget", $view_data, $return_as_data);
+    }
+
+}
+
+/**
+ * get total clients
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('total_clients_widget')) {
+
+    function total_clients_widget($return_as_data = false, $show_own_clients_only_user_id = "") {
+        $ci = get_instance();
+        $view_data["total"] = $ci->Clients_model->count_total_clients($show_own_clients_only_user_id);
+        return $ci->load->view("clients/total_clients_widget", $view_data, $return_as_data);
+    }
+
+}
+
+/**
+ * get total client contacts
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('total_contacts_widget')) {
+
+    function total_contacts_widget($return_as_data = false, $show_own_clients_only_user_id = "") {
+        $ci = get_instance();
+        $view_data["total"] = $ci->Users_model->count_total_contacts($show_own_clients_only_user_id);
+        return $ci->load->view("clients/total_contacts_widget", $view_data, $return_as_data);
+    }
+
+}
+
+/**
+ * get active members on projects widget
+ * @param boolean $return_as_data
+ * @return html
+ */
+if (!function_exists('active_members_on_projects_widget')) {
+
+    function active_members_on_projects_widget($return_as_data = false) {
+        $ci = get_instance();
+
+        $view_data["users_info"] = $ci->Timesheets_model->active_members_on_projects()->result();
+
+        return $ci->load->view("team_members/active_members_on_projects_widget", $view_data, $return_as_data);
     }
 
 }

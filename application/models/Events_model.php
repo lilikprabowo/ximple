@@ -68,7 +68,7 @@ class Events_model extends Crud_model {
             $is_client = get_array_value($options, "is_client");
             if ($is_client) {
                 //client user's can't see the events which has shared with all team members
-                $where .= " AND $events_table.created_by=$user_id OR (FIND_IN_SET('contact:$user_id', $events_table.share_with))";
+                $where .= " AND ($events_table.created_by=$user_id OR (FIND_IN_SET('contact:$user_id', $events_table.share_with)))";
             } else {
                 //searh for user and teams
                 $where .= " AND ($events_table.created_by=$user_id 
@@ -84,13 +84,20 @@ class Events_model extends Crud_model {
             $where .= " AND $events_table.client_id=$client_id";
         }
 
+        $label_id = get_array_value($options, "label_id");
+        if ($label_id) {
+            $where .= " AND FIND_IN_SET($label_id, $events_table.labels) ";
+        }
+
         $limit = get_array_value($options, "limit");
         $limit = $limit ? $limit : "20000";
         $offset = get_array_value($options, "offset");
         $offset = $offset ? $offset : "0";
 
+        $select_labels_data_query = $this->get_labels_data_query();
+
         $sql = "SELECT $events_table.*,
-            CONCAT($users_table.first_name, ' ',$users_table.last_name) AS created_by_name, $users_table.image AS created_by_avatar, $clients_table.company_name
+            CONCAT($users_table.first_name, ' ',$users_table.last_name) AS created_by_name, $users_table.image AS created_by_avatar, $clients_table.company_name, $clients_table.is_lead, $select_labels_data_query
         FROM $events_table
         LEFT JOIN $users_table ON $users_table.id = $events_table.created_by
         LEFT JOIN $clients_table ON $clients_table.id = $events_table.client_id    
@@ -100,13 +107,44 @@ class Events_model extends Crud_model {
         return $this->db->query($sql);
     }
 
-    function count_events_today($user_id = 0) {
+    function count_events_today($options = array()) {
         $events_table = $this->db->dbprefix('events');
         $now = get_my_local_time("Y-m-d");
 
+        $where = "";
+        $user_id = get_array_value($options, "user_id");
+        if ($user_id) {
+
+            //find events where share with the user and his/her team
+            $team_ids = get_array_value($options, "team_ids");
+            $team_search_sql = "";
+
+            //searh for teams
+            if ($team_ids) {
+                $teams_array = explode(",", $team_ids);
+                foreach ($teams_array as $team_id) {
+                    $team_search_sql .= " OR (FIND_IN_SET('team:$team_id', $events_table.share_with)) ";
+                }
+            }
+
+            $is_client = get_array_value($options, "is_client");
+            if ($is_client) {
+                //client user's can't see the events which has shared with all team members
+                $where .= " AND ($events_table.created_by=$user_id OR (FIND_IN_SET('contact:$user_id', $events_table.share_with)))";
+            } else {
+                //searh for user and teams
+                $where .= " AND ($events_table.created_by=$user_id 
+                OR $events_table.share_with='all' 
+                    OR (FIND_IN_SET('member:$user_id', $events_table.share_with))
+                        $team_search_sql
+                        )";
+            }
+        }
+
         $sql = "SELECT COUNT($events_table.id) AS total
         FROM $events_table
-        WHERE $events_table.deleted=0 AND $events_table.created_by = $user_id AND (($events_table.start_date<='$now' AND $events_table.end_date>='$now') OR FIND_IN_SET('$now',$events_table.recurring_dates))";
+        WHERE $events_table.deleted=0 AND (($events_table.start_date<='$now' AND $events_table.end_date>='$now') OR FIND_IN_SET('$now',$events_table.recurring_dates)) $where";
+
         return $this->db->query($sql)->row()->total;
     }
 
@@ -230,6 +268,68 @@ class Events_model extends Crud_model {
 
         $sql = "UPDATE $events_table SET $new_status = CONCAT($new_status,',',$user_id), $old_status = REPLACE($old_status,',$user_id','')
                 WHERE $events_table.id=$id AND FIND_IN_SET($user_id,$new_status) = 0";
+
+        return $this->db->query($sql);
+    }
+
+    function get_share_with_users_of_event($event_info = "") {
+        if ($event_info) {
+
+            $users_table = $this->db->dbprefix('users');
+            $team_table = $this->db->dbprefix('team');
+
+            $where = "";
+
+            if ($event_info->share_with === "all") {
+                $where .= " AND $users_table.user_type = 'staff' "; //all team members
+            } else {
+                $share_with_array = explode(",", $event_info->share_with); // found an array like this array("member:1", "member:2", "team:1")
+
+                $event_users = array();
+                $event_team = array();
+                $event_contact = array();
+
+                foreach ($share_with_array as $share) {
+
+                    $share_data = explode(":", $share);
+
+                    if (get_array_value($share_data, '0') === "member") {
+                        $event_users[] = get_array_value($share_data, '1');
+                    } else if (get_array_value($share_data, '0') === "team") {
+                        $event_team[] = get_array_value($share_data, '1');
+                    } else if (get_array_value($share_data, '0') === "contact") {
+                        $event_contact[] = get_array_value($share_data, '1');
+                    }
+                }
+
+                //find team members
+                if (count($event_users)) {
+                    $where .= " AND FIND_IN_SET($users_table.id, '" . join(',', $event_users) . "') ";
+                }
+
+                //find team
+                if (count($event_team)) {
+                    $where .= " AND FIND_IN_SET($users_table.id, (SELECT GROUP_CONCAT($team_table.members) AS team_users FROM $team_table WHERE $team_table.deleted=0 AND FIND_IN_SET($team_table.id, '" . join(',', $event_team) . "'))) ";
+                }
+
+                //find client contacts
+                if (count($event_contact)) {
+                    $where .= " AND FIND_IN_SET($users_table.id, '" . join(',', $event_contact) . "') ";
+                }
+            }
+
+            $sql = "SELECT $users_table.email FROM $users_table
+                WHERE $users_table.deleted=0 AND $users_table.status='active' AND $users_table.id!=$event_info->created_by $where";
+
+            return $this->db->query($sql);
+        }
+    }
+
+    function get_integrated_users_with_google_calendar() {
+        $settings_table = $this->db->dbprefix('settings');
+
+        $sql = "SELECT $settings_table.setting_name, $settings_table.setting_value FROM $settings_table
+                WHERE $settings_table.deleted=0 AND $settings_table.setting_name LIKE '%_integrate_with_google_calendar%' AND $settings_table.setting_value=1";
 
         return $this->db->query($sql);
     }

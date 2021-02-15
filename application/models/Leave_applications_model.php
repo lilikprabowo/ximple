@@ -138,14 +138,4 @@ class Leave_applications_model extends Crud_model {
         return $this->db->query($sql);
     }
 
-    function count_new_leaves() {
-        $leave_applications_table = $this->db->dbprefix('leave_applications');
-        //$tickets_table = $this->db->dbprefix('tickets');
-
-        $sql = "SELECT COUNT($leave_applications_table.id) AS total
-        FROM $leave_applications_table
-        WHERE $leave_applications_table.checked_by=0";
-        return $this->db->query($sql)->row()->total;
-    }
-
 }

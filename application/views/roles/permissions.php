@@ -54,7 +54,7 @@
                     </div>
                     <div>
                         <?php
-                        echo form_checkbox("can_delete_tasks", "1", $can_edit_tasks ? true : false, "id='can_delete_tasks'");
+                        echo form_checkbox("can_delete_tasks", "1", $can_delete_tasks ? true : false, "id='can_delete_tasks'");
                         ?>
                         <label for="can_delete_tasks"><?php echo lang("can_delete_tasks"); ?></label>
                     </div>
@@ -63,6 +63,18 @@
                         echo form_checkbox("can_comment_on_tasks", "1", $can_comment_on_tasks ? true : false, "id='can_comment_on_tasks'");
                         ?>
                         <label for="can_comment_on_tasks"><?php echo lang("can_comment_on_tasks"); ?></label>
+                    </div>
+                    <div>
+                        <?php
+                        echo form_checkbox("show_assigned_tasks_only", "1", $show_assigned_tasks_only ? true : false, "id='show_assigned_tasks_only'");
+                        ?>
+                        <label for="show_assigned_tasks_only"><?php echo lang("show_assigned_tasks_only"); ?></label>
+                    </div>
+                    <div>
+                        <?php
+                        echo form_checkbox("can_update_only_assigned_tasks_status", "1", $can_update_only_assigned_tasks_status ? true : false, "id='can_update_only_assigned_tasks_status'");
+                        ?>
+                        <label for="can_update_only_assigned_tasks_status"><?php echo lang("can_update_only_assigned_tasks_status"); ?></label>
                     </div>
                     <div>
                         <?php
@@ -161,6 +173,25 @@
                 </li>
 
                 <li>
+                    <h5><?php echo lang("set_message_permissions"); ?>:</h5>
+                    <div>
+                        <?php
+                        echo form_checkbox("message_permission_no", "1", ($message_permission == "no") ? true : false, "id='message_permission_no'");
+                        ?>
+                        <label for="message_permission_no"><?php echo lang("cant_send_any_messages"); ?></label>
+                    </div>
+                    <div id="message_permission_specific_area" class="form-group <?php echo ($message_permission == "no") ? "hide" : ""; ?>">
+                        <?php
+                        echo form_checkbox("message_permission_specific_checkbox", "1", ($message_permission == "specific") ? true : false, "id='message_permission_specific_checkbox' class='message_permission_specific toggle_specific'");
+                        ?>
+                        <label for="message_permission_specific_checkbox"><?php echo lang("can_send_messages_to_specific_members_or_teams"); ?></label>
+                        <div class="specific_dropdown">
+                            <input type="text" value="<?php echo $message_permission_specific; ?>" name="message_permission_specific" id="message_permission_specific_dropdown" class="w100p validate-hidden"  data-rule-required="true" data-msg-required="<?php echo lang('field_required'); ?>" placeholder="<?php echo lang('choose_members_and_or_teams'); ?>"  />    
+                        </div>
+                    </div>
+                </li>
+
+                <li>
                     <h5><?php echo lang("set_event_permissions"); ?>:</h5>
                     <div>
                         <?php
@@ -194,7 +225,7 @@
                         ?>
                         <label for="leave_permission_all"><?php echo lang("yes_all_members"); ?></label>
                     </div>
-                    <div>
+                    <div class="form-group pb0 mb0 no-border">
                         <?php
                         echo form_radio(array(
                             "id" => "leave_permission_specific",
@@ -322,6 +353,16 @@
                         ?>
                         <label for="invoice_yes"><?php echo lang("yes"); ?></label>
                     </div>
+                    <div>
+                        <?php
+                        echo form_radio(array(
+                            "id" => "invoice_read_only",
+                            "name" => "invoice_permission",
+                            "value" => "read_only",
+                                ), $invoice, ($invoice === "read_only") ? true : false);
+                        ?>
+                        <label for="invoice_read_only"><?php echo lang("read_only"); ?></label>
+                    </div>
                 </li>
                 <li>
                     <h5><?php echo lang("can_access_estimates"); ?></h5>
@@ -389,7 +430,50 @@
                             "value" => "all",
                                 ), $client, ($client === "all") ? true : false);
                         ?>
-                        <label for="client_yes"><?php echo lang("yes"); ?></label>
+                        <label for="client_yes"><?php echo lang("yes_all_clients"); ?></label>
+                    </div>
+                    <div>
+                        <?php
+                        echo form_radio(array(
+                            "id" => "client_yes_own",
+                            "name" => "client_permission",
+                            "value" => "own",
+                                ), $client, ($client === "own") ? true : false);
+                        ?>
+                        <label for="client_yes_own"><?php echo lang("yes_only_own_clients"); ?></label>
+                    </div>
+                </li>
+                <li>
+                    <h5><?php echo lang("can_access_leads_information"); ?></h5>
+                    <div>
+                        <?php
+                        echo form_radio(array(
+                            "id" => "lead_no",
+                            "name" => "lead_permission",
+                            "value" => "",
+                                ), $lead, ($lead === "") ? true : false);
+                        ?>
+                        <label for="lead_no"><?php echo lang("no"); ?> </label>
+                    </div>
+                    <div>
+                        <?php
+                        echo form_radio(array(
+                            "id" => "lead_yes",
+                            "name" => "lead_permission",
+                            "value" => "all",
+                                ), $lead, ($lead === "all") ? true : false);
+                        ?>
+                        <label for="lead_yes"><?php echo lang("yes_all_leads"); ?></label>
+                    </div>
+                    <div>
+                        <?php
+                        echo form_radio(array(
+                            "id" => "lead_yes_own",
+                            "name" => "lead_permission",
+                            "value" => "own",
+                                ), $lead, ($lead === "own") ? true : false);
+                        ?>
+                        <label for="lead_yes_own"><?php echo lang("yes_only_own_leads"); ?></label>
                     </div>
                 </li>
                 <li>
@@ -455,6 +539,29 @@
                     </div>
                 </li>
                 <li>
+                    <h5><?php echo lang("can_access_orders"); ?></h5>
+                    <div>
+                        <?php
+                        echo form_radio(array(
+                            "id" => "order_no",
+                            "name" => "order_permission",
+                            "value" => "",
+                                ), $order, ($order === "") ? true : false);
+                        ?>
+                        <label for="order_no"><?php echo lang("no"); ?> </label>
+                    </div>
+                    <div>
+                        <?php
+                        echo form_radio(array(
+                            "id" => "order_yes",
+                            "name" => "order_permission",
+                            "value" => "all",
+                                ), $order, ($order === "all") ? true : false);
+                        ?>
+                        <label for="order_yes"><?php echo lang("yes"); ?></label>
+                    </div>
+                </li>
+                <li>
                     <h5><?php echo lang("can_manage_help_and_knowledge_base"); ?></h5>
                     <div>
                         <?php
@@ -497,7 +604,7 @@
             }
         });
 
-        $("#leave_specific_dropdown, #attendance_specific_dropdown, #timesheet_manage_permission_specific_dropdown,  #team_member_update_permission_specific_dropdown").select2({
+        $("#leave_specific_dropdown, #attendance_specific_dropdown, #timesheet_manage_permission_specific_dropdown,  #team_member_update_permission_specific_dropdown, #message_permission_specific_dropdown").select2({
             multiple: true,
             formatResult: teamAndMemberSelect2Format,
             formatSelection: teamAndMemberSelect2Format,
@@ -516,11 +623,12 @@
         });
 
         toggle_specific_dropdown();
+
         function toggle_specific_dropdown() {
-            var selectors = [".leave_permission", ".attendance_permission", ".timesheet_manage_permission", ".team_member_update_permission", ".ticket_permission"];
+            var selectors = [".leave_permission", ".attendance_permission", ".timesheet_manage_permission", ".team_member_update_permission", ".ticket_permission", ".message_permission_specific"];
             $.each(selectors, function (index, element) {
                 var $element = $(element + ":checked");
-                if ($element.val() === "specific") {
+                if ((element !== ".message_permission_specific" && $element.val() === "specific") || (element === ".message_permission_specific" && $element.is(":checked") && !$("#message_permission_specific_area").hasClass("hide"))) {
                     $element.closest("li").find(".specific_dropdown").show().find("input").addClass("validate-hidden");
                 } else {
                     //console.log($element.closest("li").find(".specific_dropdown"));
@@ -529,5 +637,16 @@
             });
 
         }
+
+        //show/hide message permission checkbox
+        $("#message_permission_no").click(function () {
+            if ($(this).is(":checked")) {
+                $("#message_permission_specific_area").addClass("hide");
+            } else {
+                $("#message_permission_specific_area").removeClass("hide");
+            }
+
+            toggle_specific_dropdown();
+        });
     });
 </script>    

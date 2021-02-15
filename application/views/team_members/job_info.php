@@ -58,7 +58,8 @@
                         "name" => "date_of_hire",
                         "value" => $job_info->date_of_hire,
                         "class" => "form-control",
-                        "placeholder" => lang('date_of_hire')
+                        "placeholder" => lang('date_of_hire'),
+                        "autocomplete" => "off"
                     ));
                     ?>
                 </div>

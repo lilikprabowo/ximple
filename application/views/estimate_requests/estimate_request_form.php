@@ -1,3 +1,5 @@
+<?php $is_preview = (isset($is_preview) && $is_preview) ? 1 : 0; ?>
+
 <style type="text/css">.post-file-previews {border:none !important; }</style>
 
 <div id="estimate-form-preview" class="panel panel-default  p15 no-border clearfix post-dropzone" style="max-width: 1000px; margin: auto;">
@@ -5,6 +7,18 @@
     <h3 id="estimate-form-title" class=" pl10 pr10"> <?php echo $model_info->title; ?></h3>
 
     <div class="pl10 pr10"><?php echo nl2br($model_info->description); ?></div>
+
+    <?php if (isset($clients_dropdown) && $clients_dropdown) { ?>
+        <div class="form-group mt15 mb15">
+            <label for="client_id" class=" col-md-12"><?php echo lang('client'); ?></label>
+            <div class="col-md-12">
+                <?php
+                echo form_dropdown("client_id", $clients_dropdown, array(), "class='select2 validate-hidden' id='client_id' data-rule-required='true', data-msg-required='" . lang('field_required') . "'");
+                ?>
+            </div>
+        </div>
+    <?php } ?>
+
     <div class=" pt10 mt15">
         <div class="table-responsive general-form ">
             <table id="estimate-form-table" class="display b-t no-thead b-b-only no-hover" cellspacing="0" width="100%">            
@@ -42,14 +56,15 @@
                 $(".dataTables_empty").hide();
             }
         });
-        var enable_attachment="<?php echo $model_info->enable_attachment; ?>";
-        var login_user_type="<?php echo $this->login_user->user_type; ?>";
+        var enable_attachment = "<?php echo $model_info->enable_attachment; ?>";
+        var isPreview = "<?php echo $is_preview; ?>";
 
-        if (enable_attachment === "1" && login_user_type==="client") {
-
+        if (enable_attachment === "1" && isPreview === "0") {
             var uploadUrl = "<?php echo get_uri("estimate_requests/upload_file"); ?>";
             var validationUrl = "<?php echo get_uri("estimate_requests/validate_file"); ?>";
             var dropzone = attachDropzoneWithForm("#estimate-form-preview", uploadUrl, validationUrl);
         }
+
+        $("#client_id").select2();
     });
 </script>

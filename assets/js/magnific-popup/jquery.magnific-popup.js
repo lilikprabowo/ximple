@@ -372,7 +372,10 @@ MagnificPopup.prototype = {
 			}
 			
 			// Trap the focus in popup
-			_document.on('focusin' + EVENT_NS, mfp._onFocusIn);
+			//_document.on('focusin' + EVENT_NS, mfp._onFocusIn);
+                        //If we want to use this plugin with bootstrap modal, we'll get 'Call Stack Exceeded' error message in browser console.
+                        //To prevent this, we need to disable this line.
+                        //Ref: https://github.com/dimsemenov/Magnific-Popup/issues/796
 
 		}, 16);
 

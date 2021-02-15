@@ -21,6 +21,7 @@
         $("#project-member-table").appTable({
             source: '<?php echo_uri("projects/project_member_list_data/" . $project_id) ?>',
             hideTools: true,
+            displayLength: 500,
             columns: [
                 {title: ''},
                 {title: '', "class": "text-center option w100"}

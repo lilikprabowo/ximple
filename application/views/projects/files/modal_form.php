@@ -3,8 +3,8 @@
     <input type="hidden" name="project_id" value="<?php echo $project_id; ?>" />
     <?php
     $this->load->view("includes/multi_file_uploader", array(
-        "upload_url" =>get_uri("projects/upload_file"),
-        "validation_url" =>get_uri("projects/validate_project_file"),
+        "upload_url" => get_uri("projects/upload_file"),
+        "validation_url" => get_uri("projects/validate_project_file"),
     ));
     ?>
 </div>

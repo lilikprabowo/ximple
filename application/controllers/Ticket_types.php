@@ -10,12 +10,13 @@ class Ticket_types extends MY_Controller {
         $this->access_only_admin();
     }
 
-    function index() {
-        $this->template->rander("ticket_types/index");
+    function index($tab = "") {
+        $view_data["tab"] = $tab;
+        $this->template->rander("ticket_types/index", $view_data);
     }
 
     function modal_form() {
-     
+
         validate_submitted_data(array(
             "id" => "numeric"
         ));

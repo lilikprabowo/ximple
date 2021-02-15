@@ -13,7 +13,7 @@ if (isset($task_id)) {
 
 <div id="<?php echo $comment_type . "-comment-form-container"; ?>">
     <?php echo form_open(get_uri("projects/save_comment"), array("id" => $comment_type . "-comment-form", "class" => "general-form", "role" => "form")); ?>
-    <div class="p15 box b-b">
+    <div class="box b-b comment-form-container">
         <div class="box-content avatar  <?php echo isset($project_id) || isset($customer_feedback_id) ? " avatar-md" : " avatar-sm"; ?>  pr15">
             <img src="<?php echo get_avatar($this->login_user->image); ?>" alt="..." />
         </div>
@@ -31,6 +31,10 @@ if (isset($task_id)) {
                 "placeholder" => lang('write_a_comment'),
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required"),
+                "data-rich-text-editor" => true,
+                "data-mention" => true,
+                "data-mention-source" => get_uri("projects/get_member_suggestion_to_mention"),
+                "data-mention-project_id" => $project_id
             ));
             ?>
             <?php $this->load->view("includes/dropzone_preview"); ?>
@@ -64,7 +68,14 @@ if (isset($task_id)) {
             isModal: false,
             onSuccess: function (result) {
                 $(".comment_description").val("");
-                $(result.data).insertAfter("#<?php echo $comment_type; ?>-comment-form-container");
+
+                if ($("#file-preview-comment-container").length) {
+                    $("#file-preview-comment-container").prepend(result.data);
+                    initScrollbarOnCommentContainer();
+                } else {
+                    $(result.data).insertAfter("#<?php echo $comment_type; ?>-comment-form-container");
+                }
+
                 appAlert.success(result.message, {duration: 10000});
 
                 if (dropzone) {

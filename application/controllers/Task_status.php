@@ -26,16 +26,20 @@ class Task_status extends MY_Controller {
 
     function save() {
         validate_submitted_data(array(
-            "id" => "numeric",
-            "title" => "required"
+            "id" => "numeric"
         ));
 
 
         $id = $this->input->post('id');
         $data = array(
-            "title" => $this->input->post('title'),
             "color" => $this->input->post('color')
         );
+
+        $task_status_info = $this->Task_status_model->get_one($id);
+        if (!$task_status_info->key_name) {
+            //the title of default task statuses shouldn't be changed
+            $data["title"] = $this->input->post('title');
+        }
 
         if (!$id) {
             //get sort value
@@ -113,16 +117,15 @@ class Task_status extends MY_Controller {
     private function _make_row($data) {
 
         $delete = "";
-        $edit = "";
+        $edit = modal_anchor(get_uri("task_status/modal_form"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => lang('edit_task_status'), "data-post-id" => $data->id));
 
         if (!$data->key_name) {
-            $edit = modal_anchor(get_uri("task_status/modal_form"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => lang('edit_task_status'), "data-post-id" => $data->id));
             $delete = js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete_task_status'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("task_status/delete"), "data-action" => "delete-confirmation"));
         }
 
         return array(
             $data->sort,
-            "<div class='pt10 pb10 field-row'  data-id='$data->id'><i class='fa fa-bars pull-left' style='margin: 3px 30px 0 0; cursor:s-resize; opacity:0.3'></i> <span style='background-color:" . $data->color . "' class='color-tag  pull-left'></span>" . ($data->key_name ? lang($data->key_name) : $data->title) . '</div>',
+            "<div class='pt10 pb10 field-row'  data-id='$data->id'><i class='fa fa-bars pull-left move-icon'></i> <span style='background-color:" . $data->color . "' class='color-tag  pull-left'></span>" . ($data->key_name ? lang($data->key_name) : $data->title) . '</div>',
             $edit . $delete
         );
     }

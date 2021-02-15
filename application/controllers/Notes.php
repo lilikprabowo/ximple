@@ -10,20 +10,30 @@ class Notes extends MY_Controller {
         $this->access_only_team_members();
     }
 
-    protected function validate_access_to_note($note_info) {
-        if ($note_info->client_id) {
-            //this is a client's note. check client access permission
-            $access_info = $this->get_access_info("client");
-            if ($access_info->access_type != "all") {
-                redirect("forbidden");
+    protected function validate_access_to_note($note_info, $edit_mode = false) {
+        if ($note_info->is_public) {
+            //it's a public note. visible to all available users
+            if ($edit_mode) {
+                //for edit mode, only creator and admin can access
+                if ($this->login_user->id !== $note_info->created_by && !$this->login_user->is_admin) {
+                    redirect("forbidden");
+                }
             }
-        } else if ($note_info->user_id) {
-            //this is a user's note. check user's access permission.
-            redirect("forbidden");
         } else {
-            //this is a private note. only avaialble to creator
-            if ($this->login_user->id !== $note_info->created_by) {
+            if ($note_info->client_id) {
+                //this is a client's note. check client access permission
+                $access_info = $this->get_access_info("client");
+                if ($access_info->access_type != "all") {
+                    redirect("forbidden");
+                }
+            } else if ($note_info->user_id) {
+                //this is a user's note. check user's access permission.
                 redirect("forbidden");
+            } else {
+                //this is a private note. only available to creator
+                if ($this->login_user->id !== $note_info->created_by) {
+                    redirect("forbidden");
+                }
             }
         }
     }
@@ -40,23 +50,13 @@ class Notes extends MY_Controller {
         $view_data['project_id'] = $this->input->post('project_id') ? $this->input->post('project_id') : $view_data['model_info']->project_id;
         $view_data['client_id'] = $this->input->post('client_id') ? $this->input->post('client_id') : $view_data['model_info']->client_id;
         $view_data['user_id'] = $this->input->post('user_id') ? $this->input->post('user_id') : $view_data['model_info']->user_id;
-        $labels = explode(",", $this->Notes_model->get_label_suggestions($this->login_user->id));
 
         //check permission for saved note
         if ($view_data['model_info']->id) {
-            $this->validate_access_to_note($view_data['model_info']);
+            $this->validate_access_to_note($view_data['model_info'], true);
         }
 
-        $label_suggestions = array();
-        foreach ($labels as $label) {
-            if ($label && !in_array($label, $label_suggestions)) {
-                $label_suggestions[] = $label;
-            }
-        }
-        if (!count($label_suggestions)) {
-            $label_suggestions = array("0" => "Important");
-        }
-        $view_data['label_suggestions'] = $label_suggestions;
+        $view_data['label_suggestions'] = $this->make_labels_dropdown("note", $view_data['model_info']->labels, false);
         $this->load->view('notes/modal_form', $view_data);
     }
 
@@ -82,7 +82,8 @@ class Notes extends MY_Controller {
             "labels" => $this->input->post('labels'),
             "project_id" => $this->input->post('project_id') ? $this->input->post('project_id') : 0,
             "client_id" => $this->input->post('client_id') ? $this->input->post('client_id') : 0,
-            "user_id" => $this->input->post('user_id') ? $this->input->post('user_id') : 0
+            "user_id" => $this->input->post('user_id') ? $this->input->post('user_id') : 0,
+            "is_public" => $this->input->post('is_public') ? $this->input->post('is_public') : 0
         );
 
         if ($id) {
@@ -98,7 +99,7 @@ class Notes extends MY_Controller {
             //saving existing note. check permission
             $note_info = $this->Notes_model->get_one($id);
 
-            $this->validate_access_to_note($note_info);
+            $this->validate_access_to_note($note_info, true);
         } else {
             $data['created_at'] = get_current_utc_time();
         }
@@ -121,7 +122,7 @@ class Notes extends MY_Controller {
         $id = $this->input->post('id');
 
         $note_info = $this->Notes_model->get_one($id);
-        $this->validate_access_to_note($note_info);
+        $this->validate_access_to_note($note_info, true);
 
         if ($this->Notes_model->delete($id)) {
             //delete the files
@@ -130,8 +131,7 @@ class Notes extends MY_Controller {
                 $files = unserialize($note_info->files);
 
                 foreach ($files as $file) {
-                    $source_path = $file_path . get_array_value($file, "file_name");
-                    delete_file_from_directory($source_path);
+                    delete_app_files($file_path, array($file));
                 }
             }
 
@@ -156,7 +156,6 @@ class Notes extends MY_Controller {
             $options["my_notes"] = true;
         }
 
-
         $list_data = $this->Notes_model->get_details($options)->result();
         $result = array();
         foreach ($list_data as $data) {
@@ -172,13 +171,15 @@ class Notes extends MY_Controller {
     }
 
     private function _make_row($data) {
-        $title = modal_anchor(get_uri("notes/view/" . $data->id), $data->title, array("class" => "edit", "title" => lang('note'), "data-post-id" => $data->id));
-        $note_labels = "";
-        if ($data->labels) {
-            $labels = explode(",", $data->labels);
-            foreach ($labels as $label) {
-                $note_labels .= "<span class='label label-info clickable'>" . $label . "</span> ";
-            }
+        $public_icon = "";
+        if ($data->is_public) {
+            $public_icon = "<i class='fa fa-globe'></i> ";
+        }
+
+        $title = modal_anchor(get_uri("notes/view/" . $data->id), $public_icon . $data->title, array("title" => lang('note'), "data-post-id" => $data->id));
+
+        if ($data->labels_list) {
+            $note_labels = make_labels_view_data($data->labels_list, true);
             $title .= "<br />" . $note_labels;
         }
 
@@ -186,12 +187,19 @@ class Notes extends MY_Controller {
         if ($data->files) {
             $files = unserialize($data->files);
             if (count($files)) {
-                foreach ($files as $file) {
-                    $file_name = get_array_value($file, "file_name");
+                foreach ($files as $key => $value) {
+                    $file_name = get_array_value($value, "file_name");
                     $link = " fa fa-" . get_file_icon(strtolower(pathinfo($file_name, PATHINFO_EXTENSION)));
-                    $files_link .= js_anchor(" ", array('title' => "", "data-toggle" => "app-modal", "data-sidebar" => "0", "class" => "pull-left font-22 mr10 $link", "title" => remove_file_prefix($file_name), "data-url" => get_uri("notes/file_preview/" . $file_name)));
+                    $files_link .= js_anchor(" ", array('title' => "", "data-toggle" => "app-modal", "data-sidebar" => "0", "class" => "pull-left font-22 mr10 $link", "title" => remove_file_prefix($file_name), "data-url" => get_uri("notes/file_preview/" . $data->id . "/" . $key)));
                 }
             }
+        }
+
+        //only creator and admin can edit/delete notes
+        $actions = modal_anchor(get_uri("notes/view/" . $data->id), "<i class='fa fa-bolt'></i>", array("class" => "edit", "title" => lang('note_details'), "data-modal-title" => lang("note"), "data-post-id" => $data->id));
+        if ($data->created_by == $this->login_user->id || $this->login_user->is_admin) {
+            $actions = modal_anchor(get_uri("notes/modal_form"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => lang('edit_note'), "data-post-id" => $data->id))
+                    . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete_note'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("notes/delete"), "data-action" => "delete-confirmation"));
         }
 
 
@@ -200,8 +208,7 @@ class Notes extends MY_Controller {
             format_to_relative_time($data->created_at),
             $title,
             $files_link,
-            modal_anchor(get_uri("notes/modal_form"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => lang('edit_note'), "data-post-id" => $data->id))
-            . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete_note'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("notes/delete"), "data-action" => "delete-confirmation"))
+            $actions
         );
     }
 
@@ -210,7 +217,7 @@ class Notes extends MY_Controller {
             "id" => "required|numeric"
         ));
 
-        $model_info = $this->Notes_model->get_one($this->input->post('id'));
+        $model_info = $this->Notes_model->get_details(array("id" => $this->input->post('id')))->row();
 
         $this->validate_access_to_note($model_info);
 
@@ -218,11 +225,21 @@ class Notes extends MY_Controller {
         $this->load->view('notes/view', $view_data);
     }
 
-    function file_preview($file_name = "") {
-        if ($file_name) {
-            $view_data["file_url"] = get_file_uri(get_setting("timeline_file_path") . $file_name);
+    function file_preview($id = "", $key = "") {
+        if ($id) {
+            $note_info = $this->Notes_model->get_one($id);
+            $files = unserialize($note_info->files);
+            $file = get_array_value($files, $key);
+
+            $file_name = get_array_value($file, "file_name");
+            $file_id = get_array_value($file, "file_id");
+            $service_type = get_array_value($file, "service_type");
+
+            $view_data["file_url"] = get_source_url_of_file($file, get_setting("timeline_file_path"));
             $view_data["is_image_file"] = is_image_file($file_name);
             $view_data["is_google_preview_available"] = is_google_preview_available($file_name);
+            $view_data["is_viewable_video_file"] = is_viewable_video_file($file_name);
+            $view_data["is_google_drive_file"] = ($file_id && $service_type == "google") ? true : false;
 
             $this->load->view("notes/file_preview", $view_data);
         } else {

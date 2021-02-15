@@ -1,22 +1,35 @@
-<div id="page-content" class="p20 row">
-    <div class="col-sm-3 col-lg-2">
-        <?php
-        $tab_view['active_tab'] = "tasks";
-        $this->load->view("settings/tabs", $tab_view);
-        ?>
-    </div>
+<div id="page-content" class="p20 clearfix">
+    <div class="row">
+        <div class="col-sm-3 col-lg-2">
+            <?php
+            $tab_view['active_tab'] = "tasks";
+            $this->load->view("settings/tabs", $tab_view);
+            ?>
+        </div>
 
-    <div class="col-sm-9 col-lg-10">
-        <div class="panel panel-default">
-            <div class="page-title clearfix no-border">
-                <h4> <?php echo lang('task_status'); ?></h4>
-                <div class="title-button-group">
-                    <?php echo modal_anchor(get_uri("task_status/modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('add_task_status'), array("class" => "btn btn-default", "title" => lang('add_task_status'))); ?>
+        <div class="col-sm-9 col-lg-10">
+            <div class="panel panel-default">
+
+                <ul data-toggle="ajax-tab" class="nav nav-tabs bg-white title" role="tablist">
+                    <li><a  role="presentation" class="active" href="javascript:;" data-target="#task-status-tab"> <?php echo lang('task_status'); ?></a></li>
+                    <li><a role="presentation" href="<?php echo_uri("settings/tasks/"); ?>" data-target="#task-settings-tab"><?php echo lang('task_settings'); ?></a></li>
+                    <div class="tab-title clearfix no-border">
+                        <div class="title-button-group">
+                            <?php echo modal_anchor(get_uri("task_status/modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('add_task_status'), array("class" => "btn btn-default", "title" => lang('add_task_status'))); ?>
+                        </div>
+                    </div>
+                </ul>
+
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane fade" id="task-status-tab">
+                        <div class="table-responsive">
+                            <table id="task-status-table" class="display no-thead b-t b-b-only no-hover" cellspacing="0" width="100%">         
+                            </table>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane fade" id="task-settings-tab"></div>
                 </div>
-            </div>
-            <div class="table-responsive ">
-                <table id="task-status-table" class="display no-thead b-t b-b-only no-hover" cellspacing="0" width="100%">         
-                </table>
+
             </div>
         </div>
     </div>

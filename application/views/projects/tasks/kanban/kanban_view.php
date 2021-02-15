@@ -1,72 +1,93 @@
-<div id="kanban-wrapper" class="row">
-        <?php
-        $columns_data = array();
+<div id="kanban-wrapper">
+    <?php
+    $columns_data = array();
 
-        $column_width = (335 * $total_columns) + 5;
+    foreach ($tasks as $task) {
 
-        foreach ($tasks as $task) {
-
-            $exising_items = get_array_value($columns_data, $task->status_id);
-            if (!$exising_items) {
-                $exising_items = "";
-            }
-
-            $task_labels = "";
-            if ($task->labels) {
-                $labels = explode(",", $task->labels);
-                foreach ($labels as $label) {
-                    $task_labels .= "<span class='label label-info'>" . $label . "</span> ";
-                }
-            }
-
-            if ($task_labels) {
-                $task_labels = "<div class='meta'>$task_labels</div>";
-            }
-
-            $item = $exising_items .  modal_anchor(get_uri("projects/task_view"), 
-                        "<span class='avatar'>" .
-                        "<img src='" . get_avatar($task->assigned_to_avatar) . "'>" .
-                        "</span>" . $task->id . ". " . $task->title .
-                        $task_labels,
-                    array("class"=>"kanban-item", "data-id"=>$task->id, "data-project_id"=>$task->project_id, "data-sort"=>$task->new_sort, "data-post-id" => $task->id, "title" => lang('task_info') . " #$task->id",));
-
-            $columns_data[$task->status_id] = $item;
+        $exising_items = get_array_value($columns_data, $task->status_id);
+        if (!$exising_items) {
+            $exising_items = "";
         }
-        ?>
 
-        <ul id="kanban-container" class="kanban-container clearfix" style="width: <?php echo $column_width; ?>px;">
+        $task_labels = make_labels_view_data($task->labels_list);
+        $sub_task_icon = "";
+        if ($task->parent_task_id) {
+            $sub_task_icon = "<span class='sub-task-icon mr5' title='" . lang("sub_task") . "'><i class='fa fa-code-fork'></i></span>";
+        }
 
-            <?php foreach ($columns as $column) { ?>
-                <li class="kanban-col" >
-                    <div class="kanban-col-title" style="background: <?php echo $column->color ? $column->color : "#2e4053"; ?>;"> <?php echo $column->key_name ? lang($column->key_name) : $column->title; ?> </div>
+        if ($task_labels) {
+            $task_labels = "<div class='meta'>$task_labels</div>";
+        }
 
-                    <div class="kanban-input general-form hide">
-                        <?php
-                        echo form_input(array(
-                            "id" => "title",
-                            "name" => "title",
-                            "value" => "",
-                            "class" => "form-control",
-                            "placeholder" => lang('add_a_task')
-                        ));
-                        ?>
-                    </div>
+        $unread_comments_class = "";
+        if (isset($task->unread) && $task->unread && $task->unread != "0") {
+            $unread_comments_class = "unread-comments-of-kanban unread";
+        }
 
-                    <div  id="kanban-item-list-<?php echo $column->id; ?>" class="kanban-item-list" data-status_id="<?php echo $column->id; ?>">
-                        <?php echo get_array_value($columns_data, $column->id); ?>
-                    </div>
-                </li>
-            <?php } ?>
+        $batch_operation_checkbox = "";
+        if ($this->login_user->user_type == "staff" && $can_edit_tasks && $project_id) {
+            $batch_operation_checkbox = "<span data-act='batch-operation-task-checkbox' title='" . lang("batch_update") . "' class='checkbox-blank-sm pull-right invisible'></span>";
+        }
 
-        </ul>
-    </div>
+        $disable_dragging = can_edit_this_task_status($task->assigned_to) ? "" : "disable-dragging";
 
-    <img id="move-icon" class="hide" src="<?php echo get_file_uri("assets/images/move.png"); ?>" alt="..." />
-    
+        $item = $exising_items . modal_anchor(get_uri("projects/task_view"), "<span class='avatar'>" .
+                        "<img src='" . get_avatar($task->assigned_to_avatar) . "'>" .
+                        "</span>" . $sub_task_icon . $task->id . ". " . $task->title . $batch_operation_checkbox .
+                        $task_labels, array("class" => "kanban-item $disable_dragging $unread_comments_class", "data-id" => $task->id, "data-project_id" => $task->project_id, "data-sort" => $task->new_sort, "data-post-id" => $task->id, "title" => lang('task_info') . " #$task->id", "data-modal-lg" => "1"));
+
+        $columns_data[$task->status_id] = $item;
+    }
+    ?>
+
+    <ul id="kanban-container" class="kanban-container clearfix">
+
+        <?php foreach ($columns as $column) { ?>
+            <li class="kanban-col" >
+                <div class="kanban-col-title" style="background: <?php echo $column->color ? $column->color : "#2e4053"; ?>;"> <?php echo $column->key_name ? lang($column->key_name) : $column->title; ?> </div>
+
+                <div class="kanban-input general-form hide">
+                    <?php
+                    echo form_input(array(
+                        "id" => "title",
+                        "name" => "title",
+                        "value" => "",
+                        "class" => "form-control",
+                        "placeholder" => lang('add_a_task')
+                    ));
+                    ?>
+                </div>
+
+                <div  id="kanban-item-list-<?php echo $column->id; ?>" class="kanban-item-list" data-status_id="<?php echo $column->id; ?>">
+                    <?php echo get_array_value($columns_data, $column->id); ?>
+                </div>
+            </li>
+        <?php } ?>
+
+    </ul>
+</div>
+
+<img id="move-icon" class="hide" src="<?php echo get_file_uri("assets/images/move.png"); ?>" alt="..." />
+
 <script type="text/javascript">
-
+    var kanbanContainerWidth = "";
 
     adjustViewHeightWidth = function () {
+
+        if (!$("#kanban-container").length) {
+            return false;
+        }
+
+
+        var totalColumns = "<?php echo $total_columns ?>";
+        var columnWidth = (335 * totalColumns) + 5;
+
+        if (columnWidth > kanbanContainerWidth) {
+            $("#kanban-container").css({width: columnWidth + "px"});
+        } else {
+            $("#kanban-container").css({width: "100%"});
+        }
+
 
         //set wrapper scroll
         if ($("#kanban-wrapper")[0].offsetWidth < $("#kanban-wrapper")[0].scrollWidth) {
@@ -76,9 +97,15 @@
         }
 
 
-        //set column scroll 
-        $(".kanban-item-list").height($(window).height() - $(".kanban-item-list").offset().top-30);
-    
+        //set column scroll
+
+        var columnHeight = $(window).height() - $(".kanban-item-list").offset().top - 30;
+        if (isMobile()) {
+            columnHeight = $(window).height() - 30;
+        }
+
+        $(".kanban-item-list").height(columnHeight);
+
         $(".kanban-item-list").each(function (index) {
 
             //set scrollbar on column... if requred
@@ -138,6 +165,10 @@
             data: {id: id, sort: newSort, status_id: status, project_id: project_id},
             success: function () {
                 appLoader.hide();
+
+                if (isMobile()) {
+                    adjustViewHeightWidth();
+                }
             }
         });
 
@@ -146,41 +177,51 @@
 
 
     $(document).ready(function () {
+        kanbanContainerWidth = $("#kanban-container").width();
+
+        if (isMobile() && window.scrollToKanbanContent) {
+            window.scrollTo(0, 220); //scroll to the content for mobile devices
+            window.scrollToKanbanContent = false;
+        }
 
         var isChrome = !!window.chrome && !!window.chrome.webstore;
 
 
-        $(".kanban-item-list").each(function (index) {
-            var id = this.id;
+<?php if ($this->login_user->user_type == "staff" || ($this->login_user->user_type == "client" && $can_edit_tasks)) { ?>
+            $(".kanban-item-list").each(function (index) {
+                var id = this.id;
 
-            var options = {
-                animation: 150,
-                group: "kanban-item-list",
-                onAdd: function (e) {
-                    //moved to another column. update bothe sort and status
-                    saveStatusAndSort($(e.item), $(e.item).closest(".kanban-item-list").attr("data-status_id"));
-                },
-                onUpdate: function (e) {
-                    //updated sort
-                    saveStatusAndSort($(e.item));
-                }
-            };
-
-            //apply only on chrome because this feature is not working perfectly in other browsers.
-            if (isChrome) {
-                options.setData = function (dataTransfer, dragEl) {
-                    var img = document.createElement("img");
-                    img.src = $("#move-icon").attr("src");
-                    img.style.opacity = 1;
-                    dataTransfer.setDragImage(img, 5, 10);
+                var options = {
+                    animation: 150,
+                    group: "kanban-item-list",
+                    filter: ".disable-dragging",
+                    cancel: ".disable-dragging",
+                    onAdd: function (e) {
+                        //moved to another column. update bothe sort and status
+                        saveStatusAndSort($(e.item), $(e.item).closest(".kanban-item-list").attr("data-status_id"));
+                    },
+                    onUpdate: function (e) {
+                        //updated sort
+                        saveStatusAndSort($(e.item));
+                    }
                 };
 
-                options.ghostClass = "kanban-sortable-ghost";
-                options.chosenClass = "kanban-sortable-chosen";
-            }
+                //apply only on chrome because this feature is not working perfectly in other browsers.
+                if (isChrome) {
+                    options.setData = function (dataTransfer, dragEl) {
+                        var img = document.createElement("img");
+                        img.src = $("#move-icon").attr("src");
+                        img.style.opacity = 1;
+                        dataTransfer.setDragImage(img, 5, 10);
+                    };
 
-            Sortable.create($("#" + id)[0], options);
-        });
+                    options.ghostClass = "kanban-sortable-ghost";
+                    options.chosenClass = "kanban-sortable-chosen";
+                }
+
+                Sortable.create($("#" + id)[0], options);
+            });
+<?php } ?>
 
 
         adjustViewHeightWidth();
@@ -193,5 +234,6 @@
         adjustViewHeightWidth();
     });
 
-
 </script>
+
+<?php $this->load->view("projects/tasks/update_task_read_comments_status_script"); ?>

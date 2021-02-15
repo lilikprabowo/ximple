@@ -37,6 +37,7 @@
                 "value" => $model_info->description,
                 "class" => "form-control",
                 "placeholder" => lang('description'),
+                "data-rich-text-editor" => true
             ));
             ?>
         </div>
@@ -50,7 +51,8 @@
                 "name" => "start_date",
                 "value" => is_date_exists($model_info->start_date) ? $model_info->start_date : "",
                 "class" => "form-control",
-                "placeholder" => lang('start_date')
+                "placeholder" => lang('start_date'),
+                "autocomplete" => "off"
             ));
             ?>
         </div>
@@ -64,7 +66,8 @@
                 "name" => "deadline",
                 "value" => is_date_exists($model_info->deadline) ? $model_info->deadline : "",
                 "class" => "form-control",
-                "placeholder" => lang('deadline')
+                "placeholder" => lang('deadline'),
+                "autocomplete" => "off"
             ));
             ?>
         </div>
@@ -98,6 +101,9 @@
             ?>
         </div>
     </div>
+
+    <?php $this->load->view("custom_fields/form/prepare_context_fields", array("custom_fields" => $custom_fields, "label_column" => "col-md-3", "field_column" => " col-md-9")); ?> 
+
     <div class="form-group">
         <label for="copy_project_members"class=" col-md-12">
             <?php
@@ -139,6 +145,15 @@
             echo form_checkbox("copy_milestones", "1", false, "id='copy_milestones'  class='pull-left '");
             ?>    
             <span class="pull-left ml15"> <?php echo lang('copy_milestones'); ?> </span>
+        </label>
+    </div>
+
+    <div class="form-group">
+        <label for="move_all_tasks_to_to_do"class=" col-md-12">
+            <?php
+            echo form_checkbox("move_all_tasks_to_to_do", "1", false, "id='move_all_tasks_to_to_do'  class='pull-left '");
+            ?>    
+            <span class="pull-left ml15"> <?php echo lang('move_all_tasks_to_to_do'); ?> </span>
         </label>
     </div>
 

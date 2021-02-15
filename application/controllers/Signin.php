@@ -9,7 +9,7 @@ class Signin extends CI_Controller {
 
     function index() {
         if ($this->Users_model->login_user_id()) {
-            redirect('dashboard');
+            redirect('dashboard/view');
         } else {
 
             $view_data["redirect"] = "";
@@ -37,7 +37,7 @@ class Signin extends CI_Controller {
                 if ($view_data["redirect"]) {
                     redirect($view_data["redirect"]);
                 } else {
-                    redirect('dashboard');
+                    redirect('dashboard/view');
                 }
             }
         }
@@ -108,22 +108,23 @@ class Signin extends CI_Controller {
         if (get_setting("re_captcha_secret_key")) {
 
             $response = $this->is_valid_recaptcha($this->input->post("g-recaptcha-response"));
-       
+
             if ($response !== true) {
-                
-                if($response){
-                    echo json_encode(array('success' => false, 'message' => lang("re_captcha_error-" . $response) ));
-                }else{
-                    echo json_encode(array('success' => false, 'message' => lang("re_captcha_expired") ));
+
+                if ($response) {
+                    echo json_encode(array('success' => false, 'message' => lang("re_captcha_error-" . $response)));
+                } else {
+                    echo json_encode(array('success' => false, 'message' => lang("re_captcha_expired")));
                 }
-                
+
                 return false;
             }
         }
 
-        
+
 
         $email = $this->input->post("email");
+        
         $existing_user = $this->Users_model->is_email_exists($email);
 
         //send reset password email if found account with this email
@@ -134,8 +135,21 @@ class Signin extends CI_Controller {
             $parser_data["SIGNATURE"] = $email_template->signature;
             $parser_data["LOGO_URL"] = get_logo_url();
             $parser_data["SITE_URL"] = get_uri();
-            $key = encode_id($this->encryption->encrypt($existing_user->email . '|' . (time() + (24 * 60 * 60))), "reset_password");
-            $parser_data['RESET_PASSWORD_URL'] = get_uri("signin/new_password/" . $key);
+
+            $verification_data = array(
+                "type" => "reset_password",
+                "code" => make_random_string(),
+                "params" => serialize(array(
+                    "email" => $existing_user->email,
+                    "expire_time" => time() + (24 * 60 * 60)
+                ))
+            );
+
+            $save_id = $this->Verification_model->save($verification_data);
+
+            $verification_info = $this->Verification_model->get_one($save_id);
+
+            $parser_data['RESET_PASSWORD_URL'] = get_uri("signin/new_password/" . $verification_info->code);
 
             $message = $this->parser->parse_string($email_template->message, $parser_data, TRUE);
             if (send_app_mail($email, $email_template->subject, $message)) {
@@ -192,8 +206,15 @@ class Signin extends CI_Controller {
         if ($valid_key) {
             $email = get_array_value($valid_key, "email");
             $user = $this->Users_model->is_email_exists($email);
-            $user_data = array("password" => md5($password));
+            $user_data = array("password" => password_hash($password, PASSWORD_DEFAULT));
             if ($user->id && $this->Users_model->save($user_data, $user->id)) {
+                //user can't reset password two times with the same code
+                $options = array("code" => $key, "type" => "reset_password");
+                $verification_info = $this->Verification_model->get_details($options)->row();
+                if ($verification_info->id) {
+                    $this->Verification_model->delete_permanently($verification_info->id);
+                }
+
                 echo json_encode(array("success" => true, 'message' => lang("password_reset_successfully") . " " . anchor("signin", lang("signin"))));
                 return true;
             }
@@ -202,18 +223,21 @@ class Signin extends CI_Controller {
     }
 
     //check valid key
-    private function is_valid_reset_password_key($key = "") {
+    private function is_valid_reset_password_key($verification_code = "") {
 
-        if ($key) {
-            $key = decode_id($key, "reset_password");
-            $key = $this->encryption->decrypt($key);
-            $key = explode('|', $key);
+        if ($verification_code) {
+            $options = array("code" => $verification_code, "type" => "reset_password");
+            $verification_info = $this->Verification_model->get_details($options)->row();
 
-            $email = get_array_value($key, "0");
-            $expire_time = get_array_value($key, "1");
+            if ($verification_info && $verification_info->id) {
+                $reset_password_info = unserialize($verification_info->params);
 
-            if ($email && valid_email($email) && $expire_time && $expire_time > time()) {
-                return array("email" => $email);
+                $email = get_array_value($reset_password_info, "email");
+                $expire_time = get_array_value($reset_password_info, "expire_time");
+
+                if ($email && valid_email($email) && $expire_time && $expire_time > time()) {
+                    return array("email" => $email);
+                }
             }
         }
     }

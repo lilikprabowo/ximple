@@ -10,13 +10,33 @@
                     <?php $this->load->view("projects/project_task_pie_chart"); ?>
                 </div>
 
-               <div class="col-md-12 col-sm-12 project-custom-fields">
-                    <?php  $this->load->view('projects/custom_fields_list', array("custom_fields_list"=>$custom_fields_list)); ?>
-               </div>
+                <?php if (get_setting('module_project_timesheet')) { ?>
+                    <div class="col-md-12 col-sm-12">
+                        <?php $this->load->view("projects/widgets/total_hours_worked_widget"); ?>
+                    </div>
+                <?php } ?>
 
-                <div class="col-md-12 col-sm-12">
-                    <?php $this->load->view("projects/project_members/index"); ?>
-                </div>  
+                <div class="col-md-12 col-sm-12 project-custom-fields">
+                    <?php $this->load->view('projects/custom_fields_list', array("custom_fields_list" => $custom_fields_list)); ?>
+                </div>
+
+                <?php if ($project_info->estimate_id) { ?>
+                    <div class="col-md-12 col-sm-12">
+                        <?php $this->load->view("projects/estimates/index"); ?>
+                    </div> 
+                <?php } ?>
+
+                <?php if ($can_add_remove_project_members) { ?>
+                    <div class="col-md-12 col-sm-12">
+                        <?php $this->load->view("projects/project_members/index"); ?>
+                    </div>  
+                <?php } ?>
+
+                <?php if ($can_access_clients) { ?>
+                    <div class="col-md-12 col-sm-12">
+                        <?php $this->load->view("projects/client_contacts/index"); ?>
+                    </div>  
+                <?php } ?>
 
                 <div class="col-md-12 col-sm-12">
                     <?php $this->load->view("projects/project_description"); ?>

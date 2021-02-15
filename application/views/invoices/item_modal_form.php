@@ -147,18 +147,11 @@
 
                         //auto fill the description, unit type and rate fields.
                         if (response && response.success) {
+                            $("#invoice_item_description").val(response.item_info.description);
 
-                            if (!$("#invoice_item_description").val()) {
-                                $("#invoice_item_description").val(response.item_info.description);
-                            }
+                            $("#invoice_unit_type").val(response.item_info.unit_type);
 
-                            if (!$("#invoice_unit_type").val()) {
-                                $("#invoice_unit_type").val(response.item_info.unit_type);
-                            }
-
-                            if (!$("#invoice_item_rate").val()) {
-                                $("#invoice_item_rate").val(response.item_info.rate);
-                            }
+                            $("#invoice_item_rate").val(response.item_info.rate);
                         }
                     }
                 });

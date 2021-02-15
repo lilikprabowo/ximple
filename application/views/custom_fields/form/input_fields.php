@@ -33,6 +33,29 @@
     </div>
 </div>
 
+<?php if (isset($related_to) && $related_to === "tickets") { ?>
+    <div class="form-group">
+        <label for="example_variable_name" class=" col-md-3"><?php echo lang('email_template_variable'); ?></label>
+        <div class=" col-md-9">
+            <?php if ($model_info->example_variable_name) { ?>
+                <input type="hidden" name="example_variable_name" value="<?php echo $model_info->example_variable_name; ?>" />
+                <?php echo $model_info->example_variable_name; ?>
+                <?php
+            } else {
+                echo form_input(array(
+                    "id" => "example_variable_name",
+                    "name" => "example_variable_name",
+                    "value" => $model_info->example_variable_name,
+                    "class" => "form-control text-uppercase",
+                    "placeholder" => lang('example_variable_name'),
+                    "autocomplete" => "off"
+                ));
+            }
+            ?>
+        </div>
+    </div>
+<?php } ?>
+
 
 <div class="form-group">
     <label for="field_type" class=" col-md-3"><?php echo lang('field_type'); ?></label>
@@ -50,7 +73,8 @@
             "multi_select" => lang("field_type_multi_select"),
             "email" => lang("email"),
             "date" => lang("date"),
-            "number" => lang("field_type_number")
+            "number" => lang("field_type_number"),
+            "external_link" => lang("field_type_external_link")
         );
         echo form_dropdown("field_type", $field_type_dropdown, $model_info->field_type, "class='select2' id='field_type' $disabled");
         ?>

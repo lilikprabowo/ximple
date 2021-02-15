@@ -91,10 +91,10 @@
                     <label for="gender_female" class=""><?php echo lang('female'); ?></label>
                 </div>
             </div>
-            
-            
-        <?php $this->load->view("custom_fields/form/prepare_context_fields", array("custom_fields" => $custom_fields, "label_column" =>"col-md-3", "field_column" => " col-md-9")); ?> 
-            
+
+
+            <?php $this->load->view("custom_fields/form/prepare_context_fields", array("custom_fields" => $custom_fields, "label_column" => "col-md-3", "field_column" => " col-md-9")); ?> 
+
         </div>
         <div role="tabpanel" class="tab-pane" id="job-info-tab">
             <div class="form-group">
@@ -146,7 +146,8 @@
                         "id" => "date_of_hire",
                         "name" => "date_of_hire",
                         "class" => "form-control",
-                        "placeholder" => lang('date_of_hire')
+                        "placeholder" => lang('date_of_hire'),
+                        "autocomplete" => "off"
                     ));
                     ?>
                 </div>
@@ -229,22 +230,22 @@
 <?php echo form_close(); ?>
 
 <script type="text/javascript">
-    $(document).ready(function() {
+    $(document).ready(function () {
         $("#team_member-form").appForm({
-            onSuccess: function(result) {
+            onSuccess: function (result) {
                 if (result.success) {
                     $("#team_member-table").appTable({newData: result.data, dataId: result.id});
                 }
             },
-            onSubmit: function() {
+            onSubmit: function () {
                 $("#form-previous").attr('disabled', 'disabled');
             },
-            onAjaxSuccess: function() {
+            onAjaxSuccess: function () {
                 $("#form-previous").removeAttr('disabled');
             }
         });
 
-        $("#team_member-form input").keydown(function(e) {
+        $("#team_member-form input").keydown(function (e) {
             if (e.keyCode === 13) {
                 e.preventDefault();
                 if ($('#form-submit').hasClass('hide')) {
@@ -259,7 +260,7 @@
 
         setDatePicker("#date_of_hire");
 
-        $("#form-previous").click(function() {
+        $("#form-previous").click(function () {
             var $generalTab = $("#general-info-tab"),
                     $jobTab = $("#job-info-tab"),
                     $accountTab = $("#account-info-tab"),
@@ -281,7 +282,7 @@
             }
         });
 
-        $("#form-next").click(function() {
+        $("#form-next").click(function () {
             var $generalTab = $("#general-info-tab"),
                     $jobTab = $("#job-info-tab"),
                     $accountTab = $("#account-info-tab"),
@@ -310,15 +311,15 @@
             }
         });
 
-        $("#form-submit").click(function() {
+        $("#form-submit").click(function () {
             $("#team_member-form").trigger('submit');
         });
 
-        $("#generate_password").click(function() {
+        $("#generate_password").click(function () {
             $("#password").val(getRndomString(8));
         });
 
-        $("#show_hide_password").click(function() {
+        $("#show_hide_password").click(function () {
             var $target = $("#password"),
                     type = $target.attr("type");
             if (type === "password") {
@@ -332,7 +333,7 @@
             }
         });
 
-        $("#user-role").change(function() {
+        $("#user-role").change(function () {
             if ($(this).val() === "admin") {
                 $("#user-role-help-block").removeClass("hide");
             } else {

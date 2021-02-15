@@ -31,7 +31,7 @@
                 {visible: false, searchable: false},
                 {title: '<?php echo lang("created_date") ?>', "iDataSort": 3},
                 {title: "<?php echo lang('status'); ?>"},
-                {title: "<i class='fa fa-bars></i>'", "class": "text-center option w100", visible: fieldVisibility}
+                {title: "<i class='fa fa-bars></i>'", "class": "text-center dropdown-option w100", visible: fieldVisibility}
             ],
             printColumns: [0, 2, 3, 5, 6]
         });

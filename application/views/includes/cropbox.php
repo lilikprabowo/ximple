@@ -57,14 +57,14 @@ load_js(array(
             if (typeof FileReader == 'function') {
                 $(options.thumbBox).css({"width": width + "px", "height": height + "px", "margin-top": (height / 2) * -1 + "px", "margin-left": (width / 2) * -1 + "px"});
                 var reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     options.imgSrc = e.target.result;
                     cropper = $('.crop-box').cropbox(options);
                 };
                 reader.readAsDataURL(file);
-                setTimeout(function() {
+                setTimeout(function () {
                     $("#cropModal").modal('toggle');
-                    setTimeout(function() {
+                    setTimeout(function () {
                         cropper.zoomIn();
                         cropper.zoomOut();
                         appLoader.hide();
@@ -77,18 +77,18 @@ load_js(array(
         }
     }
 
-    $(document).ready(function() {
-        $('#image-crop-button').on('click', function() {
+    $(document).ready(function () {
+        $('#image-crop-button').on('click', function () {
             var img = cropper.getDataURL(),
                     previewCntainer = $(this).attr('data-preview-container'),
                     inputField = $(this).attr('data-input-field');
             $(previewCntainer).attr("src", img);
             $(inputField).val(img).trigger("change");
         });
-        $('#image-zoomin-button').on('click', function() {
+        $('#image-zoomin-button').on('click', function () {
             cropper.zoomIn();
         });
-        $('#image-zoomout-button').on('click', function() {
+        $('#image-zoomout-button').on('click', function () {
             cropper.zoomOut();
         });
     });

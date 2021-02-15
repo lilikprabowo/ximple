@@ -37,6 +37,7 @@
                 "value" => $in_time ? date("Y-m-d", strtotime($in_time)) : "",
                 "class" => "form-control",
                 "placeholder" => lang('in_date'),
+                "autocomplete" => "off",
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required"),
             ));
@@ -76,6 +77,7 @@
                 "value" => $out_time ? date("Y-m-d", strtotime($out_time)) : "",
                 "class" => "form-control",
                 "placeholder" => lang('out_date'),
+                "autocomplete" => "off",
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required"),
                 "data-rule-greaterThanOrEqual" => "#in_date",
@@ -108,6 +110,7 @@
                 "class" => "form-control",
                 "placeholder" => lang('note'),
                 "value" => $model_info->note,
+                "data-rich-text-editor" => true
             ));
             ?>
         </div>

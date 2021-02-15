@@ -1,1 +1,8 @@
-<img src="<?php echo get_file_uri(get_setting("system_file_path") . get_setting("invoice_logo")); ?>" />
+<?php
+$estimate_logo = "estimate_logo";
+if (!get_setting($estimate_logo)) {
+    $estimate_logo = "invoice_logo";
+}
+?>
+
+<img src="<?php echo get_file_from_setting($estimate_logo, get_setting('only_file_path')); ?>" />

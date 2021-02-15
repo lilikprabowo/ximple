@@ -60,23 +60,78 @@ class Notification_processor extends CI_Controller {
             "invoice_payment_id" => get_array_value($_POST, "invoice_payment_id"),
             "invoice_id" => get_array_value($_POST, "invoice_id"),
             "estimate_id" => get_array_value($_POST, "estimate_id"),
+            "order_id" => get_array_value($_POST, "order_id"),
             "estimate_request_id" => get_array_value($_POST, "estimate_request_id"),
             "actual_message_id" => get_array_value($_POST, "actual_message_id"),
             "parent_message_id" => get_array_value($_POST, "parent_message_id"),
             "event_id" => get_array_value($_POST, "event_id"),
-            "announcement_id" => get_array_value($_POST, "announcement_id")
+            "announcement_id" => get_array_value($_POST, "announcement_id"),
+            "exclude_ticket_creator" => get_array_value($_POST, "exclude_ticket_creator"),
+            "notification_multiple_tasks" => get_array_value($_POST, "notification_multiple_tasks"),
+            "lead_id" => get_array_value($_POST, "lead_id")
         );
 
 
         //clasified the task modification parts
         if ($event == "project_task_updated") {
-            $this->_clasified_task_modification($event, $options, $activity_log_id); //overwrite event and  options
+            //overwrite event and options
+            $notify_to_array = $this->_clasified_task_modification($event, $options, $activity_log_id);
+
+            /*
+             * for custom field changes, we've to check if the field has any restrictions 
+             * like 'visible to admins only' or 'hide from clients'
+             * but there might be changed other things along with the secret custom fields
+             * so, we've to show only that fields. then, we need to create notification for all users
+             */
+            if (is_array($notify_to_array)) {
+                if (!get_array_value($notify_to_array, array_search("all", $notify_to_array))) {
+                    $options["notify_to_admins_only"] = true;
+                }
+            }
         }
+
+        //get reminder tasks
+        if (get_array_value($options, "notification_multiple_tasks")) {
+            $reminder_tasks = $this->get_reminder_tasks($event);
+            if ($reminder_tasks) {
+                $options["notification_multiple_tasks"] = $reminder_tasks;
+            } else {
+                //if no tasks to remind, exit for reminder tasks notifications
+                return;
+            }
+        }
+
+        //save reminder date
+        $this->_save_reminder_date($event, $options);
 
         //error_log("announcement_id: " . $options["announcement_id"] . PHP_EOL, 3, "notification.txt");
         //error_log("announcement_share_with: " . $options["announcement_share_with"] . PHP_EOL, 3, "notification.txt");
 
         $this->Notifications_model->create_notification($event, $user_id, $options);
+    }
+
+    private function get_reminder_tasks($event) {
+        //prepare task deadline date accroding to the setting
+        $reminder_date = get_setting($event);
+        if ($reminder_date) {
+            $date = get_today_date();
+            $start_date = add_period_to_date($date, $reminder_date, "days");
+            $todo_status_id = $this->Task_status_model->get_one_where(array("key_name" => "done", "deleted" => 0));
+
+            if ($event == "project_task_deadline_overdue_reminder") {
+                $start_date = subtract_period_from_date($date, $reminder_date, "days");
+            } else if ($event == "project_task_reminder_on_the_day_of_deadline") {
+                $start_date = $date;
+            }
+
+            return $this->Tasks_model->get_details(array(
+                        "exclude_status_id" => $todo_status_id->id, //find all tasks which are not done yet
+                        "start_date" => $start_date,
+                        "deadline" => $start_date, //both should be same
+                        "exclude_reminder_date" => $date, //don't find tasks which reminder already sent today
+                        "sort_by_project" => true
+                    ))->result();
+        }
     }
 
     private function _clasified_task_modification(&$event, &$options, $activity_log_id = 0) {
@@ -86,8 +141,10 @@ class Notification_processor extends CI_Controller {
             $activity = $this->Activity_logs_model->get_one($activity_log_id);
             if ($activity && $activity->changes) {
 
-                $changes = unserialize($activity->changes);
+                //get notify to array according to changes
+                $notify_to_array = get_change_logs_array($activity->changes, $activity->log_type, $activity->action, true);
 
+                $changes = unserialize($activity->changes);
 
                 //only chaged assigned_to field?
                 if (is_array($changes) && count($changes) == 1 && get_array_value($changes, "assigned_to")) {
@@ -115,6 +172,37 @@ class Notification_processor extends CI_Controller {
                     }
                     $options["activity_log_id"] = ""; //remove activity log id
                 }
+
+                return $notify_to_array;
+            }
+        }
+    }
+
+    //to prevent multiple reminder, we'll save the reminder date
+    private function _save_reminder_date(&$event, &$options) {
+        //save invoices reminder dates 
+        $invoice_id = get_array_value($options, "invoice_id");
+        if ($invoice_id) {
+            $invoice_reminder_date = array();
+            if ($event == "invoice_due_reminder_before_due_date" || $event == "invoice_overdue_reminder") {
+                $invoice_reminder_date["due_reminder_date"] = get_my_local_time();
+            }
+            if ($event == "recurring_invoice_creation_reminder") {
+                $invoice_reminder_date["recurring_reminder_date"] = get_my_local_time();
+            }
+            if (count($invoice_reminder_date)) {
+                $this->Invoices_model->save($invoice_reminder_date, $invoice_id);
+            }
+        }
+
+        //save tasks reminder dates
+        $notification_multiple_tasks = get_array_value($options, "notification_multiple_tasks");
+        if ($notification_multiple_tasks) {
+
+            foreach ($notification_multiple_tasks as $task_info) {
+                //don't create activity logs for this
+                $data["reminder_date"] = get_my_local_time();
+                $this->Tasks_model->save_reminder_date($data, $task_info->id);
             }
         }
     }

@@ -22,7 +22,10 @@
                         </p>
                         <strong class="error text-danger" data-dz-errormessage></strong>
                         <input class="file-count-field" type="hidden" name="files[]" value="" />
-                        <input class="form-control description-field" type="text" style="cursor: auto;" placeholder="<?php echo lang("description") ?>" />
+
+                        <?php if (!isset($hide_description)) { ?>
+                            <input class="form-control description-field" type="text" style="cursor: auto;" placeholder="<?php echo lang("description") ?>" />
+                        <?php } ?>
                     </div>
                 </div>
             </div>
@@ -33,14 +36,24 @@
 <script type="text/javascript">
     $(document).ready(function () {
         fileSerial = 0;
-       
+
         // Get the template HTML and remove it from the doumenthe template HTML and remove it from the doument
         var previewNode = document.querySelector("#file-upload-row");
         previewNode.id = "";
         var previewTemplate = previewNode.parentNode.innerHTML;
         previewNode.parentNode.removeChild(previewNode);
 
-        var dropzoneId="#file-upload-dropzone";
+        var dropzoneId = "#file-upload-dropzone";
+
+        var disableButtonType = '[type="submit"]';
+<?php if (isset($hide_description)) { ?>
+            disableButtonType = '[type="button"]';
+<?php } ?>
+
+        var maxFiles = 1000;
+<?php if (isset($max_files)) { ?>
+            maxFiles = <?php echo $max_files; ?>;
+<?php } ?>
 
         var projectFilesDropzone = new Dropzone(dropzoneId, {
             url: "<?php echo $upload_url; ?>",
@@ -53,6 +66,10 @@
             autoQueue: true,
             previewsContainer: "#uploaded-file-previews",
             clickable: true,
+            maxFiles: maxFiles,
+            sending: function (file, xhr, formData) {
+                formData.append(AppHelper.csrfTokenName, AppHelper.csrfHash);
+            },
             accept: function (file, done) {
 
                 if (file.name.length > 200) {
@@ -71,8 +88,8 @@
                         if (response.success) {
                             fileSerial++;
                             $(file.previewTemplate).find(".description-field").attr("name", "description_" + fileSerial);
-                            $(file.previewTemplate).append("<input type='hidden' name='file_name_" + fileSerial + "' value='" + file.name + "' />\n\
-                                <input type='hidden' name='file_size_" + fileSerial + "' value='" + file.size + "' />");
+                            $(file.previewTemplate).append('<input type="hidden" name="file_name_' + fileSerial + '" value="' + file.name + '" />\n\
+                                <input type="hidden" name="file_size_' + fileSerial + '" value="' + file.size + '" />');
                             $(file.previewTemplate).find(".file-count-field").val(fileSerial);
                             done();
                         } else {
@@ -83,23 +100,33 @@
                 });
             },
             processing: function () {
-                $(dropzoneId).closest('form').find('[type="submit"]').prop("disabled", true);
+                $(dropzoneId).closest('form').find(disableButtonType).prop("disabled", true);
+
+                this.on("maxfilesexceeded", function (file) {
+                    this.removeAllFiles();
+                    this.addFile(file);
+                });
             },
             queuecomplete: function () {
-                $(dropzoneId).closest('form').find('[type="submit"]').prop("disabled", false);
+                $(dropzoneId).closest('form').find(disableButtonType).prop("disabled", false);
             },
             fallback: function () {
                 //add custom fallback;
                 $("body").addClass("dropzone-disabled");
-                $(dropzoneId).closest('form').find('[type="submit"]').removeAttr('disabled');
+                $(dropzoneId).closest('form').find(disableButtonType).removeAttr('disabled');
 
                 $("#file-upload-dropzone").hide();
                 $(dropzoneId).closest('form').find(".modal-footer").prepend("<button id='add-more-file-button' type='button' class='btn  btn-default pull-left'><i class='fa fa-plus-circle'></i> " + "<?php echo lang("add_more"); ?>" + "</button>");
 
                 $(dropzoneId).closest('form').find(".modal-footer").on("click", "#add-more-file-button", function () {
+                    var descriptionDom = "<div class='mb5 pb5'><input class='form-control description-field'  name='description[]'  type='text' style='cursor: auto;' placeholder='<?php echo lang("description") ?>' /></div>";
+<?php if (isset($hide_description)) { ?>
+                        descriptionDom = "";
+<?php } ?>
+
                     var newFileRow = "<div class='file-row pb10 pt10 b-b mb10'>"
                             + "<div class='pb10 clearfix '><button type='button' class='btn btn-xs btn-danger pull-left mr10 remove-file'><i class='fa fa-times'></i></button> <input class='pull-left' type='file' name='manualFiles[]' /></div>"
-                            + "<div class='mb5 pb5'><input class='form-control description-field'  name='description[]'  type='text' style='cursor: auto;' placeholder='<?php echo lang("description") ?>' /></div>"
+                            + descriptionDom
                             + "</div>";
                     $("#uploaded-file-previews").prepend(newFileRow);
                 });

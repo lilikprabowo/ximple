@@ -11,6 +11,8 @@
             <h4><?php echo lang('account_settings'); ?></h4>
         </div>
         <div class="panel-body">
+            <input type="hidden" name="first_name" value="<?php echo $user_info->first_name; ?>" />
+            <input type="hidden" name="last_name" value="<?php echo $user_info->last_name; ?>" />
             <div class="form-group">
                 <label for="email" class=" col-md-2"><?php echo lang('email'); ?></label>
                 <div class=" col-md-10">
@@ -105,6 +107,17 @@
                 <?php } ?>
 
             <?php } ?>
+
+            <?php if ($user_info->user_type === "client" && $this->login_user->is_admin) { ?>
+                <div class="form-group hide" id="resend_login_details_section">
+                    <label for="email_login_details" class="col-md-2"><?php echo lang('email_login_details'); ?></label>
+                    <div class="col-md-10">
+                        <?php
+                        echo form_checkbox("email_login_details", "1", false, "id='email_login_details' class='ml15'");
+                        ?>
+                    </div>
+                </div>
+            <?php } ?>
         </div>
         <div class="panel-footer">
             <button type="submit" class="btn btn-primary"><span class="fa fa-check-circle"></span> <?php echo lang('save'); ?></button>
@@ -114,10 +127,10 @@
 </div>
 
 <script type="text/javascript">
-    $(document).ready(function() {
+    $(document).ready(function () {
         $("#account-info-form").appForm({
             isModal: false,
-            onSuccess: function(result) {
+            onSuccess: function (result) {
                 appAlert.success(result.message, {duration: 10000});
             }
         });
@@ -125,7 +138,7 @@
 
 
         //show/hide asmin permission help message
-        $("#user-role").change(function() {
+        $("#user-role").change(function () {
             if ($(this).val() === "admin") {
                 $("#user-role-help-block").removeClass("hide");
             } else {
@@ -134,7 +147,7 @@
         });
 
         //show/hide disable login help message
-        $("#disable_login").click(function() {
+        $("#disable_login").click(function () {
             if ($(this).is(":checked")) {
                 $("#disable-login-help-block").removeClass("hide");
             } else {
@@ -143,11 +156,21 @@
         });
 
         //show/hide user status help message
-        $("#user_status").click(function() {
+        $("#user_status").click(function () {
             if ($(this).is(":checked")) {
                 $("#user-status-help-block").removeClass("hide");
             } else {
                 $("#user-status-help-block").addClass("hide");
+            }
+        });
+
+        //the checkbox will be enable if anyone enter the password
+        $("#password").change(function () {
+            var password = $("#password").val();
+            if (password) {
+                $("#resend_login_details_section").removeClass("hide");
+            }else{
+                $("#resend_login_details_section").addClass("hide");
             }
         });
     });

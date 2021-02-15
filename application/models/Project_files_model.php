@@ -64,10 +64,10 @@ class Project_files_model extends Crud_model {
 
     function get_files($ids = array()) {
         $string_of_ids = implode(",", $ids);
-                   
+
         $project_files_table = $this->db->dbprefix("project_files");
         $sql = "SELECT * FROM $project_files_table WHERE deleted=0 AND FIND_IN_SET($project_files_table.id, '$string_of_ids')";
-        if($this->db->query($sql)->num_rows() > 0){
+        if ($this->db->query($sql)->num_rows() > 0) {
             return $this->db->query($sql);
         }
     }

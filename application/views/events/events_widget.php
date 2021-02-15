@@ -25,7 +25,7 @@
             <div><?php echo anchor("events", lang("view_on_calendar"), array("class" => "btn btn-default b-a load-more mt15")); ?></div>
         </div>
     </div>
-</div>
+</div> 
 
 <script type="text/javascript">
     $(document).ready(function () {
@@ -33,4 +33,4 @@
             setHeight: 285
         });
     });
-</script>    
+</script> 

@@ -28,7 +28,17 @@
                 $this->load->view("projects/comments/comment_form");
             }
             ?>
-            <?php $this->load->view("projects/comments/comment_list"); ?>
+
+            <div id="file-preview-comment-container" class="pt15">
+                <?php $this->load->view("projects/comments/comment_list"); ?>
+            </div>
+
+            <script>
+                $(document).ready(function () {
+                    initScrollbarOnCommentContainer();
+                });
+            </script>
+
         </div>
     </div>
 

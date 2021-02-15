@@ -1011,7 +1011,8 @@ $.fn.formToArray = function(semantic, elements) {
             if (elements) {
                 elements.push(el);
             }
-            a.push({name: n, value: v, type: el.type, required: el.required});
+
+            a.push({name: n, value: v, type: el.type, required: el.required, data: $(el).data()});
         }
     }
 

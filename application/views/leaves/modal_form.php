@@ -69,6 +69,7 @@
                 "name" => "single_date",
                 "class" => "form-control",
                 "placeholder" => lang('date'),
+                "autocomplete" => "off",
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required"),
             ));
@@ -85,6 +86,7 @@
                     "name" => "start_date",
                     "class" => "form-control",
                     "placeholder" => lang('start_date'),
+                    "autocomplete" => "off",
                     "data-rule-required" => true,
                     "data-msg-required" => lang("field_required")
                 ));
@@ -101,6 +103,7 @@
                     "name" => "end_date",
                     "class" => "form-control",
                     "placeholder" => lang('end_date'),
+                    "autocomplete" => "off",
                     "data-rule-required" => true,
                     "data-msg-required" => lang("field_required"),
                     "data-rule-greaterThanOrEqual" => "#start_date",
@@ -108,6 +111,15 @@
                     "data-rule-mustBeSameYear" => "#start_date"
                 ));
                 ?>
+            </div>
+        </div>
+    </div>
+
+    <div id="total_days_section" class="hide date_section">
+        <div class="form-group">
+            <label for="total_days" class="col-md-3"><?php echo lang('total_days'); ?></label>
+            <div class="col-md-9 total-days">
+
             </div>
         </div>
     </div>
@@ -122,6 +134,7 @@
                     "name" => "hour_date",
                     "class" => "form-control",
                     "placeholder" => lang('date'),
+                    "autocomplete" => "off",
                     "data-rule-required" => true,
                     "data-msg-required" => lang("field_required"),
                 ));
@@ -170,21 +183,21 @@
 <?php echo form_close(); ?>
 
 <script type="text/javascript">
-    $(document).ready(function() {
+    $(document).ready(function () {
         $("#leave-form").appForm({
-            onSuccess: function(result) {
+            onSuccess: function (result) {
                 location.reload();
             }
         });
 
         setDatePicker("#start_date, #end_date");
-        
+
         setDatePicker("#single_date, #hour_date");
 
 
         $("#leave-form .select2").select2();
 
-        $(".duration").click(function() {
+        $(".duration").click(function () {
             var value = $(this).val();
             $(".date_section").addClass("hide");
             if (value === "multiple_days") {
@@ -195,5 +208,23 @@
                 $("#single_day_section").removeClass("hide");
             }
         });
+
+
+        $("#multiple_days_section").change(function () {
+            var start_date = $('#start_date').val();
+            var end_date = $('#end_date').val();
+            if (start_date && end_date) {
+                $("#total_days_section").removeClass("hide");
+
+                var start_date = moment($('#start_date').val(), getJsDateFormat().toUpperCase());
+                var end_date = moment($('#end_date').val(), getJsDateFormat().toUpperCase());
+                var total_days = end_date.diff(start_date, 'days');
+
+                $('div.total-days').html((total_days * 1) + 1); //count the starting day too
+            } else {
+                $("#total_days_section").addClass("hide");
+            }
+        });
+
     });
 </script>

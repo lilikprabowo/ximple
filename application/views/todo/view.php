@@ -7,12 +7,8 @@
 
     <div class="col-md-12 mb15">
         <?php
-        $note_labels = "";
         $date = "";
-        $labels = explode(",", $model_info->labels);
-        foreach ($labels as $label) {
-            $note_labels.="<span class='label label-info mr10'>" . $label . "</span>";
-        }
+        $note_labels = make_labels_view_data($model_info->labels_list);
 
         if (is_date_exists($model_info->start_date)) {
             $date = format_to_date($model_info->start_date, false);

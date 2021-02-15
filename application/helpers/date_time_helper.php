@@ -110,8 +110,15 @@ if (!function_exists('convert_time_to_24hours_format')) {
                 $time = $check_time[0] + 12 . ":" . get_array_value($check_time, 1);
             }
         }
-        $time.=":00";
-        return $time;
+
+        $array_time = explode(":", $time);
+
+        $hour = get_array_value($array_time, 0) ? get_array_value($array_time, 0) : "00";
+        $minute = get_array_value($array_time, 1) ? get_array_value($array_time, 1) : "00";
+        $secound = get_array_value($array_time, 2) ? get_array_value($array_time, 2) : "00";
+
+
+        return $hour . ":" . $minute . ":" . $secound;
     }
 
 }
@@ -138,17 +145,23 @@ if (!function_exists('convert_time_to_12hours_format')) {
             $minute = get_array_value($check_time, 1) * 1;
             $minute = ($minute < 10) ? "0" . $minute : $minute;
 
+            $second = get_array_value($check_time, 2) * 1;
+            if (!$second) {
+                $second = "00";
+            }
+
+
             if ($hour == 0) {
-                $time = "12:" . $minute . $am;
+                $time = "12:" . $minute . ":" . $second . $am;
             } else if ($hour == 12) {
-                $time = $hour . ":" . $minute . $pm;
+                $time = $hour . ":" . $minute . ":" . $second . $pm;
             } else if ($hour > 12) {
                 $hour = $hour - 12;
                 $hour = ($hour < 10) ? "0" . $hour : $hour;
-                $time = $hour . ":" . $minute . $pm;
+                $time = $hour . ":" . $minute . ":" . $second . $pm;
             } else {
                 $hour = ($hour < 10) ? "0" . $hour : $hour;
-                $time = $hour . ":" . $minute . $am;
+                $time = $hour . ":" . $minute . ":" . $second . $am;
             }
             return $time;
         }
@@ -386,14 +399,14 @@ if (!function_exists('add_period_to_date')) {
  * subtract days from a given date
  * 
  * $date should be Y-m-d
- * $period_type should be days/months/years/weeks
+ * $period_type should be days/months/years/weeks/hours
  * 
  * @return date
  */
 if (!function_exists('subtract_period_from_date')) {
 
-    function subtract_period_from_date($date, $no_of = 0, $period_type = "days") {
-        return date('Y-m-d', strtotime("-$no_of $period_type", strtotime($date)));
+    function subtract_period_from_date($date, $no_of = 0, $period_type = "days", $format = "Y-m-d") {
+        return date($format, strtotime("-$no_of $period_type", strtotime($date)));
     }
 
 }
@@ -463,7 +476,7 @@ if (!function_exists('is_date_exists')) {
 
     function is_date_exists($date = "") {
 
-        if (!$date || $date == "NULL" || is_null($date)) {
+        if (!$date || $date == "NULL" || is_null($date) || $date == "0000-00-00") {
             return false;
         } else {
             return true;
@@ -471,3 +484,51 @@ if (!function_exists('is_date_exists')) {
     }
 
 }
+
+//convert to hours from humanize data
+if (!function_exists('convert_humanize_data_to_hours')) {
+
+    function convert_humanize_data_to_hours($hours = "") {
+        require_once(APPPATH . "third_party/php-duration-master/init.php");
+
+        $duration = \Init_duration::init($hours);
+        $hours = $duration->toMinutes(null, 0); //convert in minutes
+        $hours = $hours / 60; //final hours format
+
+        return round($hours, 2);
+    }
+
+}
+
+//convert humanize data to hours
+if (!function_exists('convert_hours_to_humanize_data')) {
+
+    function convert_hours_to_humanize_data($hours = "") {
+        require_once(APPPATH . "third_party/php-duration-master/init.php");
+
+        $duration = \Init_duration::init($hours . "h");
+        $minutes = round($duration->toMinutes(), 0); //remove decimals from minutes first
+
+        $duration = \Init_duration::init($minutes * 60);
+        return $duration->humanize();
+    }
+
+}
+
+//prepare last recently date time
+if (!function_exists('prepare_last_recently_date_time')) {
+
+    function prepare_last_recently_date_time($login_user_id = 0) {
+        $now = get_current_utc_time();
+        $recently_meaning = get_setting("user_" . $login_user_id . "_recently_meaning");
+        $recently_meaning = $recently_meaning ? $recently_meaning : "1_days";
+
+        $explode_recently_meaning = explode('_', $recently_meaning);
+        $no_of = get_array_value($explode_recently_meaning, 0);
+        $period_type = get_array_value($explode_recently_meaning, 1);
+
+        return subtract_period_from_date($now, $no_of, $period_type, "Y-m-d H:i:s");
+    }
+
+}
+

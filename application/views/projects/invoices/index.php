@@ -2,7 +2,11 @@
     <div class="tab-title clearfix">
         <h4><?php echo lang('invoices'); ?></h4>
         <div class="title-button-group">
-            <?php echo modal_anchor(get_uri("invoices/modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('add_invoice'), array("class" => "btn btn-default", "title" => lang('add_invoice'), "data-post-project_id" => $project_id)); ?>
+            <?php
+            if ($can_edit_invoices) {
+                echo modal_anchor(get_uri("invoices/modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('add_invoice'), array("class" => "btn btn-default", "title" => lang('add_invoice'), "data-post-project_id" => $project_id));
+            }
+            ?>
         </div>
     </div>
 
@@ -14,7 +18,7 @@
 
 
 <script type="text/javascript">
-    $(document).ready(function() {
+    $(document).ready(function () {
         var currencySymbol = "<?php echo $project_info->currency_symbol; ?>";
         $("#invoice-table").appTable({
             source: '<?php echo_uri("invoices/invoice_list_data_of_project/" . $project_id) ?>',
@@ -31,7 +35,7 @@
                 {title: "<?php echo lang("invoice_value") ?>", "class": "w10p text-right"},
                 {title: "<?php echo lang("payment_received") ?>", "class": "w10p text-right"},
                 {title: "<?php echo lang("status") ?>", "class": "w10p text-center"}
-                <?php echo $custom_field_headers; ?>
+<?php echo $custom_field_headers; ?>
             ],
             printColumns: combineCustomFieldsColumns([0, 4, 5, 6, 7, 8, 9], '<?php echo $custom_field_headers; ?>'),
             xlsColumns: combineCustomFieldsColumns([0, 4, 5, 6, 7, 8, 9], '<?php echo $custom_field_headers; ?>'),

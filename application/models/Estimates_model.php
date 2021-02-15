@@ -14,6 +14,7 @@ class Estimates_model extends Crud_model {
         $clients_table = $this->db->dbprefix('clients');
         $taxes_table = $this->db->dbprefix('taxes');
         $estimate_items_table = $this->db->dbprefix('estimate_items');
+        $projects_table = $this->db->dbprefix('projects');
 
         $where = "";
         $id = get_array_value($options, "id");
@@ -31,13 +32,21 @@ class Estimates_model extends Crud_model {
             $where .= " AND ($estimates_table.estimate_date BETWEEN '$start_date' AND '$end_date') ";
         }
 
+        $after_tax_1 = "(IFNULL(tax_table.percentage,0)/100*IFNULL(items_table.estimate_value,0))";
+        $after_tax_2 = "(IFNULL(tax_table2.percentage,0)/100*IFNULL(items_table.estimate_value,0))";
+
+        $discountable_estimate_value = "IF($estimates_table.discount_type='after_tax', (IFNULL(items_table.estimate_value,0) + $after_tax_1 + $after_tax_2), IFNULL(items_table.estimate_value,0) )";
+
+        $discount_amount = "IF($estimates_table.discount_amount_type='percentage', IFNULL($estimates_table.discount_amount,0)/100* $discountable_estimate_value, $estimates_table.discount_amount)";
+
+        $before_tax_1 = "(IFNULL(tax_table.percentage,0)/100* (IFNULL(items_table.estimate_value,0)- $discount_amount))";
+        $before_tax_2 = "(IFNULL(tax_table2.percentage,0)/100* (IFNULL(items_table.estimate_value,0)- $discount_amount))";
 
         $estimate_value_calculation = "(
-            IFNULL(items_table.estimate_value,0)+ 
-            (IFNULL(tax_table.percentage,0)/100*IFNULL(items_table.estimate_value,0))+
-            (IFNULL(tax_table2.percentage,0)/100*IFNULL(items_table.estimate_value,0))
+            IFNULL(items_table.estimate_value,0)+
+            IF($estimates_table.discount_type='before_tax',  ($before_tax_1+ $before_tax_2), ($after_tax_1 + $after_tax_2))
+            - $discount_amount
            )";
-
 
         $status = get_array_value($options, "status");
         if ($status) {
@@ -58,10 +67,11 @@ class Estimates_model extends Crud_model {
 
 
 
-        $sql = "SELECT $estimates_table.*, $clients_table.currency, $clients_table.currency_symbol, $clients_table.company_name,
+        $sql = "SELECT $estimates_table.*, $clients_table.currency, $clients_table.currency_symbol, $clients_table.company_name, $projects_table.title as project_title, $clients_table.is_lead,
            $estimate_value_calculation AS estimate_value, tax_table.percentage AS tax_percentage, tax_table2.percentage AS tax_percentage2 $select_custom_fieds
         FROM $estimates_table
         LEFT JOIN $clients_table ON $clients_table.id= $estimates_table.client_id
+        LEFT JOIN $projects_table ON $projects_table.id= $estimates_table.project_id
         LEFT JOIN (SELECT $taxes_table.* FROM $taxes_table) AS tax_table ON tax_table.id = $estimates_table.tax_id
         LEFT JOIN (SELECT $taxes_table.* FROM $taxes_table) AS tax_table2 ON tax_table2.id = $estimates_table.tax_id2 
         LEFT JOIN (SELECT estimate_id, SUM(total) AS estimate_value FROM $estimate_items_table WHERE deleted=0 GROUP BY estimate_id) AS items_table ON items_table.estimate_id = $estimates_table.id 
@@ -103,17 +113,54 @@ class Estimates_model extends Crud_model {
         $result->tax_name2 = $estimate->tax_name2;
         $result->tax = 0;
         $result->tax2 = 0;
+
+        $estimate_subtotal = $result->estimate_subtotal;
+        $estimate_subtotal_for_taxes = $estimate_subtotal;
+        if ($estimate->discount_type == "before_tax") {
+            $estimate_subtotal_for_taxes = $estimate_subtotal - ($estimate->discount_amount_type == "percentage" ? ($estimate_subtotal * ($estimate->discount_amount / 100)) : $estimate->discount_amount);
+        }
+
         if ($estimate->tax_percentage) {
-            $result->tax = $result->estimate_subtotal * ($estimate->tax_percentage / 100);
+            $result->tax = $estimate_subtotal_for_taxes * ($estimate->tax_percentage / 100);
         }
         if ($estimate->tax_percentage2) {
-            $result->tax2 = $result->estimate_subtotal * ($estimate->tax_percentage2 / 100);
+            $result->tax2 = $estimate_subtotal_for_taxes * ($estimate->tax_percentage2 / 100);
         }
-        $result->estimate_total = $item->estimate_subtotal + $result->tax + $result->tax2;
+        $estimate_total = $item->estimate_subtotal + $result->tax + $result->tax2;
+
+        //get discount total
+        $result->discount_total = 0;
+        if ($estimate->discount_type == "after_tax") {
+            $estimate_subtotal = $estimate_total;
+        }
+
+        $result->discount_total = $estimate->discount_amount_type == "percentage" ? ($estimate_subtotal * ($estimate->discount_amount / 100)) : $estimate->discount_amount;
+
+        $result->discount_type = $estimate->discount_type;
+
+        $result->estimate_total = $estimate_total - number_format($result->discount_total, 2, ".", "");
 
         $result->currency_symbol = $client->currency_symbol ? $client->currency_symbol : get_setting("currency_symbol");
         $result->currency = $client->currency ? $client->currency : get_setting("default_currency");
         return $result;
+    }
+
+    //get estimate last id
+    function get_estimate_last_id() {
+        $estimates_table = $this->db->dbprefix('estimates');
+
+        $sql = "SELECT MAX($estimates_table.id) AS last_id FROM $estimates_table";
+
+        return $this->db->query($sql)->row()->last_id;
+    }
+
+    //save initial number of estimate
+    function save_initial_number_of_estimate($value) {
+        $estimates_table = $this->db->dbprefix('estimates');
+
+        $sql = "ALTER TABLE $estimates_table AUTO_INCREMENT=$value;";
+
+        return $this->db->query($sql);
     }
 
 }

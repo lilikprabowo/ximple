@@ -3,7 +3,7 @@ if (isset($page_type) && $page_type === "full") {
     echo "m20";
 }
 ?>">
-    <ul data-toggle="ajax-tab" class="nav nav-tabs bg-white title" role="tablist">
+    <ul id="team-member-attendance-tabs" data-toggle="ajax-tab" class="nav nav-tabs bg-white title" role="tablist">
         <li class="title-tab"><h4 class="pl15 pt10 pr15"><?php
                 if ($user_id === $this->login_user->id) {
                     echo lang("my_time_cards");
@@ -14,7 +14,12 @@ if (isset($page_type) && $page_type === "full") {
         <li><a id="monthly-attendance-button"  role="presentation" class="active" href="javascript:;" data-target="#team_member-monthly-attendance"><?php echo lang("monthly"); ?></a></li>
         <li><a role="presentation" href="<?php echo_uri("team_members/weekly_attendance/"); ?>" data-target="#team_member-weekly-attendance"><?php echo lang('weekly'); ?></a></li>    
         <li><a role="presentation" href="<?php echo_uri("team_members/custom_range_attendance/"); ?>" data-target="#team_member-custom-range-attendance"><?php echo lang('custom'); ?></a></li>    
-        <li><a role="presentation" href="<?php echo_uri("team_members/attendance_summary/" . $user_id); ?>" data-target="#team_member-attendance-summary"><?php echo lang('summary'); ?></a></li>    
+        <li><a role="presentation" href="<?php echo_uri("team_members/attendance_summary/" . $user_id); ?>" data-target="#team_member-attendance-summary"><?php echo lang('summary'); ?></a></li>   
+
+        <?php if (isset($show_clock_in_out)) { ?>
+            <li><a role="presentation" href="<?php echo_uri("attendance/clock_in_out"); ?>" data-target="#clock-in-out"><?php echo lang('clock_in_out'); ?></a></li>
+        <?php } ?>
+
     </ul>
     <div class="tab-content">
         <div role="tabpanel" class="tab-pane fade" id="team_member-monthly-attendance">
@@ -45,7 +50,7 @@ if (isset($page_type) && $page_type === "full") {
                             {visible: false, searchable: false},
                             {title: "<?php echo lang("out_date"); ?>", "class": "w20p", iDataSort: 1},
                             {title: "<?php echo lang("out_time"); ?>", "class": "w20p"},
-                            {title: "<?php echo lang("duration"); ?>"},
+                            {title: "<?php echo lang("duration"); ?>", "class": "text-right"},
                             {title: '<i class="fa fa-comment"></i>', "class": "text-center w50"},
                             {title: '<i class="fa fa-bars"></i>', "class": "text-center option w100"}
                         ],
@@ -55,7 +60,6 @@ if (isset($page_type) && $page_type === "full") {
                     });
                 };
                 $(document).ready(function () {
-                    $("#monthly-attendance-button").trigger("click");
                     loadMembersAttendanceTable("#monthly-attendance-table", "monthly");
                 });
             </script>
@@ -63,5 +67,6 @@ if (isset($page_type) && $page_type === "full") {
         <div role="tabpanel" class="tab-pane fade" id="team_member-weekly-attendance"></div>
         <div role="tabpanel" class="tab-pane fade" id="team_member-custom-range-attendance"></div>
         <div role="tabpanel" class="tab-pane fade" id="team_member-attendance-summary"></div>
+        <div role="tabpanel" class="tab-pane fade" id="clock-in-out"></div>
     </div>
 </div>

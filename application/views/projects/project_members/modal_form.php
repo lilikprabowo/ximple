@@ -4,7 +4,7 @@
     <input type="hidden" name="project_id" value="<?php echo $project_id; ?>" />
 
     <div class="form-group" style="min-height: 50px">
-        <label for="user_id" class=" col-md-3"><?php echo lang('member'); ?></label>
+        <label for="user_id" class=" col-md-3"><?php echo ($add_user_type == "client_contacts") ? lang('contact') : lang('member'); ?></label>
         <div class="col-md-9">
             <div class="select-member-field">
                 <div class="select-member-form clearfix pb10">
@@ -30,7 +30,11 @@
             onSuccess: function (result) {
                 if (result.id !== "exists") {
                     for (i = 0; i < result.data.length; i++) {
-                        $("#project-member-table").appTable({newData: result.data[i], dataId: result.id[i]});
+<?php if ($add_user_type == "client_contacts") { ?>
+                            $("#project-client-contacts-table").appTable({newData: result.data[i], dataId: result.id[i]});
+<?php } else { ?>
+                            $("#project-member-table").appTable({newData: result.data[i], dataId: result.id[i]});
+<?php } ?>
                     }
                 }
             }

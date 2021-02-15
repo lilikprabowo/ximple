@@ -1,7 +1,6 @@
 <?php echo form_open(get_uri("notes/save"), array("id" => "note-form", "class" => "general-form", "role" => "form")); ?>
 <div id="notes-dropzone" class="post-dropzone">
     <div class="modal-body clearfix">
-        <?php ?>
         <input type="hidden" name="id" value="<?php echo $model_info->id; ?>" />
         <input type="hidden" name="project_id" value="<?php echo $project_id; ?>" />
         <input type="hidden" name="client_id" value="<?php echo $client_id; ?>" />
@@ -32,6 +31,7 @@
                         "value" => $model_info->description,
                         "class" => "form-control",
                         "placeholder" => lang('description') . "...",
+                        "data-rich-text-editor" => true
                     ));
                     ?>
                 </div>
@@ -52,6 +52,23 @@
                 </div>
             </div>
         </div>
+
+        <?php if ($project_id) { ?>
+            <?php if ($model_info->is_public) { ?>
+                <input type="hidden" name="is_public" value="<?php echo $model_info->is_public; ?>" />
+            <?php } else { ?>
+                <div class="form-group">
+                    <label for="mark_as_public"class=" col-md-12">
+                        <?php
+                        echo form_checkbox("is_public", "1", false, "id='mark_as_public'  class='pull-left '");
+                        ?>    
+                        <span class="pull-left ml15"> <?php echo lang('mark_as_public'); ?> </span>
+                        <span id="mark_as_public_help_message" class="ml10 hide"><i class="fa fa-warning text-warning"></i> <?php echo lang("mark_as_public_help_message"); ?></span>
+                    </label>
+                </div>
+            <?php } ?>
+        <?php } ?>
+
         <div class="form-group">
             <div class="col-md-12">
                 <?php
@@ -73,7 +90,6 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
-
         var uploadUrl = "<?php echo get_uri("notes/upload_file"); ?>";
         var validationUri = "<?php echo get_uri("notes/validate_notes_file"); ?>";
 
@@ -84,10 +100,18 @@
                 $("#note-table").appTable({newData: result.data, dataId: result.id});
             }
         });
+
         $("#title").focus();
-        $("#note_labels").select2({
-            tags: <?php echo json_encode($label_suggestions); ?>,
-            'minimumInputLength': 0
+
+        $("#note_labels").select2({multiple: true, data: <?php echo json_encode($label_suggestions); ?>});
+
+        //show/hide mark as public help message
+        $("#mark_as_public").click(function () {
+            if ($(this).is(":checked")) {
+                $("#mark_as_public_help_message").removeClass("hide");
+            } else {
+                $("#mark_as_public_help_message").addClass("hide");
+            }
         });
     });
 </script>    

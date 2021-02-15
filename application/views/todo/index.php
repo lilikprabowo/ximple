@@ -27,6 +27,9 @@
     <div class="panel panel-default">
         <div class="page-title clearfix">
             <h1> <?php echo lang('todo') . " (" . lang('private') . ")"; ?></h1>
+            <div class="title-button-group">
+                <?php echo modal_anchor(get_uri("labels/modal_form"), "<i class='fa fa-tags'></i> " . lang('manage_labels'), array("class" => "btn btn-default", "title" => lang('manage_labels'), "data-post-type" => "to_do")); ?>
+            </div>
         </div>
         <div class="table-responsive">
             <table id="todo-table" class="display" cellspacing="0" width="100%">            
@@ -35,18 +38,10 @@
     </div>
 </div>
 
+<?php $this->load->view("todo/helper_js"); ?>
+
 <script type="text/javascript">
     $(document).ready(function () {
-
-        $("#todo-inline-form").appForm({
-            isModal: false,
-            onSuccess: function (result) {
-                $("#todo-title").val("");
-                $("#todo-table").appTable({newData: result.data, dataId: result.id});
-                appAlert.success(result.message, {duration: 5000});
-            }
-        });
-
         $("#todo-table").appTable({
             source: '<?php echo_uri("todo/list_data") ?>',
             order: [[1, 'desc']],
@@ -54,8 +49,8 @@
                 {visible: false, searchable: false},
                 {title: '', "class": "w25"},
                 {title: '<?php echo lang("title"); ?>'},
-                {targets: [5], visible: false},
-                {title: '<?php echo lang("date"); ?>', "class": "w200"},
+                {visible: false, searchable: false},
+                {title: '<?php echo lang("date"); ?>', "iDataSort": 3, "class": "w200"},
                 {title: '<i class="fa fa-bars"></i>', "class": "text-center option w100"}
             ],
             checkBoxes: [
@@ -67,22 +62,6 @@
             rowCallback: function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                 $('td:eq(0)', nRow).addClass(aData[0]);
             }
-        });
-
-
-        $('body').on('click', '[data-act=update-todo-status-checkbox]', function () {
-            $(this).find("span").addClass("inline-loader");
-            $.ajax({
-                url: '<?php echo_uri("todo/save_status") ?>',
-                type: 'POST',
-                dataType: 'json',
-                data: {id: $(this).attr('data-id'), status: $(this).attr('data-value')},
-                success: function (response) {
-                    if (response.success) {
-                        $("#todo-table").appTable({newData: response.data, dataId: response.id});
-                    }
-                }
-            });
         });
     });
 </script>

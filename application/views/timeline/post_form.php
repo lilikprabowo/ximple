@@ -15,6 +15,7 @@
                 "placeholder" => lang('post_placeholder_text'),
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required"),
+                "data-rich-text-editor" => true
             ));
             ?>
 
@@ -29,7 +30,7 @@
     </div>
 </div>
 <script type="text/javascript">
-    $(document).ready(function() {
+    $(document).ready(function () {
 
         var uploadUrl = "<?php echo get_uri("timeline/upload_file"); ?>";
         var validationUrl = "<?php echo get_uri("timeline/validate_post_file"); ?>";
@@ -37,7 +38,7 @@
 
         $("#post-form").appForm({
             isModal: false,
-            onSuccess: function(result) {
+            onSuccess: function (result) {
                 if ($("body").hasClass("dropzone-disabled")) {
                     location.reload();
                 } else {

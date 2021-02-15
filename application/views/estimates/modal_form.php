@@ -1,6 +1,15 @@
 <?php echo form_open(get_uri("estimates/save"), array("id" => "estimate-form", "class" => "general-form", "role" => "form")); ?>
 <div class="modal-body clearfix">
     <input type="hidden" name="id" value="<?php echo $model_info->id; ?>" />
+    <input type="hidden" name="estimate_request_id" value="<?php echo $estimate_request_id; ?>" />
+
+    <?php if ($is_clone) { ?>
+        <input type="hidden" name="is_clone" value="1" />
+        <input type="hidden" name="discount_amount" value="<?php echo $model_info->discount_amount; ?>" />
+        <input type="hidden" name="discount_amount_type" value="<?php echo $model_info->discount_amount_type; ?>" />
+        <input type="hidden" name="discount_type" value="<?php echo $model_info->discount_type; ?>" />
+    <?php } ?>
+
     <div class="form-group">
         <label for="estimate_date" class=" col-md-3"><?php echo lang('estimate_date'); ?></label>
         <div class="col-md-9">
@@ -11,6 +20,7 @@
                 "value" => $model_info->estimate_date,
                 "class" => "form-control",
                 "placeholder" => lang('estimate_date'),
+                "autocomplete" => "off",
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required"),
             ));
@@ -27,6 +37,7 @@
                 "value" => $model_info->valid_until,
                 "class" => "form-control",
                 "placeholder" => lang('valid_until'),
+                "autocomplete" => "off",
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required"),
                 "data-rule-greaterThanOrEqual" => "#estimate_date",
@@ -73,13 +84,45 @@
                 "name" => "estimate_note",
                 "value" => $model_info->note ? $model_info->note : "",
                 "class" => "form-control",
-                "placeholder" => lang('note')
+                "placeholder" => lang('note'),
+                "data-rich-text-editor" => true
             ));
             ?>
         </div>
     </div>
 
     <?php $this->load->view("custom_fields/form/prepare_context_fields", array("custom_fields" => $custom_fields, "label_column" => "col-md-3", "field_column" => " col-md-9")); ?> 
+
+    <?php if ($is_clone) { ?>
+        <div class="form-group">
+            <label for="copy_items"class=" col-md-12">
+                <?php
+                echo form_checkbox("copy_items", "1", true, "id='copy_items' disabled='disabled' class='pull-left mr15'");
+                ?>    
+                <?php echo lang('copy_items'); ?>
+            </label>
+        </div>
+        <div class="form-group">
+            <label for="copy_discount"class=" col-md-12">
+                <?php
+                echo form_checkbox("copy_discount", "1", true, "id='copy_discount' disabled='disabled' class='pull-left mr15'");
+                ?>    
+                <?php echo lang('copy_discount'); ?>
+            </label>
+        </div>
+    <?php } ?> 
+
+    <?php if ($order_id) { ?>
+        <div class="form-group">
+            <label for="order_id_checkbox" class=" col-md-12">
+                <input type="hidden" name="copy_items_from_order" value="<?php echo $order_id; ?>" />
+                <?php
+                echo form_checkbox("order_id_checkbox", $order_id, true, " class='pull-left' disabled='disabled'");
+                ?>    
+                <span class="pull-left ml15"> <?php echo lang('include_all_items_of_this_order'); ?> </span>
+            </label>
+        </div>
+    <?php } ?>
 
 </div>
 

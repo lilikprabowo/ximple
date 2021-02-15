@@ -5,6 +5,7 @@ class Signup extends CI_Controller {
     function __construct() {
         parent::__construct();
         $this->load->helper('email');
+        $this->load->model("Verification_model");
     }
 
     function index() {
@@ -17,12 +18,18 @@ class Signup extends CI_Controller {
         $view_data["type"] = "client";
         $view_data["signup_type"] = "new_client";
         $view_data["signup_message"] = lang("create_an_account_as_a_new_client");
+
+        //check if the email verification before signup is active
+        if (get_setting("verify_email_before_client_signup")) {
+            $view_data["signup_type"] = "send_verify_email";
+        }
+
         $this->load->view("signup/index", $view_data);
     }
 
     //redirected from email
     function accept_invitation($signup_key = "") {
-        $valid_key = $this->is_valid_key($signup_key);
+        $valid_key = $this->is_valid_invitation_key($signup_key);
         if ($valid_key) {
             $email = get_array_value($valid_key, "email");
             $type = get_array_value($valid_key, "type");
@@ -50,20 +57,6 @@ class Signup extends CI_Controller {
         }
     }
 
-    private function is_valid_key($signup_key = "") {
-        $signup_key = decode_id($signup_key, "signup");
-        $signup_key = $this->encryption->decrypt($signup_key);
-        $signup_key = explode('|', $signup_key);
-        $type = get_array_value($signup_key, "0");
-        $email = get_array_value($signup_key, "1");
-        $expire_time = get_array_value($signup_key, "2");
-        $client_id = get_array_value($signup_key, "3");
-        if ($type && $email && valid_email($email) && $expire_time && $expire_time > time()) {
-            return array("type" => $type, "email" => $email, "client_id" => $client_id);
-        }
-    }
-
-    
     private function is_valid_recaptcha($recaptcha_post_data) {
         //load recaptcha lib
         require_once(APPPATH . "third_party/recaptcha/autoload.php");
@@ -82,11 +75,11 @@ class Signup extends CI_Controller {
             return $error;
         }
     }
-    
-    
+
     function create_account() {
 
         $signup_key = $this->input->post("signup_key");
+        $verify_email_key = $this->input->post("verify_email_key");
 
         validate_submitted_data(array(
             "first_name" => "required",
@@ -94,42 +87,45 @@ class Signup extends CI_Controller {
             "password" => "required"
         ));
 
-        
+
         //check if there reCaptcha is enabled
         //if reCaptcha is enabled, check the validation
-        if (get_setting("re_captcha_secret_key")) {
+        //reCaptcha isn't necessary for a verified user
+        if (get_setting("re_captcha_secret_key") && !$verify_email_key) {
 
             $response = $this->is_valid_recaptcha($this->input->post("g-recaptcha-response"));
-       
+
             if ($response !== true) {
-                
-                if($response){
-                    echo json_encode(array('success' => false, 'message' => lang("re_captcha_error-" . $response) ));
-                }else{
-                    echo json_encode(array('success' => false, 'message' => lang("re_captcha_expired") ));
+
+                if ($response) {
+                    echo json_encode(array('success' => false, 'message' => lang("re_captcha_error-" . $response)));
+                } else {
+                    echo json_encode(array('success' => false, 'message' => lang("re_captcha_expired")));
                 }
-                
+
                 return false;
             }
         }
-        
+
+        $first_name = $this->input->post("first_name");
+        $last_name = $this->input->post("last_name");
+
         $user_data = array(
-            "first_name" => $this->input->post("first_name"),
-            "last_name" => $this->input->post("last_name"),
+            "first_name" => $first_name,
+            "last_name" => $last_name,
             "job_title" => $this->input->post("job_title") ? $this->input->post("job_title") : "Untitled",
-            "gender" => $this->input->post("gender"),
             "created_at" => get_current_utc_time()
         );
-        
+
         $user_data = clean_data($user_data);
-        
+
         // don't clean password since there might be special characters 
-        $user_data["password"] =  md5($this->input->post("password"));
-        
+        $user_data["password"] = password_hash($this->input->post("password"), PASSWORD_DEFAULT);
+
 
         if ($signup_key) {
             //it is an invitation, validate the invitation key
-            $valid_key = $this->is_valid_key($signup_key);
+            $valid_key = $this->is_valid_invitation_key($signup_key);
 
             if ($valid_key) {
 
@@ -145,6 +141,8 @@ class Signup extends CI_Controller {
 
                 $user_data["email"] = $email;
                 $user_data["user_type"] = $type;
+
+                $delete_verification_code = true;
 
                 if ($type === "staff") {
                     //create a team member account
@@ -173,10 +171,23 @@ class Signup extends CI_Controller {
 
                         //create a client contact account
                         $user_id = $this->Users_model->save($user_data);
+                        if ($user_id) {
+                            log_notification("invited_client_contact_signed_up", array("client_id" => $clent_id), $user_id);
+                        }
                     } else {
                         //invalid client
+                        $delete_verification_code = false;
                         echo json_encode(array("success" => false, 'message' => lang("something_went_wrong")));
                         return false;
+                    }
+                }
+
+                //user can't create account two times with the same code
+                if ($delete_verification_code) {
+                    $options = array("code" => $signup_key, "type" => "invitation");
+                    $verification_info = $this->Verification_model->get_details($options)->row();
+                    if ($verification_info->id) {
+                        $this->Verification_model->delete_permanently($verification_info->id);
                     }
                 }
             } else {
@@ -190,24 +201,44 @@ class Signup extends CI_Controller {
                 show_404();
             }
 
-            validate_submitted_data(array(
-                "email" => "required|valid_email",
-                "company_name" => "required"
-            ));
+            if (get_setting("verify_email_before_client_signup") && !$verify_email_key) {
+                show_404();
+            }
 
-            $email = $this->input->post("email");
-            $company_name = $this->input->post("company_name");
+            //for a email verified user, get the email using the key
+            if ($verify_email_key) {
+                $valid_key = $this->is_valid_email_verification_key($verify_email_key);
+                if ($valid_key) {
+                    $email = get_array_value($valid_key, "email");
+                } else {
+                    show_404();
+                }
+            } else {
+                validate_submitted_data(array(
+                    "email" => "required|valid_email"
+                ));
 
-            if ($this->Users_model->is_email_exists($email)) {
-                echo json_encode(array("success" => false, 'message' => lang("account_already_exists_for_your_mail") . " " . anchor("signin", lang("signin"))));
+                $email = $this->input->post("email");
+
+                if ($this->Users_model->is_email_exists($email)) {
+                    echo json_encode(array("success" => false, 'message' => lang("account_already_exists_for_your_mail") . " " . anchor("signin", lang("signin"))));
+                    return false;
+                }
+            }
+
+            $company_name = $this->input->post("company_name") ? $this->input->post("company_name") : $first_name . " " . $last_name; //save user name as company name if there is no company name entered
+
+            $client_data = array("company_name" => $company_name);
+
+            $client_data = clean_data($client_data);
+
+            //check duplicate company name, if found then show an error message
+            if (get_setting("disallow_duplicate_client_company_name") == "1" && $this->Clients_model->is_duplicate_company_name($company_name)) {
+                echo json_encode(array("success" => false, 'message' => lang("account_already_exists_for_your_company_name") . " " . anchor("signin", lang("signin"))));
                 return false;
             }
 
-            $client_data = array("company_name" => $company_name);
-            
-            
-            $client_data = clean_data($client_data);
-            
+
             //create a client
             $client_id = $this->Clients_model->save($client_data);
             if ($client_id) {
@@ -218,7 +249,31 @@ class Signup extends CI_Controller {
                 $user_data["is_primary_contact"] = 1;
                 $user_id = $this->Users_model->save($user_data);
 
+                //user can't create account two times with the same code
+                if ($verify_email_key) {
+                    $options = array("code" => $verify_email_key, "type" => "verify_email");
+                    $verification_info = $this->Verification_model->get_details($options)->row();
+                    if ($verification_info->id) {
+                        $this->Verification_model->delete_permanently($verification_info->id);
+                    }
+                }
+
                 log_notification("client_signup", array("client_id" => $client_id), $user_id);
+
+                //send welcome email
+                $email_template = $this->Email_templates_model->get_final_template("new_client_greetings");
+
+                $parser_data["SIGNATURE"] = $email_template->signature;
+                $parser_data["CONTACT_FIRST_NAME"] = $first_name;
+                $parser_data["CONTACT_LAST_NAME"] = $last_name;
+                $parser_data["COMPANY_NAME"] = get_setting("company_name");
+                $parser_data["DASHBOARD_URL"] = base_url();
+                $parser_data["CONTACT_LOGIN_EMAIL"] = $email;
+                $parser_data["CONTACT_LOGIN_PASSWORD"] = $this->input->post("password");
+                $parser_data["LOGO_URL"] = get_logo_url();
+
+                $message = $this->parser->parse_string($email_template->message, $parser_data, TRUE);
+                send_app_mail($email, $email_template->subject, $message);
             } else {
                 echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
                 return false;
@@ -230,6 +285,127 @@ class Signup extends CI_Controller {
             echo json_encode(array("success" => true, 'message' => lang('account_created') . " " . anchor("signin", lang("signin"))));
         } else {
             echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
+        }
+    }
+
+    //send an email to verify the identity
+    function send_verification_mail() {
+        validate_submitted_data(array(
+            "email" => "required|valid_email"
+        ));
+
+        //check if there reCaptcha is enabled
+        //if reCaptcha is enabled, check the validation
+        if (get_setting("re_captcha_secret_key")) {
+            $response = $this->is_valid_recaptcha($this->input->post("g-recaptcha-response"));
+
+            if ($response !== true) {
+
+                if ($response) {
+                    echo json_encode(array('success' => false, 'message' => lang("re_captcha_error-" . $response)));
+                } else {
+                    echo json_encode(array('success' => false, 'message' => lang("re_captcha_expired")));
+                }
+
+                return false;
+            }
+        }
+
+        $email = $this->input->post("email");
+
+        if ($this->Users_model->is_email_exists($email)) {
+            echo json_encode(array("success" => false, 'message' => lang("account_already_exists_for_your_mail") . " " . anchor("signin", lang("signin"))));
+            return false;
+        }
+
+        $email_template = $this->Email_templates_model->get_final_template("verify_email");
+
+        $parser_data["SIGNATURE"] = $email_template->signature;
+        $parser_data["LOGO_URL"] = get_logo_url();
+        $parser_data["SITE_URL"] = get_uri();
+
+        $verification_data = array(
+            "type" => "verify_email",
+            "code" => make_random_string(),
+            "params" => serialize(array(
+                "email" => $email,
+                "expire_time" => time() + (24 * 60 * 60)
+            ))
+        );
+
+        $save_id = $this->Verification_model->save($verification_data);
+
+        $verification_info = $this->Verification_model->get_one($save_id);
+
+        $parser_data['VERIFY_EMAIL_URL'] = get_uri("signup/continue_signup/" . $verification_info->code);
+
+        $message = $this->parser->parse_string($email_template->message, $parser_data, TRUE);
+
+        if (send_app_mail($email, $email_template->subject, $message)) {
+            echo json_encode(array('success' => true, 'message' => lang("reset_info_send")));
+        } else {
+            echo json_encode(array('success' => false, 'message' => lang('error_occurred')));
+        }
+    }
+
+    //continue sign up process
+    function continue_signup($key = "") {
+        if ($key && !get_setting("disable_client_signup")) {
+            $valid_key = $this->is_valid_email_verification_key($key);
+
+            if ($valid_key) {
+                $view_data["type"] = "client";
+                $view_data["signup_type"] = "verify_email";
+                $view_data["signup_message"] = lang("please_continue_your_signup_process");
+                $view_data["key"] = $key;
+
+                $this->load->view("signup/index", $view_data);
+            } else {
+                show_404();
+            }
+        } else {
+            show_404();
+        }
+    }
+
+    //check valid key
+    private function is_valid_email_verification_key($verification_code = "") {
+
+        if ($verification_code) {
+            $options = array("code" => $verification_code, "type" => "verify_email");
+            $verification_info = $this->Verification_model->get_details($options)->row();
+
+            if ($verification_info && $verification_info->id) {
+                $email_verification_info = unserialize($verification_info->params);
+
+                $email = get_array_value($email_verification_info, "email");
+                $expire_time = get_array_value($email_verification_info, "expire_time");
+
+                if ($email && valid_email($email) && $expire_time && $expire_time > time()) {
+                    return array("email" => $email);
+                }
+            }
+        }
+    }
+
+    //check valid key
+    private function is_valid_invitation_key($verification_code = "") {
+        if ($verification_code) {
+            $options = array("code" => $verification_code, "type" => "invitation");
+            $verification_info = $this->Verification_model->get_details($options)->row();
+
+            if ($verification_info && $verification_info->id) {
+                $invitation_info = unserialize($verification_info->params);
+
+                $email = get_array_value($invitation_info, "email");
+                $expire_time = get_array_value($invitation_info, "expire_time");
+                $type = get_array_value($invitation_info, "type");
+                $client_id = get_array_value($invitation_info, "client_id");
+
+                if ($email && valid_email($email) && $expire_time && $expire_time > time()) {
+                    return array("email" => $email, "type" => $type, "client_id" => $client_id);
+                }
+            }
         }
     }
 

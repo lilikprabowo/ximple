@@ -717,10 +717,15 @@
 			}
 
 			this.picker.addClass('datepicker-orient-' + yorient);
-			if (yorient === 'top')
-				top -= calendarHeight + parseInt(this.picker.css('padding-top'));
-			else
-				top += height;
+			if (yorient === 'top'){
+                            top -= calendarHeight + parseInt(this.picker.css('padding-top'));
+                        } else {
+                            if(window.outerWidth <= 640){
+                                top += height + 50;
+                            } else {
+                                top += height;
+                            }				
+                        }
 
 			if (this.o.rtl) {
 				var right = windowWidth - (left + width);

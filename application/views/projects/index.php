@@ -5,6 +5,10 @@
             <div class="title-button-group">
                 <?php
                 if ($can_create_projects) {
+                    if ($can_edit_projects) {
+                        echo modal_anchor(get_uri("labels/modal_form"), "<i class='fa fa-tags'></i> " . lang('manage_labels'), array("class" => "btn btn-default", "title" => lang('manage_labels'), "data-post-type" => "project"));
+                    }
+
                     echo modal_anchor(get_uri("projects/modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('add_project'), array("class" => "btn btn-default", "title" => lang('add_project')));
                 }
                 ?>
@@ -24,6 +28,12 @@
             optionVisibility = true;
         }
 
+        var selectOpenStatus = true, selectCompletedStatus = false;
+<?php if (isset($status) && $status == "completed") { ?>
+            selectOpenStatus = false;
+            selectCompletedStatus = true;
+<?php } ?>
+
         $("#project-table").appTable({
             source: '<?php echo_uri("projects/list_data") ?>',
             multiSelect: [
@@ -31,8 +41,8 @@
                     name: "status",
                     text: "<?php echo lang('status'); ?>",
                     options: [
-                        {text: '<?php echo lang("open") ?>', value: "open", isChecked: true},
-                        {text: '<?php echo lang("completed") ?>', value: "completed"},
+                        {text: '<?php echo lang("open") ?>', value: "open", isChecked: selectOpenStatus},
+                        {text: '<?php echo lang("completed") ?>', value: "completed", isChecked: selectCompletedStatus},
                         {text: '<?php echo lang("hold") ?>', value: "hold"},
                         {text: '<?php echo lang("canceled") ?>', value: "canceled"}
                     ]
@@ -58,7 +68,7 @@
                 {title: '<?php echo lang("deadline") ?>', "class": "w10p", "iDataSort": 6},
                 {title: '<?php echo lang("progress") ?>', "class": "w10p"},
                 {title: '<?php echo lang("status") ?>', "class": "w10p"}
-                <?php echo $custom_field_headers; ?>,
+<?php echo $custom_field_headers; ?>,
                 {visible: optionVisibility, title: '<i class="fa fa-bars"></i>', "class": "text-center option w100"}
             ],
             order: [[1, "desc"]],

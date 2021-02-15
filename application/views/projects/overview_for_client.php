@@ -12,28 +12,51 @@
                             <div class="col-md-6 col-sm-12">
                                 <?php $this->load->view("projects/project_task_pie_chart"); ?>
                             </div>
+
+                            <?php if ($show_activity) { ?>
+                                <div class="col-md-12 col-sm-12">
+                                    <?php $this->load->view('projects/custom_fields_list', array("custom_fields_list" => $custom_fields_list)); ?>
+                                </div>
+
+                                <div class="col-md-12 col-sm-12">
+                                    <?php $this->load->view("projects/project_description"); ?>
+                                </div>
+                            <?php } ?>
                         </div>
                     </div>
-                    
-                    <div class="col-md-6 col-sm-12">
-                        <?php  $this->load->view('projects/custom_fields_list', array("custom_fields_list"=>$custom_fields_list)); ?>
-                    </div>
-                
-                    <div class="col-md-6 col-sm-12">
-                        <?php $this->load->view("projects/project_description"); ?>
-                    </div>
 
+                    <?php if (!$show_activity) { ?>
+                        <div class="col-md-6 col-sm-12">
+                            <?php $this->load->view('projects/custom_fields_list', array("custom_fields_list" => $custom_fields_list)); ?>
+                        </div>
+
+                        <div class="col-md-6 col-sm-12">
+                            <?php $this->load->view("projects/project_description"); ?>
+                        </div>
+                    <?php } ?>
+
+                    <?php if ($show_activity) { ?>
+                        <div class="col-md-6 col-sm-12">
+                            <div class="panel">
+                                <div class="tab-title clearfix">
+                                    <h4><?php echo lang('activity'); ?></h4>
+                                </div>
+                                <?php $this->load->view("projects/history/index"); ?>
+                            </div>
+                        </div>
+                    <?php } ?>
 
                 <?php } else { ?>
                     <div class="col-md-12">
-                        <?php  $this->load->view('projects/custom_fields_list', array("custom_fields_list"=>$custom_fields_list)); ?>
+                        <?php $this->load->view('projects/custom_fields_list', array("custom_fields_list" => $custom_fields_list)); ?>
                     </div>
-                
+
                     <div class="col-md-12">
                         <?php $this->load->view("projects/project_description"); ?>
                     </div>
 
                 <?php } ?>
+
             </div>
         </div>
     </div>

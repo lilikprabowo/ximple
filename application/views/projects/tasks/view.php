@@ -1,146 +1,110 @@
-<div class="modal-body clearfix general-form ">
-    <div class="p10 clearfix">
-        <div class="media m0 bg-white">
-            <div class="media-left">
-                <span class="avatar avatar-sm">
-                    <img src="<?php echo get_avatar($model_info->assigned_to_avatar); ?>" alt="..." />
-                </span>
-            </div>
-            <div class="media-body w100p pt5">
-                <div class="media-heading m0">
-                    <?php echo $model_info->assigned_to_user; ?>
-                </div>
-                <p> 
-                    <span class='label label-light mr5' title='Point'><?php echo $model_info->points; ?></span>
+<?php if ($view_type == "details") { ?>
 
-                    <?php echo $labels . " " . "<span class='label' style='background:$model_info->status_color; '>" . ($model_info->status_key_name ? lang($model_info->status_key_name) : $model_info->status_title) . "</span>"; ?>
-                </p>
+    <div id="page-content" class="p20 pb0 clearfix task-view-modal-body task-preview">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-default">
+                    <div class="page-title clearfix">
+                        <h1><?php echo lang("task_info") . " #$model_info->id"; ?></h1>
+
+                        <?php if ($can_edit_tasks) { ?>
+                            <div class="title-button-group p10">
+                                <span class="dropdown inline-block">
+                                    <button class="btn btn-default dropdown-toggle  mt0 mb0" type="button" data-toggle="dropdown" aria-expanded="true">
+                                        <i class='fa fa-cogs'></i> <?php echo lang('actions'); ?>
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu pull-right" role="menu">
+                                        <li role="presentation"><?php echo modal_anchor(get_uri("projects/task_modal_form"), "<i class='fa fa-pencil'></i> " . lang('edit_task'), array("title" => lang('edit_task'), "data-post-id" => $model_info->id, "data-post-view_type" => "details", "id" => "task-details-edit-btn")); ?></li>
+                                        <li role="presentation"><?php echo modal_anchor(get_uri("projects/task_modal_form"), "<i class='fa fa-copy'></i> " . lang('clone_task'), array("title" => lang('clone_task'), "data-post-id" => $model_info->id, "data-post-is_clone" => true, "data-post-view_type" => "details")); ?></li>
+                                    </ul>
+                                </span>
+                            </div> 
+                        <?php } ?>
+
+                    </div>
+
+                    <div class="panel-body">
+                        <?php $this->load->view("projects/tasks/task_view_data"); ?>
+                    </div>
+
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="form-group clearfix">
-        <div  class="col-md-12 mb15">
-            <strong><?php echo $model_info->title; ?></strong>
-        </div>
+<?php } else { ?>
 
-        <div class="col-md-12 mb15">
-            <?php echo $model_info->description ? nl2br(link_it($model_info->description)) : "-"; ?>
-        </div>
-
-        <?php if ($model_info->milestone_title) { ?>
-            <div class="col-md-12 mb15">
-                <strong><?php echo lang('milestone') . ": "; ?></strong> <?php echo $model_info->milestone_title; ?>
-            </div>
-        <?php } ?>
-
-        <?php if (is_date_exists($model_info->start_date)) { ?>
-            <div class="col-md-12 mb15">
-                <strong><?php echo lang('start_date') . ": "; ?></strong> <?php echo format_to_date($model_info->start_date, false); ?>
-            </div>
-        <?php } ?>
-        <div class="col-md-12 mb15">
-            <strong><?php echo lang('deadline') . ": "; ?></strong> <?php echo format_to_date($model_info->deadline, false); ?>
-        </div>
-        <?php if ($collaborators) { ?>
-            <div class="col-md-12 mb15">
-                <strong><?php echo lang('collaborators') . ": "; ?> </strong> <?php echo $collaborators; ?>
-            </div>
-        <?php } ?>
-
-        <?php
-        if (count($custom_fields_list)) {
-            foreach ($custom_fields_list as $data) {
-                if ($data->value) {
-                    ?>
-                    <div class="col-md-12 mb15">
-                        <strong><?php echo $data->title . ": "; ?> </strong> <?php echo $this->load->view("custom_fields/output_" . $data->field_type, array("value" => $data->value), true); ?>
-                    </div>
-                    <?php
-                }
+    <script type="text/javascript">
+        $(document).ready(function () {
+            //remove task details view when it's already opened to prevent selector duplication
+            if ($(".task-preview").length) {
+                $("#page-content").remove();
+                $('#ajaxModal').on('hidden.bs.modal', function () {
+                    location.reload();
+                });
             }
+        });
+    </script>
+
+    <div class="modal-body clearfix general-form task-view-modal-body">
+        <?php $this->load->view("projects/tasks/task_view_data"); ?>
+    </div>
+
+    <div class="modal-footer">
+        <?php
+        if ($can_edit_tasks) {
+            echo modal_anchor(get_uri("projects/task_modal_form"), "<i class='fa fa-copy'></i> " . lang('clone_task'), array("class" => "btn btn-default pull-left", "data-post-is_clone" => true, "data-post-id" => $model_info->id, "title" => lang('clone_task')));
+            echo modal_anchor(get_uri("projects/task_modal_form/"), "<i class='fa fa-pencil'></i> " . lang('edit_task'), array("class" => "btn btn-default", "data-post-id" => $model_info->id, "title" => lang('edit_task')));
         }
         ?>
-
-        <div class="col-md-12 mb15">
-            <strong><?php echo lang('project') . ": "; ?> </strong> <?php echo anchor(get_uri("projects/view/" . $model_info->project_id), $model_info->project_title); ?>
-        </div>
-
-
-        <!--checklist-->
-        <?php echo form_open(get_uri("projects/save_checklist_item"), array("id" => "checklist_form", "class" => "general-form", "role" => "form")); ?>
-        <div class="col-md-12 mb15 b-t">
-            <div class="pb10 pt10">
-                <strong><?php echo lang("checklist"); ?></strong>
-            </div>
-            <input type="hidden" name="task_id" value="<?php echo $task_id; ?>" />
-            <div class="checklist-items">
-
-            </div>
-            <?php if($can_edit_tasks){ ?>
-            <div class="form-group">
-                <div class="mt5 col-md-12 p0">
-                    <?php
-                    echo form_input(array(
-                        "id" => "checklist-add-item",
-                        "name" => "checklist-add-item",
-                        "class" => "form-control",
-                        "placeholder" => lang('add_item'),
-                        "data-rule-required" => true,
-                        "data-msg-required" => lang("field_required")
-                    ));
-                    ?>
-                </div>
-            </div>
-            <div id="checklist-options-panel" class="col-md-12 mb15 p0 hide">
-                <button type="submit" class="btn btn-primary"><span class="fa fa-check-circle"></span> <?php echo lang('add'); ?></button> 
-                <button id="checklist-options-panel-close" type="button" class="btn btn-default"><span class="fa fa-close"></span> <?php echo lang('cancel'); ?></button>
-            </div>
-            <?php } ?>
-        </div>
-        <?php echo form_close(); ?>
-
-
-
+        <button type="button" class="btn btn-default" data-dismiss="modal"><span class="fa fa-close"></span> <?php echo lang('close'); ?></button>
     </div>
 
-    <div class="row clearfix">
-        <div class="col-md-12 b-t pt10 list-container">
-            <?php if ($can_comment_on_tasks) { ?>
-                <?php $this->load->view("projects/comments/comment_form"); ?>
-            <?php } ?>
-            <?php $this->load->view("projects/comments/comment_list"); ?>
-        </div>
-    </div>
-
-    <?php if ($this->login_user->user_type === "staff") { ?>
-        <div class="box-title"><span ><?php echo lang("activity"); ?></span></div>
-        <div class="pl15 pr15 mt15 list-container">
-            <?php echo activity_logs_widget(array("limit" => 20, "offset" => 0, "log_type" => "task", "log_type_id" => $model_info->id)); ?>
-        </div>
-    <?php } ?>
-</div>
-
-<div class="modal-footer">
-    <?php
-    if ($can_edit_tasks) {
-        echo modal_anchor(get_uri("projects/task_modal_form/"), "<i class='fa fa-pencil'></i> " . lang('edit_task'), array("class" => "btn btn-default", "data-post-id" => $model_info->id, "title" => lang('edit_task')));
-    }
-    ?>
-    <button type="button" class="btn btn-default" data-dismiss="modal"><span class="fa fa-close"></span> <?php echo lang('close'); ?></button>
-</div>
+<?php } ?>
 
 <?php
-$task_link = anchor(get_uri("projects/view/$model_info->project_id/tasks?task=" . $model_info->id), '<i class="fa fa-external-link"></i>', array("target" => "_blank", "class" => "p15"));
+$task_link = anchor(get_uri("projects/task_view/$model_info->id"), '<i class="fa fa-external-link task-link-btn"></i>', array("target" => "_blank", "class" => "p15"));
 ?>
 
 <script type="text/javascript">
     $(document).ready(function () {
+
+        //make the checklist items sortable
+        var $selector = $("#checklist-items");
+        Sortable.create($selector[0], {
+            animation: 150,
+            chosenClass: "sortable-chosen",
+            ghostClass: "sortable-ghost",
+            onUpdate: function (e) {
+                appLoader.show();
+                //prepare checklist items indexes 
+                var data = "";
+                $.each($selector.find(".checklist-item-row"), function (index, ele) {
+                    if (data) {
+                        data += ",";
+                    }
+
+                    data += $(ele).attr("data-id") + "-" + parseInt(index + 1);
+                });
+
+                //update sort indexes
+                $.ajax({
+                    url: '<?php echo_uri("projects/save_checklist_items_sort") ?>',
+                    type: "POST",
+                    data: {sort_values: data},
+                    success: function () {
+                        appLoader.hide();
+                    }
+                });
+            }
+        });
+
         //add a clickable link in task title.
         $("#ajaxModalTitle").append('<?php echo $task_link ?>');
 
         //show the items in checklist
-        $(".checklist-items").html(<?php echo $checklist_items; ?>);
+        $("#checklist-items").html(<?php echo $checklist_items; ?>);
 
         //show save & cancel button when the checklist-add-item-form is focused
         $("#checklist-add-item").focus(function () {
@@ -159,7 +123,7 @@ $task_link = anchor(get_uri("projects/view/$model_info->project_id/tasks?task=" 
             onSuccess: function (response) {
                 $("#checklist-add-item").val("");
                 $("#checklist-add-item").focus();
-                $(".checklist-items").append(response.data);
+                $("#checklist-items").append(response.data);
             }
         });
 
@@ -178,5 +142,173 @@ $task_link = anchor(get_uri("projects/view/$model_info->project_id/tasks?task=" 
                 }
             });
         });
+
+        //show the sub tasks
+        $("#sub-tasks").html(<?php echo $sub_tasks; ?>);
+
+        //show create & cancel button when the add-sub-task-form is focused
+        $("#sub-task-title").focus(function () {
+            $("#sub-task-options-panel").removeClass("hide");
+            $("#sub-task-title-error").removeClass("hide");
+        });
+
+        $("#sub-task-options-panel-close").click(function () {
+            $("#sub-task-options-panel").addClass("hide");
+            $("#sub-task-title-error").addClass("hide");
+            $("#sub-task-title").val("");
+        });
+
+        $("#sub_task_form").appForm({
+            isModal: false,
+            onSuccess: function (response) {
+                $("#sub-task-title").val("");
+                $("#sub-task-title").focus();
+                $("#sub-tasks").append(response.task_data);
+            }
+        });
+
+        $('body').on('click', '[data-act=update-sub-task-status-checkbox]', function () {
+            var sub_task_status_checkbox = $(this).find("span");
+            sub_task_status_checkbox.addClass("inline-loader");
+            $.ajax({
+                url: '<?php echo_uri("projects/save_task_status") ?>/' + $(this).attr('data-id'),
+                type: 'POST',
+                dataType: 'json',
+                data: {value: $(this).attr('data-value'), type: "sub_task"},
+                success: function (response) {
+                    if (response.success) {
+                        sub_task_status_checkbox.closest("div").html(response.data);
+                    }
+                }
+            });
+        });
+
+<?php if ($view_type == "details") { ?>
+            $("#task-details-edit-btn").click(function () {
+                window.refreshAfterAddTask = true;
+            });
+<?php } ?>
+
+        /* Dependency */
+
+        var $dependencyTasksForm = $("#dependency_tasks_form"),
+                $dependencyArea = $("#dependency-area"),
+                $blockedByArea = $("#blocked-by-area"),
+                $blockingArea = $("#blocking-area");
+
+        //add dependency
+        $(".add-dependency-btn").click(function () {
+            var dependencyType = $(this).attr("data-dependency_type");
+            showFormAndArea(dependencyType);
+        });
+
+        function showFormAndArea(type) {
+            if ((type === "blocked_by" && $blockedByArea.find("form").length) || (type === "blocking" && $blockingArea.find("form").length)) {
+                //don't show the same shown form again
+                return false;
+            }
+
+            var $dependencyTasksFormClone = $dependencyTasksForm.clone();
+
+            //show existing tasks on editing
+            $.ajax({
+                url: '<?php echo_uri("projects/get_existing_dependency_tasks") ?>' + "/" + "<?php echo $task_id; ?>",
+                type: "POST",
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        $dependencyTasksFormClone.append("<input type='hidden' name='dependency_type' value='" + type + "' />");
+                        $dependencyTasksFormClone.find("#dependency_task").select2({data: response.tasks_dropdown});
+                        $dependencyArea.removeClass("hide");
+
+                        if (type === "blocked_by") {
+                            hideFromAndArea("blocking");
+                            $blockedByArea.removeClass("hide");
+                            $dependencyTasksFormClone.removeClass("hide");
+                            $blockedByArea.append($dependencyTasksFormClone);
+                        } else {
+                            hideFromAndArea("blocked_by");
+                            $blockingArea.removeClass("hide");
+                            $dependencyTasksFormClone.removeClass("hide");
+                            $blockingArea.append($dependencyTasksFormClone);
+                        }
+
+                        $dependencyTasksFormClone.appForm({
+                            isModal: false,
+                            onSuccess: function (result) {
+                                if (result.success) {
+                                    if (type === "blocked_by") {
+                                        $("#blocked-by-tasks").append(result.data);
+                                    } else {
+                                        $("#blocking-tasks").append(result.data);
+                                    }
+
+                                    hideFromAndArea(type);
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        $('body').on('click', '.dependency-tasks-close', function () {
+            hideFromAndArea();
+        });
+
+        $('body').on('click', '#dependency-area [data-act="ajax-request"]', function () {
+            setTimeout(function () {
+                hideFromAndArea();
+            }, 800);
+        });
+
+        //hide form clone and area
+        function hideFromAndArea(type) {
+            var blockedByTasksLength = $("#blocked-by-tasks").html().length,
+                    blockingTasksLength = $("#blocking-tasks").html().length;
+
+            if (type === "blocked_by" || !type) {
+                fadeAndRemove($blockedByArea.find("form"));
+
+
+                if (!blockedByTasksLength) {
+                    fadeAndHide($blockedByArea);
+                }
+            }
+
+            if (type === "blocking" || !type) {
+                fadeAndRemove($blockingArea.find("form"));
+
+                if (!blockingTasksLength) {
+                    fadeAndHide($blockingArea);
+                }
+            }
+
+            if (!type && !blockedByTasksLength && !blockingTasksLength) {
+                fadeAndHide($dependencyArea);
+            }
+        }
+
+        function fadeAndRemove($selector) {
+            $selector.fadeOut(300, function () {
+                $(this).remove();
+            });
+        }
+
+        function fadeAndHide($selector) {
+            $selector.fadeOut(300, function () {
+                $(this).css('display', '')
+                $(this).addClass("hide");
+            });
+        }
+
+        $('[data-toggle="tooltip"]').tooltip();
+
     });
 </script>
+
+<?php
+if ($can_edit_tasks) {
+    $this->load->view("projects/tasks/update_task_info_script");
+}
+?>

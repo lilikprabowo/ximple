@@ -13,7 +13,9 @@
                 <ul id="custom-field-tab" data-toggle="ajax-tab" class="nav nav-tabs bg-white title" role="tablist">
                     <li class="title-tab"><h4 class="pl15 pt10 pr15"><?php echo lang("custom_fields"); ?></h4></li>
                     <li><a role="presentation" data-related_to="clients" class="active" href="javascript:;" data-target="#custom-field-clients"><?php echo lang("clients"); ?></a></li>
-                    <li><a role="presentation" data-related_to="contacts" class="" href="<?php echo_uri("custom_fields/contacts/"); ?>" data-target="#custom-field-contacts"><?php echo lang("contacts"); ?></a></li>
+                    <li><a role="presentation" data-related_to="client_contacts" class="" href="<?php echo_uri("custom_fields/client_contacts/"); ?>" data-target="#custom-field-client_contacts"><?php echo lang("client_contacts"); ?></a></li>
+                    <li><a role="presentation" data-related_to="leads" class="active" href="<?php echo_uri("custom_fields/leads/"); ?>" data-target="#custom-field-leads"><?php echo lang("leads"); ?></a></li>
+                    <li><a role="presentation" data-related_to="lead_contacts" class="" href="<?php echo_uri("custom_fields/lead_contacts/"); ?>" data-target="#custom-field-lead_contacts"><?php echo lang("lead_contacts"); ?></a></li>
                     <li><a role="presentation" data-related_to="projects" href="<?php echo_uri("custom_fields/projects/"); ?>" data-target="#custom-field-projects"><?php echo lang('projects'); ?></a></li>
                     <li><a role="presentation" data-related_to="tasks" href="<?php echo_uri("custom_fields/tasks/"); ?>" data-target="#custom-field-tasks"><?php echo lang('tasks'); ?></a></li>
                     <li><a role="presentation" data-related_to="team_members" href="<?php echo_uri("custom_fields/team_members/"); ?>" data-target="#custom-field-team_members"><?php echo lang('team_members'); ?></a></li>
@@ -22,6 +24,8 @@
                     <li><a role="presentation" data-related_to="events" href="<?php echo_uri("custom_fields/events/"); ?>" data-target="#custom-field-events"><?php echo lang('events'); ?></a></li>
                     <li><a role="presentation" data-related_to="expenses" href="<?php echo_uri("custom_fields/expenses/"); ?>" data-target="#custom-field-expenses"><?php echo lang('expenses'); ?></a></li>
                     <li><a role="presentation" data-related_to="estimates" href="<?php echo_uri("custom_fields/estimates/"); ?>" data-target="#custom-field-estimates"><?php echo lang('estimates'); ?></a></li>
+                    <li><a role="presentation" data-related_to="orders" href="<?php echo_uri("custom_fields/orders/"); ?>" data-target="#custom-field-orders"><?php echo lang('orders'); ?></a></li>
+                    <li><a role="presentation" data-related_to="timesheets" href="<?php echo_uri("custom_fields/timesheets/"); ?>" data-target="#custom-field-timesheets"><?php echo lang('timesheets'); ?></a></li>
                     <div class="tab-title clearfix no-border">
                         <div class="title-button-group">
                             <?php echo modal_anchor(get_uri("custom_fields/modal_form/"), "<i class='fa fa-plus-circle'></i> " . lang('add_field'), array("class" => "btn btn-default", "id" => "add-field-button", "data-post-related_to" => "clients", "title" => lang('add_field'))); ?>
@@ -39,7 +43,9 @@
                             </div>
                         </div>
                     </div>
-                    <div role="tabpanel" class="tab-pane fade" id="custom-field-contacts"></div>
+                    <div role="tabpanel" class="tab-pane fade" id="custom-field-client_contacts"></div>
+                    <div role="tabpanel" class="tab-pane fade" id="custom-field-lead_contacts"></div>
+                    <div role="tabpanel" class="tab-pane fade" id="custom-field-leads"></div>
                     <div role="tabpanel" class="tab-pane fade" id="custom-field-projects"></div>
                     <div role="tabpanel" class="tab-pane fade" id="custom-field-tasks"></div>
                     <div role="tabpanel" class="tab-pane fade" id="custom-field-team_members"></div>
@@ -48,6 +54,8 @@
                     <div role="tabpanel" class="tab-pane fade" id="custom-field-events"></div>
                     <div role="tabpanel" class="tab-pane fade" id="custom-field-expenses"></div>
                     <div role="tabpanel" class="tab-pane fade" id="custom-field-estimates"></div>
+                    <div role="tabpanel" class="tab-pane fade" id="custom-field-orders"></div>
+                    <div role="tabpanel" class="tab-pane fade" id="custom-field-timesheets"></div>
                 </div>
             </div>
         </div>
@@ -60,10 +68,12 @@
             $("#add-field-button").attr("data-post-related_to", $(this).attr("data-related_to"));
         });
 
-        var tab = "<?php echo $tab; ?>";
-        if (tab) {
-            $("[data-target=#custom-field-" + tab + "]").trigger("click");
-        }
+        setTimeout(function () {
+            var tab = "<?php echo $tab; ?>";
+            if (tab) {
+                $("[data-target=#custom-field-" + tab + "]").trigger("click");
+            }
+        }, 210);
 
 
         loadCustomFieldTable("clients");

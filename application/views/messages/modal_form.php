@@ -42,7 +42,8 @@
                     "placeholder" => lang('write_a_message'),
                     "data-rule-required" => true,
                     "data-msg-required" => lang("field_required"),
-                    "style" => "min-height:200px;"
+                    "style" => "min-height:200px;",
+                    "data-rich-text-editor" => true
                 ));
                 ?>
             </div>

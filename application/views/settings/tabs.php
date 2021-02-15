@@ -1,41 +1,123 @@
+<?php
+$settings_menu = array(
+    "app_settings" => array(
+        array("name" => "general", "url" => "settings/general"),
+        array("name" => "email", "url" => "settings/email"),
+        array("name" => "email_templates", "url" => "email_templates"),
+        array("name" => "modules", "url" => "settings/modules"),
+        array("name" => "cron_job", "url" => "settings/cron_job"),
+        array("name" => "notifications", "url" => "settings/notifications"),
+        array("name" => "integration", "url" => "settings/integration"),
+        array("name" => "updates", "url" => "Updates"),
+    ),
+    "access_permission" => array(
+        array("name" => "roles", "url" => "roles"),
+        array("name" => "team", "url" => "team"),
+    ),
+    "client" => array(
+        array("name" => "client_permissions", "url" => "settings/client_permissions"),
+        array("name" => "client_groups", "url" => "client_groups"),
+        array("name" => "dashboard", "url" => "dashboard/client_default_dashboard"),
+        array("name" => "client_left_menu", "url" => "left_menus/index/client_default"),
+        array("name" => "client_projects", "url" => "settings/client_projects"),
+    ),
+    "setup" => array(
+        array("name" => "custom_fields", "url" => "custom_fields"),
+        array("name" => "tasks", "url" => "task_status"),
+    )
+);
 
-<h4><i class="fa fa-wrench"></i> <?php echo lang("app_settings"); ?></h4>
-<ul class="nav nav-tabs vertical" role="tablist">
-    <li role="presentation" class="<?php echo ($active_tab == 'general') ? 'active' : ''; ?>"><a href="<?php echo_uri("settings/general"); ?>"><?php echo lang("general"); ?></a></li>
-    <li role="presentation" class="<?php echo ($active_tab == 'company') ? 'active' : ''; ?>"><a href="<?php echo_uri("settings/company"); ?>"><?php echo lang("company"); ?></a></li>
-    <li role="presentation" class="<?php echo ($active_tab == 'email') ? 'active' : ''; ?>"><a href="<?php echo_uri("settings/email"); ?>"><?php echo lang("email"); ?></a></li>
-    <li role="presentation" class="<?php echo ($active_tab == 'email_templates') ? 'active' : ''; ?>"><a href="<?php echo_uri("email_templates"); ?>"><?php echo lang("email_templates"); ?></a></li>
-    <li role="presentation" class="<?php echo ($active_tab == 'team') ? 'active' : ''; ?>"><a href="<?php echo_uri("team"); ?>"><?php echo lang("team"); ?></a></li>
-    <li role="presentation" class="<?php echo ($active_tab == 'roles') ? 'active' : ''; ?>"><a href="<?php echo_uri("roles"); ?>"><?php echo lang("roles"); ?></a></li>
-    <li role="presentation" class="<?php echo ($active_tab == 'client') ? 'active' : ''; ?>"><a href="<?php echo_uri("settings/client"); ?>"><?php echo lang("client"); ?></a></li>    
-    <li role="presentation" class="<?php echo ($active_tab == 'modules') ? 'active' : ''; ?>"><a href="<?php echo_uri("settings/modules"); ?>"><?php echo lang("modules"); ?></a></li>
-    
-    <?php if (get_setting("module_leave") == "1") { ?>
-        <li role="presentation" class="<?php echo ($active_tab == 'leave_types') ? 'active' : ''; ?>"><a href="<?php echo_uri("leave_types"); ?>"><?php echo lang("leave_types"); ?></a></li>
-    <?php } ?>
+//restricted settings
+if (get_setting("module_attendance") == "1") {
+    $settings_menu["access_permission"][] = array("name" => "ip_restriction", "url" => "settings/ip_restriction");
+}
 
-    <li role="presentation" class="<?php echo ($active_tab == 'tasks') ? 'active' : ''; ?>"><a href="<?php echo_uri('task_status'); ?>"><?php echo lang("tasks"); ?></a></li>    
-        
-    <?php if (get_setting("module_ticket") == "1") { ?>
-        <li role="presentation" class="<?php echo ($active_tab == 'ticket_types') ? 'active' : ''; ?>"><a href="<?php echo_uri("ticket_types"); ?>"><?php echo lang("ticket"); ?></a></li>
-    <?php } ?>
-    <?php if (get_setting("module_expense") == "1") { ?>    
-        <li role="presentation" class="<?php echo ($active_tab == 'expense_categories') ? 'active' : ''; ?>"><a href="<?php echo_uri("expense_categories"); ?>"><?php echo lang("expense_categories"); ?></a></li>
-    <?php } ?>
-    <li role="presentation" class="<?php echo ($active_tab == 'taxes') ? 'active' : ''; ?>"><a href="<?php echo_uri("taxes"); ?>"><?php echo lang("taxes"); ?></a></li>
+if (get_setting("module_event") == "1") {
+    $settings_menu["setup"][] = array("name" => "events", "url" => "settings/events");
+}
 
-    <?php if (get_setting("module_invoice") == "1") { ?>    
-        <li role="presentation" class="<?php echo ($active_tab == 'invoice') ? 'active' : ''; ?>"><a href="<?php echo_uri("settings/invoice"); ?>"><?php echo lang("invoice"); ?></a></li>
-    <?php } ?>
+if (get_setting("module_leave") == "1") {
+    $settings_menu["setup"][] = array("name" => "leave_types", "url" => "leave_types");
+}
 
-    <li role="presentation" class="<?php echo ($active_tab == 'payment_methods') ? 'active' : ''; ?>"><a href="<?php echo_uri("payment_methods"); ?>"><?php echo lang("payment_methods"); ?></a></li>
-    <li role="presentation" class="<?php echo ($active_tab == 'notification') ? 'active' : ''; ?>"><a href="<?php echo_uri("settings/notification"); ?>"><?php echo lang("notification"); ?></a></li>
+if (get_setting("module_ticket") == "1") {
+    $settings_menu["setup"][] = array("name" => "tickets", "url" => "ticket_types");
+}
 
-    <li role="presentation" class="<?php echo ($active_tab == 'custom_fields') ? 'active' : ''; ?>"><a href="<?php echo_uri("custom_fields"); ?>"><?php echo lang("custom_fields"); ?></a></li>
-    <?php if (get_setting("module_attendance") == "1") { ?>    
-        <li role="presentation" class="<?php echo ($active_tab == 'ip_restriction') ? 'active' : ''; ?>"><a href="<?php echo_uri("settings/ip_restriction"); ?>"><?php echo lang("ip_restriction"); ?></a></li>
-    <?php } ?>
-        
-    <li role="presentation" class="<?php echo ($active_tab == 'cron_job') ? 'active' : ''; ?>"><a href="<?php echo_uri("settings/cron_job"); ?>"><?php echo lang("cron_job"); ?></a></li>
-    <li role="presentation" class="<?php echo ($active_tab == 'integration') ? 'active' : ''; ?>"><a href="<?php echo_uri("settings/integration"); ?>"><?php echo lang("integration"); ?></a></li>
+if (get_setting("module_expense") == "1") {
+    $settings_menu["setup"][] = array("name" => "expense_categories", "url" => "expense_categories");
+}
+
+if (get_setting("module_invoice") == "1") {
+    $settings_menu["setup"][] = array("name" => "invoices", "url" => "settings/invoices");
+}
+
+if (get_setting("module_estimate") == "1") {
+    $settings_menu["setup"][] = array("name" => "estimates", "url" => "settings/estimates");
+}
+
+if (get_setting("module_order") == "1") {
+    $settings_menu["setup"][] = array("name" => "orders", "url" => "settings/orders");
+}
+
+$settings_menu["setup"][] = array("name" => "payment_methods", "url" => "payment_methods");
+$settings_menu["setup"][] = array("name" => "company", "url" => "settings/company");
+$settings_menu["setup"][] = array("name" => "taxes", "url" => "taxes");
+
+if (get_setting("module_lead") == "1") {
+    $settings_menu["setup"][] = array("name" => "leads", "url" => "lead_status");
+}
+
+$settings_menu["setup"][] = array("name" => "projects", "url" => "settings/projects");
+
+if (get_setting("module_project_timesheet") == "1") {
+    $settings_menu["setup"][] = array("name" => "timesheets", "url" => "settings/timesheets");
+}
+
+$settings_menu["setup"][] = array("name" => "gdpr", "url" => "settings/gdpr");
+$settings_menu["setup"][] = array("name" => "pages", "url" => "pages");
+
+$settings_menu["setup"][] = array("name" => "left_menu", "url" => "left_menus");
+
+$settings_menu["setup"][] = array("name" => "footer", "url" => "settings/footer");
+?>
+
+<ul class="nav nav-tabs vertical settings" role="tablist">
+    <?php
+    foreach ($settings_menu as $key => $value) {
+
+        //collapse the selected settings tab panel
+        $collapse_in = "";
+        $collapsed_class = "collapsed";
+        if (in_array($active_tab, array_column($value, "name"))) {
+            $collapse_in = "in";
+            $collapsed_class = "";
+        }
+        ?>
+
+        <div class="clearfix settings-anchor <?php echo $collapsed_class; ?>" data-toggle="collapse" data-target="#settings-tab-<?php echo $key; ?>">
+            <?php echo lang($key); ?>
+            <span class="pull-right"><i class="fa fa-plus-square-o"></i></span>
+        </div>
+
+        <?php
+        echo "<div id='settings-tab-$key' class='collapse $collapse_in'>";
+        echo "<ul class='list-group help-catagory'>";
+
+        foreach ($value as $sub_setting) {
+            $active_class = "";
+            $setting_name = get_array_value($sub_setting, "name");
+            $setting_url = get_array_value($sub_setting, "url");
+
+            if ($active_tab == $setting_name) {
+                $active_class = "active";
+            }
+
+            echo "<a href='" . get_uri($setting_url) . "' class='list-group-item $active_class'>" . lang($setting_name) . "</a>";
+        }
+
+        echo "</ul>";
+        echo "</div>";
+    }
+    ?>
 </ul>

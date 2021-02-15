@@ -31,7 +31,7 @@
             </div>
         <?php } ?>
 
-        <div class="table-responsive">
+        <div class="table-responsive" id="client-projects-list">
             <table id="project-table" class="display" width="100%">            
             </table>
         </div>
@@ -63,6 +63,11 @@ if (isset($page_type) && $page_type === 'dashboard') {
             filters = false;
         }
 
+        var optionVisibility = false;
+        if ("<?php echo get_setting("client_can_edit_projects"); ?>") {
+            optionVisibility = true;
+        }
+
 
         $("#project-table").appTable({
             source: '<?php echo_uri("projects/projects_list_data_of_client/" . $client_id) ?>',
@@ -92,10 +97,11 @@ if (isset($page_type) && $page_type === 'dashboard') {
                 {title: '<?php echo lang("deadline") ?>', "class": "w10p", "iDataSort": 6},
                 {title: '<?php echo lang("progress") ?>', "class": "w15p"},
                 {title: '<?php echo lang("status") ?>', "class": "w10p"}
-                <?php echo $custom_field_headers; ?>
+<?php echo $custom_field_headers; ?>,
+                {visible: optionVisibility, title: '<i class="fa fa-bars"></i>', "class": "text-center option w100"}
             ],
-            printColumns:  combineCustomFieldsColumns([0, 1, 3, 5, 7, 9], '<?php echo $custom_field_headers; ?>'),
-            xlsColumns:  combineCustomFieldsColumns([0, 1, 3, 5, 7, 9], '<?php echo $custom_field_headers; ?>')
+            printColumns: combineCustomFieldsColumns([0, 1, 3, 5, 7, 9], '<?php echo $custom_field_headers; ?>'),
+            xlsColumns: combineCustomFieldsColumns([0, 1, 3, 5, 7, 9], '<?php echo $custom_field_headers; ?>')
         });
     });
 </script>

@@ -1,47 +1,49 @@
-<div id="page-content" class="p20 row">
-    <div class="col-sm-3 col-lg-2">
-        <?php
-        $tab_view['active_tab'] = "updates";
-        $this->load->view("settings/tabs", $tab_view);
-        ?>
-    </div>
+<div id="page-content" class="p20 clearfix">
+    <div class="row">
+        <div class="col-sm-3 col-lg-2">
+            <?php
+            $tab_view['active_tab'] = "updates";
+            $this->load->view("settings/tabs", $tab_view);
+            ?>
+        </div>
 
-    <div class="col-sm-9 col-lg-10">
-        <div class="panel panel-default">
-            <div class="page-title clearfix">
-                <h4> <?php echo lang('updates'); ?></h4>
-                <div class="title-button-group">
-                    <?php echo "<a href='" . get_setting("app_update_url") . "/info' data-title='Info' class='update-instruction btn btn-info font-18' style='padding:2px 10px'><i class='fa fa-info-circle'></i></a>"; ?>
+        <div class="col-sm-9 col-lg-10">
+            <div class="panel panel-default">
+                <div class="page-title clearfix">
+                    <h4> <?php echo lang('updates'); ?></h4>
+                    <div class="title-button-group">
+                        <?php echo "<a href='" . get_setting("app_update_url") . "info' data-title='Info' class='update-instruction btn btn-info font-18' style='padding:2px 10px'><i class='fa fa-info-circle'></i></a>"; ?>
+                    </div>
                 </div>
-            </div>
 
-            <div id="app-update-container" class="panel-body font-14">
-                <p>
-                    <strong><?php echo lang("current_version") . " : " . $current_version; ?></strong>
-                </p>
+                <div id="app-update-container" class="panel-body font-14">
+                    <p>
+                        <strong><?php echo lang("current_version") . " : " . $current_version; ?></strong>
+                    </p>
 
-                <?php if (count($installable_updates) || count($downloadable_updates)) { ?>
+                    <?php if (count($installable_updates) || count($downloadable_updates)) { ?>
 
-                    <script type='text/javascript'>
-                        $(document).ready(function () {
-                            appAlert.warning("Please backup all files and database before start the installation.", {container: "#app-update-container", animate: false});
-                            $(".app-alert-message").css("max-width", 1000);
-                        });
-                    </script>
+                        <script type='text/javascript'>
+                            $(document).ready(function () {
+                                appAlert.warning("Please backup all files and database before start the installation.", {container: "#app-update-container", animate: false});
+                                $(".app-alert-message").css("max-width", 1000);
+                            });
+                        </script>
 
-                    <?php
-                    foreach ($installable_updates as $salt => $version) {
-                        echo "<p><a class='do-update' data-version='$version' href='#'>Click here to Install the version - <b>$version</b></a></p>";
+                        <?php
+                        foreach ($installable_updates as $salt => $version) {
+                            echo "<p><a class='do-update' data-version='$version' href='#'>Click here to Install the version - <b>$version</b></a></p>";
+                        }
+                        foreach ($downloadable_updates as $salt => $version) {
+                            echo "<p class='download-updates' data-salt='$salt' data-version='$version'>Version - <b>$version</b> available, awaiting for download.</p>";
+                        }
+                    } else {
+                        echo "<p>No updates found.</p>";
                     }
-                    foreach ($downloadable_updates as $salt => $version) {
-                        echo "<p class='download-updates' data-salt='$salt' data-version='$version'>Version - <b>$version</b> available, awaiting for download.</p>";
-                    }
-                } else {
-                    echo "<p>No updates found.</p>";
-                }
-                ?>
-            </div>
+                    ?>
+                </div>
 
+            </div>
         </div>
     </div>
 </div>

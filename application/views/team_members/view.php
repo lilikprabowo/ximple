@@ -10,7 +10,10 @@
         <div class="col-md-6 text-center cover-widget">
             <div class="row p20">
                 <?php
-                count_project_status_widget($user_info->id);
+                if ($show_projects_count) {
+                    count_project_status_widget($user_info->id);
+                }
+
                 count_total_time_widget($user_info->id);
                 ?> 
             </div>
@@ -18,7 +21,7 @@
     </div>
 
 
-    <ul data-toggle="ajax-tab" class="nav nav-tabs" role="tablist">
+    <ul id="team-member-view-tabs" data-toggle="ajax-tab" class="nav nav-tabs" role="tablist">
 
         <?php if ($show_timeline) { ?>
             <li><a  role="presentation" class="active" href="javascript:;" data-target="#tab-timeline"> <?php echo lang('timeline'); ?></a></li>
@@ -43,6 +46,9 @@
         <?php if ($this->login_user->id == $user_info->id) { ?>
             <li><a role="presentation" href="<?php echo_uri("team_members/my_preferences/" . $user_info->id); ?>" data-target="#tab-my-preferences"> <?php echo lang('my_preferences'); ?></a></li>
         <?php } ?>
+        <?php if ($this->login_user->id == $user_info->id) { ?>
+            <li><a role="presentation" href="<?php echo_uri("left_menus/index/user"); ?>" data-target="#tab-user-left-menu"> <?php echo lang('left_menu'); ?></a></li>
+        <?php } ?>
 
         <?php if ($show_general_info) { ?>
             <li><a  role="presentation" href="<?php echo_uri("team_members/files/" . $user_info->id); ?>" data-target="#tab-files"> <?php echo lang('files'); ?></a></li>
@@ -61,7 +67,7 @@
         <?php } ?>
         <?php if ($show_expense_info) { ?>
             <li><a role="presentation" href="<?php echo_uri("team_members/expense_info/" . $user_info->id); ?>" data-target="#tab-expense-info"><?php echo lang('expenses'); ?></a></li>
-        <?php } ?> 
+        <?php } ?>
 
     </ul>
 
@@ -75,6 +81,7 @@
         <div role="tabpanel" class="tab-pane fade" id="tab-job-info"></div>
         <div role="tabpanel" class="tab-pane fade" id="tab-account-settings"></div>
         <div role="tabpanel" class="tab-pane fade" id="tab-my-preferences"></div>
+        <div role="tabpanel" class="tab-pane fade" id="tab-user-left-menu"></div>
         <div role="tabpanel" class="tab-pane fade" id="tab-projects-info"></div>
         <div role="tabpanel" class="tab-pane fade" id="tab-attendance-info"></div>
         <div role="tabpanel" class="tab-pane fade" id="tab-leave-info"></div>
@@ -115,19 +122,22 @@
             }
         });
 
-        var tab = "<?php echo $tab; ?>";
-        if (tab === "general") {
-            $("[data-target=#tab-general-info]").trigger("click");
-        } else if (tab === "account") {
-            $("[data-target=#tab-account-settings]").trigger("click");
-        } else if (tab === "social") {
-            $("[data-target=#tab-social-links]").trigger("click");
-        } else if (tab === "job_info") {
-            $("[data-target=#tab-job-info]").trigger("click");
-        } else if (tab === "my_preferences") {
-            $("[data-target=#tab-my-preferences]").trigger("click");
-        }
-
+        setTimeout(function () {
+            var tab = "<?php echo $tab; ?>";
+            if (tab === "general") {
+                $("[data-target=#tab-general-info]").trigger("click");
+            } else if (tab === "account") {
+                $("[data-target=#tab-account-settings]").trigger("click");
+            } else if (tab === "social") {
+                $("[data-target=#tab-social-links]").trigger("click");
+            } else if (tab === "job_info") {
+                $("[data-target=#tab-job-info]").trigger("click");
+            } else if (tab === "my_preferences") {
+                $("[data-target=#tab-my-preferences]").trigger("click");
+            } else if (tab === "left_menu") {
+                $("[data-target=#tab-user-left-menu]").trigger("click");
+            }
+        }, 210);
 
     });
 </script>

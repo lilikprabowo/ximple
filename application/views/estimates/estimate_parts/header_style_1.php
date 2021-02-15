@@ -1,11 +1,10 @@
 <table style="color: #444; width: 100%;">
-    <tr>
+    <tr class="invoice-preview-header-row">
         <td style="width: 45%; vertical-align: top;">
             <?php $this->load->view('estimates/estimate_parts/company_logo'); ?>
         </td>
-        <td style="width: 20%;">
-        </td>
-        <td style="width: 35%; vertical-align: top; text-align: right"><?php
+        <td class="hidden-invoice-preview-row" style="width: 20%;"></td>
+        <td class="invoice-info-container" style="width: 35%; vertical-align: top; text-align: right"><?php
             $data = array(
                 "client_info" => $client_info,
                 "color" => $color,

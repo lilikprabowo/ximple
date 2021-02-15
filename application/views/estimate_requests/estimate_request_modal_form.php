@@ -33,6 +33,7 @@
                 "class" => "form-control",
                 "placeholder" => lang('description'),
                 "style" => "height:150px;",
+                "data-rich-text-editor" => true
             ));
             ?>
         </div>
@@ -43,6 +44,15 @@
             <?php
             $status_dropdown = array("active" => lang("active"), "inactive" => lang("inactive"));
             echo form_dropdown("status", $status_dropdown, $model_info->status, "class='select2'");
+            ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="assigned_to" class="col-md-3"><?php echo lang('auto_assign_estimate_request_to') ?></label>
+        <div class="col-md-9">
+            <?php
+            echo form_dropdown("assigned_to", $assigned_to_dropdown, $model_info->assigned_to, "class='select2'");
             ?>
         </div>
     </div>

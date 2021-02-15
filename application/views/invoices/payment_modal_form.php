@@ -1,7 +1,20 @@
 <?php echo form_open(get_uri("invoice_payments/save_payment"), array("id" => "invoice-payment-form", "class" => "general-form", "role" => "form")); ?>
 <div class="modal-body clearfix">
     <input type="hidden" name="id" value="<?php echo $model_info->id; ?>" />
-    <input type="hidden" name="invoice_id" value="<?php echo $invoice_id; ?>" />
+
+    <?php if ($invoice_id) { ?>
+        <input type="hidden" name="invoice_id" value="<?php echo $invoice_id; ?>" />
+    <?php } else { ?>
+        <div class="form-group">
+            <label for="invoice_id" class=" col-md-3"><?php echo lang('invoice'); ?></label>
+            <div class="col-md-9">
+                <?php
+                echo form_dropdown("invoice_id", $invoices_dropdown, "", "class='select2 validate-hidden' id='invoice_id' data-rule-required='true' data-msg-required='" . lang('field_required') . "' ");
+                ?>
+            </div>
+        </div>
+    <?php } ?>
+
     <div class="form-group">
         <label for="invoice_payment_method_id" class=" col-md-3"><?php echo lang('payment_method'); ?></label>
         <div class="col-md-9">
@@ -20,6 +33,7 @@
                 "value" => $model_info->payment_date,
                 "class" => "form-control",
                 "placeholder" => lang('payment_date'),
+                "autocomplete" => "off",
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required")
             ));
@@ -52,7 +66,8 @@
                 "name" => "invoice_payment_note",
                 "value" => $model_info->note ? $model_info->note : "",
                 "class" => "form-control",
-                "placeholder" => lang('description')
+                "placeholder" => lang('description'),
+                "data-rich-text-editor" => true
             ));
             ?>
         </div>
@@ -66,19 +81,30 @@
 <?php echo form_close(); ?>
 
 <script type="text/javascript">
-    $(document).ready(function() {
+    $(document).ready(function () {
         $("#invoice-payment-form").appForm({
-            onSuccess: function(result) {
-                $("#invoice-payment-table").appTable({newData: result.data, dataId: result.id});
-                $("#invoice-total-section").html(result.invoice_total_view);
-                if (typeof updateInvoiceStatusBar == 'function') {
-                     updateInvoiceStatusBar(result.invoice_id);
+            onSuccess: function (result) {
+                if (typeof RELOAD_VIEW_AFTER_UPDATE !== "undefined" && RELOAD_VIEW_AFTER_UPDATE) {
+                    location.reload();
+                } else {
+                    if ($("#invoice-payment-table").length) {
+                        //it's from invoice details view
+                        $("#invoice-payment-table").appTable({newData: result.data, dataId: result.id});
+                        $("#invoice-total-section").html(result.invoice_total_view);
+                        if (typeof updateInvoiceStatusBar == 'function') {
+                            updateInvoiceStatusBar(result.invoice_id);
+                        }
+                    } else {
+                        //it's from invoices list view
+                        //update table data
+                        $("#" + $(".dataTable:visible").attr("id")).appTable({reload: true});
+                    }
                 }
             }
         });
         $("#invoice-payment-form .select2").select2();
-        
+
         setDatePicker("#invoice_payment_date");
-     
+
     });
 </script>

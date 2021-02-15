@@ -1,7 +1,3 @@
-<?php
-$this->load->view("includes/summernote");
-?>
-
 <div id="page-content" class="clearfix p20">
     <div class="panel view-container">
         <div id="help-dropzone" class="post-dropzone">

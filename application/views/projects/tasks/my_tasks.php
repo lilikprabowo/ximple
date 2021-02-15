@@ -1,14 +1,20 @@
 <div id="page-content" class="p20 clearfix">
 
-    <ul class="nav nav-tabs bg-white title tab-title" role="tablist">
+    <ul class="nav nav-tabs bg-white title" role="tablist">
         <li class="title-tab"><h4 class="pl15 pt10 pr15"><?php echo lang("tasks"); ?></h4></li>
 
-        <?php $this->load->view("projects/tasks/tabs", array("active_tab"=>"tasks_list")); ?>
-        
+        <?php $this->load->view("projects/tasks/tabs", array("active_tab" => "tasks_list")); ?>
+
         <div class="tab-title clearfix no-border">
             <div class="title-button-group">
                 <?php
+                if ($this->login_user->user_type == "staff") {
+                    echo modal_anchor("", "<i class='fa fa-pencil-square'></i> " . lang('batch_update'), array("class" => "btn btn-info hide batch-update-btn", "title" => lang('batch_update')));
+                    echo js_anchor("<i class='fa fa-check-square'></i> " . lang("batch_update"), array("class" => "btn btn-default hide batch-active-btn"));
+                    echo js_anchor("<i class='fa fa-close'></i> " . lang("cancel_selection"), array("class" => "hide btn btn-default batch-cancel-btn"));
+                }
                 if ($can_create_tasks) {
+                    echo modal_anchor(get_uri("projects/task_modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('add_multiple_tasks'), array("class" => "btn btn-default", "title" => lang('add_multiple_tasks'), "data-post-add_type" => "multiple"));
                     echo modal_anchor(get_uri("projects/task_modal_form"), "<i class='fa fa-plus-circle'></i> " . lang('add_task'), array("class" => "btn btn-default", "title" => lang('add_task')));
                 }
                 ?>
@@ -46,13 +52,25 @@ foreach ($task_statuses as $status) {
 <script type="text/javascript">
     $(document).ready(function () {
 
+        var showOption = true,
+                idColumnClass = "w10p",
+                titleColumnClass = "";
+
+        if (isMobile()) {
+            showOption = false;
+            idColumnClass = "w25p";
+            titleColumnClass = "w75p";
+        }
+
         $("#task-table").appTable({
             source: '<?php echo_uri("projects/my_tasks_list_data") ?>',
             order: [[1, "desc"]],
+            responsive: false, //hide responsive (+) icon
             filterDropdown: [
                 {name: "specific_user_id", class: "w200", options: <?php echo $team_members_dropdown; ?>},
                 {name: "milestone_id", class: "w200", options: [{id: "", text: "- <?php echo lang('milestone'); ?> -"}], dependency: ["project_id"], dataSource: '<?php echo_uri("projects/get_milestones_for_filter") ?>'}, //milestone is dependent on project
-                {name: "project_id", class: "w200", options: <?php echo $projects_dropdown; ?>, dependent: ["milestone_id"]}, //reset milestone on changing of project               
+                {name: "project_id", class: "w200", options: <?php echo $projects_dropdown; ?>, dependent: ["milestone_id"]}, //reset milestone on changing of project
+                {name: "quick_filter", class: "w200", showHtml: true, options: <?php $this->load->view("projects/tasks/quick_filters_dropdown"); ?>}
             ],
             singleDatepicker: [{name: "deadline", defaultText: "<?php echo lang('deadline') ?>",
                     options: [
@@ -71,16 +89,17 @@ foreach ($task_statuses as $status) {
             ],
             columns: [
                 {visible: false, searchable: false},
-                {title: '<?php echo lang("id") ?>'},
-                {title: '<?php echo lang("title") ?>'},
+                {title: '<?php echo lang("id") ?>', "class": idColumnClass},
+                {title: '<?php echo lang("title") ?>', "class": titleColumnClass},
                 {visible: false, searchable: false},
-                {title: '<?php echo lang("start_date") ?>', "iDataSort": 3},
+                {title: '<?php echo lang("start_date") ?>', "iDataSort": 3, visible: showOption},
                 {visible: false, searchable: false},
-                {title: '<?php echo lang("deadline") ?>', "iDataSort": 5},
-                {title: '<?php echo lang("project") ?>'},
-                {title: '<?php echo lang("assigned_to") ?>', "class": "min-w150"},
-                {title: '<?php echo lang("collaborators") ?>'},
-                {title: '<?php echo lang("status") ?>'}
+                {title: '<?php echo lang("deadline") ?>', "iDataSort": 5, visible: showOption},
+                {title: '<?php echo lang("milestone") ?>', visible: showOption},
+                {title: '<?php echo lang("project") ?>', visible: showOption},
+                {title: '<?php echo lang("assigned_to") ?>', "class": "min-w150", visible: showOption},
+                {title: '<?php echo lang("collaborators") ?>', visible: showOption},
+                {title: '<?php echo lang("status") ?>', visible: showOption}
 <?php echo $custom_field_headers; ?>,
                 {visible: false, searchable: false}
             ],
@@ -88,6 +107,14 @@ foreach ($task_statuses as $status) {
             xlsColumns: combineCustomFieldsColumns([1, 2, 4, 6, 7, 8, 9, 10], '<?php echo $custom_field_headers; ?>'),
             rowCallback: function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                 $('td:eq(0)', nRow).attr("style", "border-left:5px solid " + aData[0] + " !important;");
+            },
+            onRelaodCallback: function () {
+                hideBatchTasksBtn(true);
+            },
+            onInitComplete: function () {
+                if (!showOption) {
+                    window.scrollTo(0, 210); //scroll to the content for mobile devices
+                }
             }
         });
 
@@ -101,4 +128,8 @@ foreach ($task_statuses as $status) {
 
     });
 </script>
+
+<?php $this->load->view("projects/tasks/batch_update/batch_update_script"); ?>
 <?php $this->load->view("projects/tasks/update_task_script"); ?>
+<?php $this->load->view("projects/tasks/update_task_read_comments_status_script"); ?>
+<?php $this->load->view("projects/tasks/quick_filters_helper_js"); ?>

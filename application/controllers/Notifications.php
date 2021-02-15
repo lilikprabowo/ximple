@@ -42,6 +42,10 @@ class Notifications extends MY_Controller {
     function set_notification_status_as_read($notification_id = 0) {
         if ($notification_id) {
             $this->Notifications_model->set_notification_status_as_read($notification_id, $this->login_user->id);
+        } else {
+            //mark all notification as read
+            $this->Notifications_model->set_notification_status_as_read(0, $this->login_user->id);
+            echo json_encode(array("success" => true, 'message' => lang('marked_all_notifications_as_read')));
         }
     }
 

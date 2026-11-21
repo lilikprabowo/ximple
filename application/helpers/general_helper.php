@@ -1547,8 +1547,60 @@ if (!function_exists("get_update_task_info_anchor_data")) {
             } else if ($type == "deadline") {
 
                 return $can_edit_tasks ? js_anchor($deadline, array('title' => "", "class" => "", "data-id" => $model_info->id, "data-value" => $model_info->deadline, "data-act" => "update-task-info", "data-act-type" => "deadline")) : format_to_date($model_info->deadline, false);
+            } else if ($type == "priority") {
+                $priority_val = isset($model_info->priority) ? $model_info->priority : "";
+                $priority_view = $priority_val ? get_task_priority_badge($priority_val) : "<span class='text-off'>" . lang("add") . " " . lang("priority") . "</span>";
+                return $can_edit_tasks ? js_anchor($priority_view, array('title' => "", "class" => "", "data-id" => $model_info->id, "data-value" => $priority_val, "data-act" => "update-task-info", "data-act-type" => "priority")) : ($priority_val ? get_task_priority_badge($priority_val) : "-");
             }
         }
+    }
+
+}
+
+if (!function_exists('get_task_priority_options')) {
+
+    function get_task_priority_options($include_empty = true) {
+        $options = array();
+        if ($include_empty) {
+            $options[""] = "-";
+        }
+        $options["urgent"] = "Urgent";
+        $options["high"] = "High";
+        $options["medium"] = "Medium";
+        $options["low"] = "Low";
+        return $options;
+    }
+
+}
+
+if (!function_exists('get_task_priority_filter_dropdown')) {
+
+    function get_task_priority_filter_dropdown() {
+        return array(
+            array("id" => "", "text" => "- " . lang("priority") . " -"),
+            array("id" => "urgent", "text" => "Urgent"),
+            array("id" => "high", "text" => "High"),
+            array("id" => "medium", "text" => "Medium"),
+            array("id" => "low", "text" => "Low")
+        );
+    }
+
+}
+
+if (!function_exists('get_task_priority_badge')) {
+
+    function get_task_priority_badge($priority = "") {
+        $p = strtolower(trim((string) $priority));
+        if ($p === "urgent") {
+            return "<span class='task-priority-badge priority-urgent' title='" . lang("priority") . ": Urgent'><i class='fa fa-angle-double-up'></i> Urgent</span>";
+        } else if ($p === "high") {
+            return "<span class='task-priority-badge priority-high' title='" . lang("priority") . ": High'><i class='fa fa-angle-up'></i> High</span>";
+        } else if ($p === "medium") {
+            return "<span class='task-priority-badge priority-medium' title='" . lang("priority") . ": Medium'><i class='fa fa-minus'></i> Medium</span>";
+        } else if ($p === "low") {
+            return "<span class='task-priority-badge priority-low' title='" . lang("priority") . ": Low'><i class='fa fa-angle-down'></i> Low</span>";
+        }
+        return "";
     }
 
 }

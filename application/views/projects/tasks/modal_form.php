@@ -64,6 +64,14 @@
             </div>
         </div>
         <div class="form-group">
+            <label for="priority" class="col-md-3"><?php echo lang('priority'); ?></label>
+            <div class="col-md-9">
+                <?php
+                echo form_dropdown("priority", get_task_priority_options(true), array(isset($model_info->priority) ? $model_info->priority : ""), "class='select2' id='priority'");
+                ?>
+            </div>
+        </div>
+        <div class="form-group">
             <label for="milestone_id" class=" col-md-3"><?php echo lang('milestone'); ?></label>
             <div class="col-md-9" id="dropdown-apploader-section">
                 <?php

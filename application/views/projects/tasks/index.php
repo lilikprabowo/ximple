@@ -104,6 +104,7 @@ foreach ($task_statuses as $status) {
             filterDropdown: [
             {name: "milestone_id", class: "w150", options: <?php echo $milestone_dropdown; ?>},
             <?php if(!$show_assigned_tasks_only){ ?>{name: "assigned_to", class: "w150", options: <?php echo $assigned_to_dropdown; ?>}, <?php } ?>
+            {name: "priority", class: "w150", options: <?php echo json_encode(get_task_priority_filter_dropdown()); ?>},
             {name: "quick_filter", class: "w200", showHtml: true, options: <?php $this->load->view("projects/tasks/quick_filters_dropdown"); ?>}
             ],
             singleDatepicker: [{name: "deadline", defaultText: "<?php echo lang('deadline') ?>",

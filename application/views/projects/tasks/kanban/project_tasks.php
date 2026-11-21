@@ -34,6 +34,7 @@
             filterDropdown = [
                 {name: "specific_user_id", class: "w200", options: <?php echo $assigned_to_dropdown; ?>},
                 {name: "milestone_id", class: "w200", options: <?php echo $milestone_dropdown; ?>},
+                {name: "priority", class: "w150", options: <?php echo json_encode(get_task_priority_filter_dropdown()); ?>},
                 {name: "quick_filter", class: "w200", showHtml: true, options: <?php $this->load->view("projects/tasks/quick_filters_dropdown"); ?>}
             ];
         } else {

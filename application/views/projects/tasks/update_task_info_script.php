@@ -8,6 +8,11 @@ $points_dropdown_for_update = array();
 foreach ($points_dropdown as $key => $value) {
     $points_dropdown_for_update[] = array("id" => $key, "text" => $value);
 }
+
+$priority_dropdown_for_update = array();
+foreach (get_task_priority_options(true) as $key => $value) {
+    $priority_dropdown_for_update[] = array("id" => $key, "text" => $value);
+}
 ?>
 
 
@@ -34,6 +39,9 @@ foreach ($points_dropdown as $key => $value) {
                 select2Option = {data: source};
             } else if (type === "points") {
                 source = <?php echo json_encode($points_dropdown_for_update); ?>;
+                select2Option = {data: source};
+            } else if (type === "priority") {
+                source = <?php echo json_encode($priority_dropdown_for_update); ?>;
                 select2Option = {data: source};
             } else if (type === "collaborators") {
                 e.stopPropagation();
@@ -97,6 +105,29 @@ foreach ($points_dropdown as $key => $value) {
                             setTimeout(function () {
                                 $instance.html(response.points);
                             }, 50);
+                        }
+
+                        if (type === "priority" && response.priority_badge !== undefined) {
+                            setTimeout(function () {
+                                $instance.html(response.priority_badge);
+                            }, 50);
+
+                            // Live-update Kanban card if currently on Kanban view
+                            var $kanbanCard = $(".kanban-item[data-id='" + response.id + "']");
+                            if ($kanbanCard.length) {
+                                var $meta = $kanbanCard.find(".meta");
+                                if ($meta.length) {
+                                    $meta.find(".task-priority-badge").remove();
+                                }
+                                if (response.priority_badge.indexOf("task-priority-badge") !== -1) {
+                                    if (!$meta.length) {
+                                        $meta = $("<div class='meta'></div>").appendTo($kanbanCard);
+                                    }
+                                    $meta.prepend(response.priority_badge + " ");
+                                } else if ($meta.length && $.trim($meta.html()) === "") {
+                                    $meta.remove();
+                                }
+                            }
                         }
 
                         if (type === "labels" && response.labels) {

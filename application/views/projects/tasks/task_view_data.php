@@ -26,6 +26,10 @@
             </div>
 
             <div class="col-md-12 mb15 mt15">
+                <strong><?php echo lang('priority') . ": "; ?></strong> <?php echo get_update_task_info_anchor_data($model_info, "priority", $can_edit_tasks); ?>
+            </div>
+
+            <div class="col-md-12 mb15">
                 <strong><?php echo lang('milestone') . ": "; ?></strong> <?php echo get_update_task_info_anchor_data($model_info, "milestone", $can_edit_tasks); ?>
             </div>
 
@@ -50,6 +54,8 @@
                     <?php echo get_update_task_info_anchor_data($model_info, "collaborators", $can_edit_tasks, $collaborators); ?>
                 </div>
             </div>
+
+            <?php $this->load->view("reminders/task_reminders_section", array("task_id" => $model_info->id, "task_title" => $model_info->title)); ?>
 
             <?php if ($model_info->ticket_id != "0") { ?>
                 <div class="col-md-12 mb15">

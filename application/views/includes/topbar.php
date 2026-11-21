@@ -137,6 +137,24 @@
                 </li>
             <?php } ?>
 
+            <?php
+            $initial_rem_due = 0;
+            if (isset($this->Reminders_model) && isset($this->login_user->id)) {
+                $initial_rem_due = $this->Reminders_model->count_due($this->login_user->id, get_my_local_time("Y-m-d H:i:s"));
+            }
+            ?>
+            <li class="reminder-topbar-item dropdown">
+                <a href="javascript:void(0);" id="personal-reminder-icon" class="dropdown-toggle" data-toggle="dropdown" title="Personal Reminders" aria-label="Personal Reminders">
+                    <i class="fa fa-clock-o"></i>
+                    <span id="reminder-due-badge" class="badge bg-danger <?php echo $initial_rem_due > 0 ? '' : 'hide'; ?>"><?php echo $initial_rem_due > 99 ? '99+' : $initial_rem_due; ?></span>
+                </a>
+                <div id="reminders-dropdown-menu" class="dropdown-menu aside-xl m0 p0 font-100p rise4-reminders-dropdown">
+                    <div class="rise4-rem-loading p15 text-center">
+                        <span class="inline-loader"></span>
+                    </div>
+                </div>
+            </li>
+
             <li class="theme-mode-item" title="Toggle Dark / Light Mode" data-toggle="tooltip" data-placement="bottom">
                 <a href="javascript:void(0);" id="theme-mode-toggle" class="dropdown-toggle" aria-label="Toggle Dark Mode">
                     <i class="fa fa-moon-o theme-icon-dark"></i>
@@ -234,6 +252,289 @@
         });
 
         $('[data-toggle="tooltip"]').tooltip();
+
+        /* ==============================================================
+           RISE 4.0 PERSONAL REMINDERS ENGINE (TOPBAR + TASK + TOASTS)
+           ============================================================== */
+        var reminderBaseUrl = "<?php echo_uri('reminders'); ?>";
+        var taskViewUrl = "<?php echo_uri('projects/task_view'); ?>";
+
+        function updateReminderBadge(count) {
+            var $badge = $("#reminder-due-badge");
+            count = parseInt(count, 10) || 0;
+            if (count > 0) {
+                $badge.text(count > 99 ? "99+" : count).removeClass("hide");
+            } else {
+                $badge.text("0").addClass("hide");
+            }
+            var $pill = $(".rise4-rem-count-pill");
+            if ($pill.length) {
+                if (count > 0) {
+                    $pill.text(count + " due").show();
+                } else {
+                    $pill.hide();
+                }
+            }
+        }
+
+        function loadTopbarRemindersDropdown() {
+            var $menu = $("#reminders-dropdown-menu");
+            $menu.html("<div class='rise4-rem-loading p15 text-center'><span class='inline-loader'></span></div>");
+            $.ajax({
+                url: reminderBaseUrl + "/load_topbar_dropdown",
+                type: "GET",
+                success: function (html) {
+                    $menu.html(html);
+                }
+            });
+        }
+
+        function refreshReminderList(status, taskId) {
+            status = status || $("#reminders-dropdown-list").attr("data-status") || "active";
+            $.ajax({
+                url: reminderBaseUrl + "/list_items",
+                type: "POST",
+                dataType: "json",
+                data: {status: status, task_id: taskId || 0},
+                success: function (res) {
+                    if (res && res.success) {
+                        if (taskId) {
+                            $("#task-reminders-list-" + taskId).html(res.html);
+                        } else {
+                            $("#reminders-dropdown-list").attr("data-status", status).html(res.html);
+                        }
+                        updateReminderBadge(res.due_count);
+                    }
+                }
+            });
+        }
+
+        function showReminderToast(rem) {
+            var $container = $("#rise4-reminder-toast-stack");
+            if (!$container.length) {
+                $container = $("<div id='rise4-reminder-toast-stack'></div>").appendTo("body");
+            }
+            var safeTitle = $("<div>").text(rem.title).html();
+            var taskBtn = "";
+            if (rem.task_id && rem.task_id > 0) {
+                taskBtn = "<a href='#' class='rise4-toast-btn rise4-toast-task' data-act='ajax-modal' data-title='Task #" + rem.task_id + "' data-action-url='" + taskViewUrl + "' data-post-id='" + rem.task_id + "' data-modal-lg='1'><i class='fa fa-external-link'></i> Task #" + rem.task_id + "</a>";
+            }
+            var $toast = $(
+                "<div class='rise4-reminder-toast' data-id='" + rem.id + "'>" +
+                    "<div class='rise4-toast-icon'><i class='fa fa-clock-o'></i></div>" +
+                    "<div class='rise4-toast-content'>" +
+                        "<div class='rise4-toast-heading'>Reminder Due · " + rem.start_time + "</div>" +
+                        "<div class='rise4-toast-title'>" + safeTitle + "</div>" +
+                        "<div class='rise4-toast-actions'>" +
+                            "<button type='button' class='rise4-toast-btn primary rise4-toast-done' data-id='" + rem.id + "'><i class='fa fa-check'></i> Done</button>" +
+                            "<button type='button' class='rise4-toast-btn rise4-toast-snooze' data-id='" + rem.id + "' data-mode='30m'><i class='fa fa-history'></i> +30m</button>" +
+                            taskBtn +
+                        "</div>" +
+                    "</div>" +
+                    "<button type='button' class='rise4-toast-close' aria-label='Close'>&times;</button>" +
+                "</div>"
+            );
+            $container.append($toast);
+            setTimeout(function () { $toast.addClass("show"); }, 20);
+        }
+
+        function checkDueReminders() {
+            $.ajax({
+                url: reminderBaseUrl + "/check_due",
+                type: "GET",
+                cache: false,
+                dataType: "json",
+                success: function (res) {
+                    if (res && res.success) {
+                        updateReminderBadge(res.due_count);
+                        if (res.newly_due && res.newly_due.length) {
+                            for (var i = 0; i < res.newly_due.length; i++) {
+                                showReminderToast(res.newly_due[i]);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Keep dropdown open when clicking inside
+        $("body").on("click", "#reminders-dropdown-menu", function (e) {
+            if (!$(e.target).closest(".rise4-rem-task-link").length) {
+                e.stopPropagation();
+            }
+        });
+
+        // Load dropdown content when topbar icon clicked
+        $("#personal-reminder-icon").on("click", function () {
+            loadTopbarRemindersDropdown();
+        });
+
+        // Switch Active / Completed tabs
+        $("body").on("click", ".rise4-rem-tab", function () {
+            var status = $(this).attr("data-status");
+            $(".rise4-rem-tab").removeClass("active");
+            $(this).addClass("active");
+            refreshReminderList(status, 0);
+        });
+
+        // Save new reminder from Topbar Quick-Add
+        $("body").on("submit", "#topbar-reminder-form", function (e) {
+            e.preventDefault();
+            var $form = $(this);
+            var $btn = $form.find(".rise4-rem-add-btn");
+            $btn.prop("disabled", true);
+            $.ajax({
+                url: reminderBaseUrl + "/save",
+                type: "POST",
+                dataType: "json",
+                data: $form.serialize(),
+                success: function (res) {
+                    $btn.prop("disabled", false);
+                    if (res && res.success) {
+                        $("#topbar-reminder-title").val("").focus();
+                        $(".rise4-rem-tab").removeClass("active");
+                        $(".rise4-rem-tab[data-status='active']").addClass("active");
+                        refreshReminderList("active", 0);
+                    }
+                },
+                error: function () {
+                    $btn.prop("disabled", false);
+                }
+            });
+        });
+
+        // Mark Done / Undo (works in Topbar, Task Modal, and Toast)
+        $("body").on("click", ".rise4-rem-check, .rise4-toast-done", function () {
+            var $el = $(this);
+            var id = $el.attr("data-id");
+            var undo = $el.attr("data-undo") === "1" ? 1 : 0;
+            var $taskBox = $el.closest(".rise4-task-reminders-box");
+            var taskId = $taskBox.length ? parseInt($taskBox.attr("data-task-id"), 10) : 0;
+
+            $.ajax({
+                url: reminderBaseUrl + "/mark_done/" + id,
+                type: "POST",
+                dataType: "json",
+                data: {undo: undo},
+                success: function (res) {
+                    if (res && res.success) {
+                        updateReminderBadge(res.due_count);
+                        $el.closest(".rise4-reminder-toast").remove();
+                        if (taskId) {
+                            refreshReminderList("active", taskId);
+                        }
+                        if ($("#reminders-dropdown-list").length) {
+                            refreshReminderList($("#reminders-dropdown-list").attr("data-status"), 0);
+                        }
+                    }
+                }
+            });
+        });
+
+        // Snooze +30m or Tomorrow 09:00
+        $("body").on("click", ".rise4-rem-snooze, .rise4-toast-snooze", function () {
+            var $el = $(this);
+            var id = $el.attr("data-id");
+            var mode = $el.attr("data-mode") || "30m";
+            var $taskBox = $el.closest(".rise4-task-reminders-box");
+            var taskId = $taskBox.length ? parseInt($taskBox.attr("data-task-id"), 10) : 0;
+
+            $.ajax({
+                url: reminderBaseUrl + "/snooze/" + id,
+                type: "POST",
+                dataType: "json",
+                data: {mode: mode},
+                success: function (res) {
+                    if (res && res.success) {
+                        updateReminderBadge(res.due_count);
+                        $el.closest(".rise4-reminder-toast").remove();
+                        if (res.message && typeof appAlert !== "undefined") {
+                            appAlert.success(res.message, {duration: 4000});
+                        }
+                        if (taskId) {
+                            refreshReminderList("active", taskId);
+                        }
+                        if ($("#reminders-dropdown-list").length) {
+                            refreshReminderList($("#reminders-dropdown-list").attr("data-status"), 0);
+                        }
+                    }
+                }
+            });
+        });
+
+        // Delete reminder
+        $("body").on("click", ".rise4-rem-delete", function () {
+            var $el = $(this);
+            var id = $el.attr("data-id");
+            var $taskBox = $el.closest(".rise4-task-reminders-box");
+            var taskId = $taskBox.length ? parseInt($taskBox.attr("data-task-id"), 10) : 0;
+
+            $.ajax({
+                url: reminderBaseUrl + "/delete/" + id,
+                type: "POST",
+                dataType: "json",
+                success: function (res) {
+                    if (res && res.success) {
+                        updateReminderBadge(res.due_count);
+                        if (taskId) {
+                            refreshReminderList("active", taskId);
+                        }
+                        if ($("#reminders-dropdown-list").length) {
+                            refreshReminderList($("#reminders-dropdown-list").attr("data-status"), 0);
+                        }
+                    }
+                }
+            });
+        });
+
+        // Close floating toast
+        $("body").on("click", ".rise4-toast-close", function () {
+            $(this).closest(".rise4-reminder-toast").remove();
+        });
+
+        // Task Modal: Toggle & Save Task Reminder
+        $("body").on("click", ".rise4-task-rem-toggle-btn", function () {
+            var $box = $(this).closest(".rise4-task-reminders-box");
+            $box.find(".rise4-task-rem-form-wrap").toggleClass("hide");
+            $box.find(".rise4-task-rem-title").focus();
+        });
+
+        $("body").on("click", ".rise4-task-rem-save-btn", function () {
+            var $btn = $(this);
+            var $box = $btn.closest(".rise4-task-reminders-box");
+            var taskId = parseInt($box.attr("data-task-id"), 10);
+            var title = $.trim($box.find(".rise4-task-rem-title").val());
+            var startDate = $box.find(".rise4-task-rem-date").val();
+            var startTime = $box.find(".rise4-task-rem-time").val();
+            if (!title) {
+                $box.find(".rise4-task-rem-title").focus();
+                return;
+            }
+            $btn.prop("disabled", true);
+            $.ajax({
+                url: reminderBaseUrl + "/save",
+                type: "POST",
+                dataType: "json",
+                data: {title: title, start_date: startDate, start_time: startTime, task_id: taskId},
+                success: function (res) {
+                    $btn.prop("disabled", false);
+                    if (res && res.success) {
+                        $box.find(".rise4-task-rem-form-wrap").addClass("hide");
+                        refreshReminderList("active", taskId);
+                        if ($("#reminders-dropdown-list").length) {
+                            refreshReminderList("active", 0);
+                        }
+                    }
+                },
+                error: function () {
+                    $btn.prop("disabled", false);
+                }
+            });
+        });
+
+        // Initial check after 2s, then every 60s
+        setTimeout(checkDueReminders, 2000);
+        setInterval(checkDueReminders, 60000);
     });
 
 </script>

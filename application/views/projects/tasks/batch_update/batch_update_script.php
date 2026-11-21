@@ -18,7 +18,6 @@
         $(".batch-update-header").remove();
         $(".td-checkbox").remove();
 
-        $("[data-act=update-task-status-checkbox]").find("span").removeClass("checkbox-checked");
         $("[data-act=batch-operation-task-checkbox]").removeClass("checkbox-checked-sm");
         $("[data-act=batch-operation-task-checkbox]").find("span").removeClass("checkbox-checked-sm");
         $(".kanban-item").removeClass("kanban-item-checked");

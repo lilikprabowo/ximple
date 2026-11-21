@@ -12,6 +12,7 @@
                 {name: "specific_user_id", class: "w150", options: <?php echo $team_members_dropdown; ?>},
                 {name: "milestone_id", class: "w150", options: [{id: "", text: "- <?php echo lang('milestone'); ?> -"}], dependency: ["project_id"], dataSource: '<?php echo_uri("projects/get_milestones_for_filter") ?>'}, //milestone is dependent on project
                 {name: "project_id", class: "w200", options: <?php echo $projects_dropdown; ?>, dependent: ["milestone_id"]}, //reset milestone on changing of project  
+                {name: "priority", class: "w150", options: <?php echo json_encode(get_task_priority_filter_dropdown()); ?>},
                 {name: "quick_filter", class: "w200", showHtml: true, options: <?php $this->load->view("projects/tasks/quick_filters_dropdown"); ?>}
             ],
             singleDatepicker: [{name: "deadline", defaultText: "<?php echo lang('deadline') ?>",

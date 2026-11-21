@@ -10,13 +10,17 @@
         }
 
         $task_labels = make_labels_view_data($task->labels_list);
+        $task_priority = (isset($task->priority) && $task->priority) ? get_task_priority_badge($task->priority) : "";
         $sub_task_icon = "";
         if ($task->parent_task_id) {
             $sub_task_icon = "<span class='sub-task-icon mr5' title='" . lang("sub_task") . "'><i class='fa fa-code-fork'></i></span>";
         }
 
-        if ($task_labels) {
-            $task_labels = "<div class='meta'>$task_labels</div>";
+        $meta_html = trim($task_priority . " " . $task_labels);
+        if ($meta_html) {
+            $task_labels = "<div class='meta'>$meta_html</div>";
+        } else {
+            $task_labels = "";
         }
 
         $unread_comments_class = "";

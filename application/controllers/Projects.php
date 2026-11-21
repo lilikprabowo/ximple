@@ -2369,7 +2369,8 @@ class Projects extends MY_Controller {
             "project_status" => "open",
             "unread_status_user_id" => $this->login_user->id,
             "show_assigned_tasks_only_user_id" => $this->show_assigned_tasks_only_user_id(),
-            "quick_filter" => $this->input->post("quick_filter")
+            "quick_filter" => $this->input->post("quick_filter"),
+            "priority" => $this->input->post("priority")
         );
 
         if (!$this->can_manage_all_projects()) {
@@ -2407,7 +2408,8 @@ class Projects extends MY_Controller {
             "search" => $this->input->post('search'),
             "unread_status_user_id" => $this->login_user->id,
             "show_assigned_tasks_only_user_id" => $this->show_assigned_tasks_only_user_id(),
-            "quick_filter" => $this->input->post('quick_filter')
+            "quick_filter" => $this->input->post('quick_filter'),
+            "priority" => $this->input->post('priority')
         );
 
 
@@ -2769,6 +2771,7 @@ class Projects extends MY_Controller {
             "project_id" => $project_id,
             "milestone_id" => $this->input->post('milestone_id'),
             "points" => $this->input->post('points'),
+            "priority" => $this->input->post('priority'),
             "status_id" => $status_id,
             "labels" => $this->input->post('labels'),
             "start_date" => $start_date,
@@ -3092,6 +3095,10 @@ class Projects extends MY_Controller {
                     $success_array["points"] = $task_info->points;
                 }
 
+                if ($data_field == "priority") {
+                    $success_array["priority_badge"] = $task_info->priority ? get_task_priority_badge($task_info->priority) : "<span class='text-off'>" . lang("add") . " " . lang("priority") . "</span>";
+                }
+
                 if ($data_field == "status_id") {
                     $success_array["status_color"] = $task_info->status_color;
                 }
@@ -3211,7 +3218,8 @@ class Projects extends MY_Controller {
             "custom_fields" => $custom_fields,
             "unread_status_user_id" => $this->login_user->id,
             "show_assigned_tasks_only_user_id" => $this->show_assigned_tasks_only_user_id(),
-            "quick_filter" => $this->input->post('quick_filter')
+            "quick_filter" => $this->input->post('quick_filter'),
+            "priority" => $this->input->post('priority')
         );
 
         $list_data = $this->Tasks_model->get_details($options)->result();
@@ -3247,7 +3255,8 @@ class Projects extends MY_Controller {
             "status_ids" => $status,
             "unread_status_user_id" => $this->login_user->id,
             "show_assigned_tasks_only_user_id" => $this->show_assigned_tasks_only_user_id(),
-            "quick_filter" => $this->input->post("quick_filter")
+            "quick_filter" => $this->input->post("quick_filter"),
+            "priority" => $this->input->post("priority")
         );
 
         if ($is_widget) {
@@ -3303,13 +3312,18 @@ class Projects extends MY_Controller {
 
         $task_labels = make_labels_view_data($data->labels_list, true);
 
-        $title .= "<span class='pull-right ml5'>" . $task_labels . "</span>";
+        $task_priority = "";
+        if (isset($data->priority) && $data->priority) {
+            $task_priority = get_task_priority_badge($data->priority);
+        }
 
         $task_point = "";
         if ($data->points > 1) {
-            $task_point .= "<span class='label label-light clickable'  title='Point'>" . $data->points . "</span> ";
+            $task_point .= "<span class='label label-light clickable' title='Point'>" . $data->points . "</span>";
         }
-        $title .= "<span class='pull-right'>" . $task_point . "</span>";
+
+        $meta_badges = trim($task_priority . " " . $task_point . " " . $task_labels);
+        $title = "<div class='task-title-cell-wrap'><span class='task-title-main'>" . $title . "</span>" . ($meta_badges ? "<span class='task-title-meta'>" . $meta_badges . "</span>" : "") . "</div>";
 
         $project_title = anchor(get_uri("projects/view/" . $data->project_id), $data->project_title);
 

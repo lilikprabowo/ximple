@@ -84,6 +84,19 @@
             echo form_checkbox("", "1", false, "class='batch-update-checkbox'");
             ?>                       
         </div>
+        <label for="priority" class=" col-md-2 text-off"><?php echo lang('priority'); ?></label>
+        <div class="col-md-9">
+            <?php
+            echo form_dropdown("priority", get_task_priority_options(true), "", "class='select2'");
+            ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-1">
+            <?php
+            echo form_checkbox("", "1", false, "class='batch-update-checkbox'");
+            ?>                       
+        </div>
         <label for="labels" class=" col-md-2 text-off"><?php echo lang('labels'); ?></label>
         <div class=" col-md-9" id="dropdown-apploader-section">
             <?php

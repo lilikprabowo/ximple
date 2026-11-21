@@ -3,11 +3,21 @@
 class Tasks_model extends Crud_model {
 
     private $table = null;
+    private static $priority_column_checked = false;
 
     function __construct() {
         $this->table = 'tasks';
         parent::__construct($this->table);
         parent::init_activity_log("task", "title", "project", "project_id");
+
+        if (!self::$priority_column_checked) {
+            self::$priority_column_checked = true;
+            $tasks_table = $this->db->dbprefix('tasks');
+            $col_exists = $this->db->query("SHOW COLUMNS FROM `$tasks_table` LIKE 'priority'")->num_rows();
+            if (!$col_exists) {
+                $this->db->query("ALTER TABLE `$tasks_table` ADD COLUMN `priority` VARCHAR(20) NOT NULL DEFAULT '' AFTER `points`");
+            }
+        }
     }
 
     function schema() {
@@ -75,6 +85,10 @@ class Tasks_model extends Crud_model {
             "points" => array(
                 "label" => lang("points"),
                 "type" => "int"
+            ),
+            "priority" => array(
+                "label" => lang("priority"),
+                "type" => "text"
             ),
             "deleted" => array(
                 "label" => lang("deleted"),
@@ -188,6 +202,12 @@ class Tasks_model extends Crud_model {
         $task_status_id = get_array_value($options, "task_status_id");
         if ($task_status_id) {
             $where .= " AND $tasks_table.status_id=$task_status_id";
+        }
+
+        $priority = get_array_value($options, "priority");
+        if ($priority) {
+            $priority = $this->db->escape_str($priority);
+            $where .= " AND $tasks_table.priority='$priority'";
         }
 
         $start_date = get_array_value($options, "start_date");
@@ -395,13 +415,19 @@ class Tasks_model extends Crud_model {
             $where .= $this->make_quick_filter_query($quick_filter, $tasks_table);
         }
 
+        $priority = get_array_value($options, "priority");
+        if ($priority) {
+            $priority = $this->db->escape_str($priority);
+            $where .= " AND $tasks_table.priority='$priority'";
+        }
+
 
         $extra_select = ", 0 AS unread";
         $this->_set_unread_tasks_query($options, $tasks_table, $extra_select);
 
         $select_labels_data_query = $this->get_labels_data_query();
 
-        $sql = "SELECT $tasks_table.id, $tasks_table.title, $tasks_table.sort, IF($tasks_table.sort!=0, $tasks_table.sort, $tasks_table.id) AS new_sort, $tasks_table.assigned_to, $tasks_table.labels, $tasks_table.status_id, $tasks_table.project_id, CONCAT($users_table.first_name, ' ',$users_table.last_name) AS assigned_to_user, $users_table.image as assigned_to_avatar, $tasks_table.parent_task_id, $select_labels_data_query $extra_select
+        $sql = "SELECT $tasks_table.id, $tasks_table.title, $tasks_table.priority, $tasks_table.sort, IF($tasks_table.sort!=0, $tasks_table.sort, $tasks_table.id) AS new_sort, $tasks_table.assigned_to, $tasks_table.labels, $tasks_table.status_id, $tasks_table.project_id, CONCAT($users_table.first_name, ' ',$users_table.last_name) AS assigned_to_user, $users_table.image as assigned_to_avatar, $tasks_table.parent_task_id, $select_labels_data_query $extra_select
         FROM $tasks_table
         LEFT JOIN $users_table ON $users_table.id= $tasks_table.assigned_to
         LEFT JOIN $projects ON $tasks_table.project_id=$projects.id 

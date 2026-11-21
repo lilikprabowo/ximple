@@ -157,8 +157,12 @@
             <!--checklist-->
             <?php echo form_open(get_uri("projects/save_checklist_item"), array("id" => "checklist_form", "class" => "general-form", "role" => "form")); ?>
             <div class="col-md-12 mb15 b-t">
-                <div class="pb10 pt10">
-                    <strong><?php echo lang("checklist"); ?></strong>
+                <div class="pb10 pt10 clearfix">
+                    <strong class="pull-left font-14" style="color: #0f172a;"><?php echo lang("checklist"); ?></strong>
+                    <span id="checklist-progress-text" class="pull-right text-muted font-12" style="font-weight: 600;"></span>
+                </div>
+                <div id="checklist-progress-wrapper" class="progress mb15 hide" style="height: 6px; border-radius: 9999px; background-color: #e2e8f0; box-shadow: none; margin-bottom: 12px;">
+                    <div id="checklist-progress-bar" class="progress-bar" role="progressbar" style="width: 0%; border-radius: 9999px; background-color: #22c55e; transition: width 0.3s ease;"></div>
                 </div>
                 <input type="hidden" name="task_id" value="<?php echo $task_id; ?>" />
                 <div class="checklist-items" id="checklist-items">

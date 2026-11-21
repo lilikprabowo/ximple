@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  web:
+    image: php:7.4-apache
+    ports:
+      - "8081:80"
+    volumes:
+      - ./:/var/www/html/
+    command: sh -c "sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf && a2enmod rewrite && (php -m | grep -q mysqli || docker-php-ext-install mysqli) && docker-php-entrypoint apache2-foreground"

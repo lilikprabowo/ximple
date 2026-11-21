@@ -39,7 +39,7 @@
                         <div class="media clearfix">
 
                             <div class="media-body">
-                                <div class="clearfix mb15">
+                                <div class="clearfix mb15 timeline-post-header">
                                     <div class="media-left ">
                                         <span class="avatar avatar-sm">
                                             <img src="<?php echo get_avatar($post->created_by_avatar); ?>" alt="..." />
@@ -74,7 +74,7 @@
                                 $this->load->view("includes/timeline_preview", array("files" => $files));
                                 ?>
 
-                                <div class="mb15 clearfix">
+                                <div class="mb15 clearfix timeline-post-footer">
                                     <?php
                                     echo ajax_anchor(get_uri("timeline/post_reply_form/" . $post->id), "<i class='fa fa-reply font-11'></i> " . lang('reply'), array("data-real-target" => "#reply-form-container-" . $post->id, "class" => "dark"));
                                     ?>

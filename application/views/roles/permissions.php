@@ -247,6 +247,12 @@
                             ?>
                             <label for="can_delete_leave_application"><?php echo lang("can_delete_leave_application"); ?> <span class="help" data-toggle="tooltip" title="Can delete based on his/her access permission"><i class="fa fa-question-circle"></i></span></label>
                         </div>
+			<div>
+                            <?php
+                            echo form_checkbox("can_approve_reject_leave_application", "1", $can_approve_reject_leave_application ? true : false, "id='can_approve_reject_leave_application'");
+                            ?>
+                            <label for="can_approve_reject_leave_application"><?php echo lang("can_approve_reject_leave_application"); ?> <span class="help" data-toggle="tooltip" title="Can approve & reject based on his/her access permission"><i class="fa fa-question-circle"></i></span></label>
+                        </div>
                     </div>
                 </li>
                 <li>
@@ -285,6 +291,12 @@
                         <label for="attendance_permission_specific"><?php echo lang("yes_specific_members_or_teams") . " (" . lang("excluding_his_her_time_cards") . ")"; ?>:</label>
                         <div class="specific_dropdown">
                             <input type="text" value="<?php echo $attendance_specific; ?>" name="attendance_permission_specific" id="attendance_specific_dropdown" class="w100p validate-hidden"  data-rule-required="true" data-msg-required="<?php echo lang('field_required'); ?>" placeholder="<?php echo lang('choose_members_and_or_teams'); ?>"  />
+                        </div>
+			<div>
+                            <?php
+                            echo form_checkbox("can_edit_delete_team_members_timecards", "1", $can_edit_delete_team_members_timecards ? true : false, "id='can_edit_delete_team_members_timecards'");
+                            ?>
+                            <label for="can_edit_delete_team_members_timecards"><?php echo lang("can_edit_delete_team_members_timecards"); ?> <span class="help" data-toggle="tooltip" title="Can edit & delete based on his/her access permission"><i class="fa fa-question-circle"></i></span></label>
                         </div>
                     </div>
 

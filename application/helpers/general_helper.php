@@ -85,7 +85,9 @@ if (!function_exists('load_css')) {
         $version = get_setting("app_version");
 
         foreach ($array as $uri) {
-            echo "<link rel='stylesheet' type='text/css' href='" . base_url($uri) . "?v=$version' />";
+            $file_path = FCPATH . $uri;
+            $v = file_exists($file_path) ? filemtime($file_path) : ($version ? $version : "2.8");
+            echo "<link rel='stylesheet' type='text/css' href='" . base_url($uri) . "?v=$v' />";
         }
     }
 
@@ -104,7 +106,9 @@ if (!function_exists('load_js')) {
         $version = get_setting("app_version");
 
         foreach ($array as $uri) {
-            echo "<script type='text/javascript'  src='" . base_url($uri) . "?v=$version'></script>";
+            $file_path = FCPATH . $uri;
+            $v = file_exists($file_path) ? filemtime($file_path) : ($version ? $version : "2.8");
+            echo "<script type='text/javascript'  src='" . base_url($uri) . "?v=$v'></script>";
         }
     }
 
@@ -1325,6 +1329,23 @@ if (!function_exists("get_logo_url")) {
 
     function get_logo_url() {
         return get_file_from_setting("site_logo");
+    }
+
+}
+
+//return site logo icon (for collapsed sidebar)
+if (!function_exists("get_logo_icon_url")) {
+
+    function get_logo_icon_url() {
+        $favicon = get_setting("favicon");
+        if ($favicon) {
+            return get_favicon_url();
+        }
+        $icon_file = get_setting("system_file_path") . "site-logo-icon.png";
+        if (file_exists($icon_file)) {
+            return get_file_uri($icon_file);
+        }
+        return get_logo_url();
     }
 
 }

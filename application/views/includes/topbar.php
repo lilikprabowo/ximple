@@ -2,9 +2,6 @@
 
 <nav class="navbar navbar-default navbar-fixed-top" role="navigation" id="default-navbar">
     <div class="navbar-header">
-        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="fa fa-chevron-down"></span>
-        </button>
         <button id="sidebar-toggle" type="button" class="navbar-toggle"  data-target="#sidebar">
             <span class="sr-only">Toggle navigation</span>
             <span class="fa fa-bars"></span>
@@ -19,13 +16,17 @@
         }
         ?>
 
-        <a class="navbar-brand" href="<?php echo $dashboard_link; ?>"><img class="dashboard-image" src="<?php echo get_logo_url(); ?>" /></a>
+        <a class="navbar-brand" href="<?php echo $dashboard_link; ?>">
+            <img class="dashboard-image dashboard-logo-full logo-light-mode" src="<?php echo get_logo_url(); ?>" alt="logo" />
+            <img class="dashboard-image dashboard-logo-full logo-dark-mode" src="<?php echo base_url('files/system/site-logo-dark.png?v=4'); ?>" alt="logo dark" />
+            <img class="dashboard-image dashboard-logo-icon" src="<?php echo get_logo_icon_url(); ?>" alt="icon" />
+        </a>
 
 
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
-        <ul class="nav navbar-nav navbar-left inline-block">
+        <ul class="nav navbar-nav navbar-left inline-block hidden-xs">
             <li class="hidden-xs pl15 pr15  b-l">
                 <button class="hidden-xs" id="sidebar-toggle-md">
                     <span class="fa fa-dedent"></span>
@@ -136,6 +137,13 @@
                 </li>
             <?php } ?>
 
+            <li class="theme-mode-item" title="Toggle Dark / Light Mode" data-toggle="tooltip" data-placement="bottom">
+                <a href="javascript:void(0);" id="theme-mode-toggle" class="dropdown-toggle" aria-label="Toggle Dark Mode">
+                    <i class="fa fa-moon-o theme-icon-dark"></i>
+                    <i class="fa fa-sun-o theme-icon-light"></i>
+                </a>
+            </li>
+
             <li class="dropdown pr15 dropdown-user">
                 <a id="user-dropdown-icon" href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
                     <span class="avatar-xs avatar pull-left mt-5 mr10" >
@@ -174,13 +182,6 @@
 </nav>
 
 <script type="text/javascript">
-    //close navbar collapse panel on clicking outside of the panel
-    $(document).click(function (e) {
-        if (!$(e.target).is('#navbar') && isMobile()) {
-            $('#navbar').collapse('hide');
-        }
-    });
-
     var notificationOptions = {};
 
     $(document).ready(function () {

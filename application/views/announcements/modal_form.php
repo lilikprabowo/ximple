@@ -150,15 +150,9 @@
         initWYSIWYGEditor("#description", {
             height: 250,
             toolbar: [
-                ['style', ['style']],
                 ['font', ['bold', 'italic', 'underline', 'clear']],
-                ['fontname', ['fontname']],
-                ['color', ['color']],
-                ['para', ['ul', 'ol', 'paragraph']],
-                ['height', ['height']],
-                ['table', ['table']],
-                ['insert', ['hr', 'picture', 'video']],
-                ['view', ['fullscreen', 'codeview']]
+                ['para', ['ul', 'ol']],
+                ['insert', ['link', 'picture']]
             ],
             onImageUpload: function (files, editor, welEditable) {
                 //insert image url

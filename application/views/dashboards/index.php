@@ -8,7 +8,7 @@
     announcements_alert_widget();
     ?>
 
-    <div class="row">
+    <div class="row dashboard-summary-widgets">
         <?php
         $widget_column = "3"; //default bootstrap column class
         $total_hidden = 0;

@@ -28,6 +28,12 @@ class Leaves extends MY_Controller {
         }
     }
 
+    protected function can_approve_reject_leave_application() {
+        if ($this->login_user->is_admin || get_array_value($this->login_user->permissions, "can_approve_reject_leave_application") == "1") {
+            return true;
+        }
+    }
+
     function index() {
         $this->check_module_availability("module_leave");
         $this->template->rander("leaves/index");
@@ -352,7 +358,13 @@ class Leaves extends MY_Controller {
         } else if (array_search($info->applicant_id, $this->allowed_members) && $info->applicant_id !== $this->login_user->id) {
             $can_manage_application = true;
         }
-        $view_data['show_approve_reject'] = $can_manage_application;
+
+        $show_approve_reject = false;
+        if($this->can_approve_reject_leave_application()) {
+            $show_approve_reject = true;
+        }
+
+        $view_data['show_approve_reject'] = $show_approve_reject;
 
         //has permission to manage the appliation? or is it own application?
         if (!$can_manage_application && $info->applicant_id !== $this->login_user->id) {

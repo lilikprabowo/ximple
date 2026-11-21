@@ -41,6 +41,12 @@ class Attendance extends MY_Controller {
         }
     }
 
+    protected function can_edit_delete_team_members_timecards() {
+        if ($this->login_user->is_admin || get_array_value($this->login_user->permissions, "can_edit_delete_team_members_timecards") == "1") {
+            return true;
+        }
+    }
+
     //show attendance list view
     function index($tab = "") {
         $this->check_module_availability("module_attendance");
@@ -287,6 +293,10 @@ class Attendance extends MY_Controller {
             if ($data->user_id === $this->login_user->id) {
                 $option_links = "";
             }
+        }
+
+	if (!$this->can_edit_delete_team_members_timecards()) {
+            $option_links = "";
         }
 
         //if the rich text editor is enabled, don't show the note as title

@@ -16,7 +16,7 @@ if ($widget_type == "total_hours_worked") {
             <i class="fa fa-clock-o"></i>
         </div>
         <div class="widget-details">
-            <h1><?php echo $total_count; ?></h1>
+            <h1 class="total-hours-scramble" data-value="<?php echo $total_count; ?>"><?php echo $total_count; ?></h1>
             <?php echo lang($widget_type); ?>
         </div>
     </div>

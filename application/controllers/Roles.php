@@ -97,6 +97,8 @@ class roles extends MY_Controller {
             $view_data['hide_team_members_list'] = get_array_value($permissions, "hide_team_members_list");
 
             $view_data['can_delete_leave_application'] = get_array_value($permissions, "can_delete_leave_application");
+	    $view_data['can_approve_reject_leave_application'] = get_array_value($permissions, "can_approve_reject_leave_application");
+	    $view_data['can_edit_delete_team_members_timecards'] = get_array_value($permissions, "can_edit_delete_team_members_timecards");
 
             $view_data['message_permission'] = get_array_value($permissions, "message_permission");
             $view_data['message_permission_specific'] = get_array_value($permissions, "message_permission_specific");
@@ -202,6 +204,8 @@ class roles extends MY_Controller {
         $hide_team_members_list = $this->input->post('hide_team_members_list');
 
         $can_delete_leave_application = $this->input->post('can_delete_leave_application');
+        $can_approve_reject_leave_application = $this->input->post('can_approve_reject_leave_application');
+	$can_edit_delete_team_members_timecards = $this->input->post('can_edit_delete_team_members_timecards');
 
         $message_permission = "";
         $message_permission_specific = "";
@@ -251,6 +255,8 @@ class roles extends MY_Controller {
             "disable_event_sharing" => $disable_event_sharing,
             "hide_team_members_list" => $hide_team_members_list,
             "can_delete_leave_application" => $can_delete_leave_application,
+            "can_approve_reject_leave_application" => $can_approve_reject_leave_application,
+	    "can_edit_delete_team_members_timecards" => $can_edit_delete_team_members_timecards,
             "message_permission" => $message_permission,
             "message_permission_specific" => $message_permission_specific,
         );

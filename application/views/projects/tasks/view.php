@@ -106,6 +106,22 @@ $task_link = anchor(get_uri("projects/task_view/$model_info->id"), '<i class="fa
         //show the items in checklist
         $("#checklist-items").html(<?php echo $checklist_items; ?>);
 
+        function updateChecklistProgress() {
+            var $items = $("#checklist-items .checklist-item-row");
+            var total = $items.length;
+            if (total > 0) {
+                var checked = $items.find(".checkbox-checked").length;
+                var percent = Math.round((checked / total) * 100);
+                $("#checklist-progress-wrapper").removeClass("hide");
+                $("#checklist-progress-bar").css("width", percent + "%");
+                $("#checklist-progress-text").text(checked + " / " + total + " (" + percent + "%)");
+            } else {
+                $("#checklist-progress-wrapper").addClass("hide");
+                $("#checklist-progress-text").text("");
+            }
+        }
+        updateChecklistProgress();
+
         //show save & cancel button when the checklist-add-item-form is focused
         $("#checklist-add-item").focus(function () {
             $("#checklist-options-panel").removeClass("hide");
@@ -124,6 +140,7 @@ $task_link = anchor(get_uri("projects/task_view/$model_info->id"), '<i class="fa
                 $("#checklist-add-item").val("");
                 $("#checklist-add-item").focus();
                 $("#checklist-items").append(response.data);
+                updateChecklistProgress();
             }
         });
 
@@ -138,9 +155,14 @@ $task_link = anchor(get_uri("projects/task_view/$model_info->id"), '<i class="fa
                 success: function (response) {
                     if (response.success) {
                         status_checkbox.closest("div").html(response.data);
+                        updateChecklistProgress();
                     }
                 }
             });
+        });
+
+        $('body').on('click', '.delete-checklist-item', function () {
+            setTimeout(updateChecklistProgress, 400);
         });
 
         //show the sub tasks

@@ -59,7 +59,7 @@
                 "id" => "status_active",
                 "name" => "status",
                 "data-msg-required" => lang("field_required"),
-                    ), "active", ($model_info->status === "active") ? true : ($model_info->status !== "inactive") ? true : false);
+                    ), "active", ($model_info->status === "active") ? true : (($model_info->status !== "inactive") ? true : false));
             ?>
             <label for="status_active" class="mr15"><?php echo lang('active'); ?></label>
             <?php

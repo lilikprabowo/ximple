@@ -69,7 +69,7 @@
                                 "id" => "status_active",
                                 "name" => "status",
                                 "data-msg-required" => lang("field_required"),
-                                    ), "active", ($model_info->status === "active") ? true : ($model_info->status !== "inactive") ? true : false);
+                                    ), "active", ($model_info->status === "active") ? true : (($model_info->status !== "inactive") ? true : false));
                             ?>
                             <label for="status_active" class="mr15"><?php echo lang('active'); ?></label>
                             <?php
@@ -113,15 +113,9 @@
         initWYSIWYGEditor("#description", {
             height: 250,
             toolbar: [
-                ['style', ['style']],
                 ['font', ['bold', 'italic', 'underline', 'clear']],
-                ['fontname', ['fontname']],
-                ['color', ['color']],
-                ['para', ['ul', 'ol', 'paragraph']],
-                ['height', ['height']],
-                ['table', ['table']],
-                ['insert', ['link','hr', 'picture', 'video']],
-                ['view', ['fullscreen', 'codeview']]
+                ['para', ['ul', 'ol']],
+                ['insert', ['link', 'picture']]
             ],
             onImageUpload: function (files, editor, welEditable) {
                 //insert image url

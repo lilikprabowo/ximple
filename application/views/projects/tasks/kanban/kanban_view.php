@@ -130,28 +130,27 @@
                 id = $item.attr("data-id"),
                 project_id = $item.attr("data-project_id");
 
-        if ($prev && $prev.attr("data-sort")) {
+        var hasPrev = $prev.length && $prev.attr("data-sort") !== undefined;
+        var hasNext = $next.length && $next.attr("data-sort") !== undefined;
+
+        if (hasPrev) {
             prevSort = $prev.attr("data-sort") * 1;
         }
 
-        if ($next && $next.attr("data-sort")) {
+        if (hasNext) {
             nextSort = $next.attr("data-sort") * 1;
         }
 
-
-        if (!prevSort && nextSort) {
+        if (!hasPrev && hasNext) {
             //item moved at the top
             newSort = nextSort - stepDiff;
-
-        } else if (!nextSort && prevSort) {
+        } else if (!hasNext && hasPrev) {
             //item moved at the bottom
             newSort = prevSort + step;
-
-        } else if (prevSort && nextSort) {
+        } else if (hasPrev && hasNext) {
             //item moved inside two items
             newSort = (prevSort + nextSort) / 2;
-
-        } else if (!prevSort && !nextSort) {
+        } else if (!hasPrev && !hasNext) {
             //It's the first item of this column
             newSort = step * 100; //set a big value for 1st item
         }
@@ -184,9 +183,6 @@
             window.scrollToKanbanContent = false;
         }
 
-        var isChrome = !!window.chrome && !!window.chrome.webstore;
-
-
 <?php if ($this->login_user->user_type == "staff" || ($this->login_user->user_type == "client" && $can_edit_tasks)) { ?>
             $(".kanban-item-list").each(function (index) {
                 var id = this.id;
@@ -196,8 +192,18 @@
                     group: "kanban-item-list",
                     filter: ".disable-dragging",
                     cancel: ".disable-dragging",
+                    ghostClass: "kanban-sortable-ghost",
+                    chosenClass: "kanban-sortable-chosen",
+                    setData: function (dataTransfer, dragEl) {
+                        var img = document.createElement("img");
+                        img.src = $("#move-icon").attr("src");
+                        img.style.opacity = 1;
+                        if (dataTransfer && dataTransfer.setDragImage) {
+                            dataTransfer.setDragImage(img, 5, 10);
+                        }
+                    },
                     onAdd: function (e) {
-                        //moved to another column. update bothe sort and status
+                        //moved to another column. update both sort and status
                         saveStatusAndSort($(e.item), $(e.item).closest(".kanban-item-list").attr("data-status_id"));
                     },
                     onUpdate: function (e) {
@@ -205,19 +211,6 @@
                         saveStatusAndSort($(e.item));
                     }
                 };
-
-                //apply only on chrome because this feature is not working perfectly in other browsers.
-                if (isChrome) {
-                    options.setData = function (dataTransfer, dragEl) {
-                        var img = document.createElement("img");
-                        img.src = $("#move-icon").attr("src");
-                        img.style.opacity = 1;
-                        dataTransfer.setDragImage(img, 5, 10);
-                    };
-
-                    options.ghostClass = "kanban-sortable-ghost";
-                    options.chosenClass = "kanban-sortable-chosen";
-                }
 
                 Sortable.create($("#" + id)[0], options);
             });

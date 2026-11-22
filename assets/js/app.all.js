@@ -8901,7 +8901,7 @@ keyboardShortcuts = function (keyupCode) {
 setSummernoteToAll = function (notFocus) {
     $("textarea").each(function () {
         var $instance = $(this);
-        if ($instance.val()) {
+        if ($instance.val() || $instance.attr("data-rich-text-editor")) {
             setTimeout(function () {
                 setSummernote($instance, notFocus);
             }, 100);
@@ -8979,62 +8979,61 @@ showBrowserNotification = function (data) {
 setSummernote = function ($instance, notFocus) {
     if (AppHelper.settings.enableRichTextEditor === "1" && $instance.attr("data-rich-text-editor")) {
 
+        if ($instance.next('.note-editor').length) {
+            return;
+        }
+
         var focus = true;
         if (notFocus) {
             focus = false;
         }
 
-        $instance.fadeOut(100, function () {
-            var settings = {
-                height: 150,
-                focus: focus,
-                toolbar: [
-                    ['style', ['style']],
-                    ['font', ['bold', 'italic', 'underline', 'clear']],
-                    ['fontname', ['fontname']],
-                    ['para', ['ul', 'ol', 'paragraph']],
-                    ['table', ['table']],
-                    ['insert', ['hr']],
-                    ['view', ['fullscreen', 'codeview']]
-                ],
-                disableDragAndDrop: true
-            };
+        $instance.hide();
+        var settings = {
+            height: 150,
+            focus: focus,
+            toolbar: [
+                ['font', ['bold', 'italic', 'underline', 'clear']],
+                ['para', ['ul', 'ol']]
+            ],
+            disableDragAndDrop: true,
+            placeholder: $instance.attr("placeholder") || ""
+        };
 
-            if ($instance.attr("data-mention")) {
-                //generate mention data for summernote
-                var source = $instance.attr("data-mention-source"), project_id = $instance.attr("data-mention-project_id");
+        if ($instance.attr("data-mention")) {
+            //generate mention data for summernote
+            var source = $instance.attr("data-mention-source"), project_id = $instance.attr("data-mention-project_id");
 
-                $.ajax({
-                    url: source,
-                    data: {project_id: project_id},
-                    dataType: "json",
-                    method: "POST",
-                    success: function (result) {
-                        if (result.success && result.data) {
-                            settings.hint = {
-                                mentions: result.data,
-                                match: /\B@(\w*)$/,
-                                search: function (keyword, callback) {
-                                    callback($.grep(this.mentions, function (item) {
-                                        return item.name.toLowerCase().indexOf(keyword.toLowerCase()) === 0;
-                                    }));
-                                },
-                                template: function (item) {
-                                    return item.name;
-                                },
-                                content: function (item) {
-                                    return $('<span>' + item.content + '&nbsp;</span>')[0];
-                                }
-                            };
-                        }
-
-                        $instance.summernote(settings);
+            $.ajax({
+                url: source,
+                data: {project_id: project_id},
+                dataType: "json",
+                method: "POST",
+                success: function (result) {
+                    if (result.success && result.data) {
+                        settings.hint = {
+                            mentions: result.data,
+                            match: /\B@(\w*)$/,
+                            search: function (keyword, callback) {
+                                callback($.grep(this.mentions, function (item) {
+                                    return item.name.toLowerCase().indexOf(keyword.toLowerCase()) === 0;
+                                }));
+                            },
+                            template: function (item) {
+                                return item.name;
+                            },
+                            content: function (item) {
+                                return $('<span>' + item.content + '&nbsp;</span>')[0];
+                            }
+                        };
                     }
-                });
-            } else {
-                $instance.summernote(settings);
-            }
-        });
+
+                    $instance.summernote(settings);
+                }
+            });
+        } else {
+            $instance.summernote(settings);
+        }
     }
 };
 
@@ -9356,15 +9355,8 @@ initWYSIWYGEditor = function (element, options) {
     var settings = $.extend({}, {
         height: 250,
         toolbar: [
-            ['style', ['style']],
             ['font', ['bold', 'italic', 'underline', 'clear']],
-            ['fontname', ['fontname']],
-            ['color', ['color']],
-            ['para', ['ul', 'ol', 'paragraph']],
-            ['height', ['height']],
-            ['table', ['table']],
-            ['insert', ['hr']],
-            ['view', ['fullscreen', 'codeview']]
+            ['para', ['ul', 'ol']]
         ],
         disableDragAndDrop: true
     }, options);

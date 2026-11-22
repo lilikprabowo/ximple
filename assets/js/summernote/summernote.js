@@ -5101,7 +5101,7 @@
     var options = context.options;
 
     this.events = {
-      'summernote.init summernote.change': function () {
+      'summernote.init summernote.change summernote.keyup': function () {
         self.update();
       },
       'summernote.codeview.toggled': function () {
@@ -5118,6 +5118,23 @@
       this.$placeholder.on('click', function () {
         context.invoke('focus');
       }).text(options.placeholder).prependTo($editingArea);
+
+      var $editable = context.layoutInfo.editable;
+      if ($editable && $editable.length) {
+        $editable.on('input keyup paste change blur', function () {
+          self.update();
+        });
+        $editable.on('keydown', function (e) {
+          var keyCode = e.keyCode || e.which;
+          var isModifierOrNav = (e.ctrlKey || e.altKey || e.metaKey || 
+              keyCode === 16 || keyCode === 17 || keyCode === 18 || 
+              keyCode === 20 || keyCode === 27 || 
+              (keyCode >= 37 && keyCode <= 40));
+          if (!isModifierOrNav) {
+            self.$placeholder.hide();
+          }
+        });
+      }
     };
 
     this.destroy = function () {
@@ -6844,14 +6861,8 @@
 
       // toolbar
       toolbar: [
-        ['style', ['style']],
-        ['font', ['bold', 'underline', 'clear']],
-        ['fontname', ['fontname']],
-        ['color', ['color']],
-        ['para', ['ul', 'ol', 'paragraph']],
-        ['table', ['table']],
-        ['insert', ['link', 'picture', 'video']],
-        ['view', ['fullscreen', 'codeview', 'help']]
+        ['font', ['bold', 'italic', 'underline', 'clear']],
+        ['para', ['ul', 'ol']]
       ],
 
       // popover

@@ -1,0 +1,257 @@
+/* Legacy Font Awesome classes mapped to Tabler Icons 3.49.0. See ../LICENSE. */
+/* angle-double-left -> chevrons-left */
+.fa.fa-angle-double-left::before { font-family: "tabler-icons" !important; content: "\ea64" !important; }
+/* angle-double-right -> chevrons-right */
+.fa.fa-angle-double-right::before { font-family: "tabler-icons" !important; content: "\ea65" !important; }
+/* angle-right -> chevron-right */
+.fa.fa-angle-right::before { font-family: "tabler-icons" !important; content: "\ea61" !important; }
+/* arrow-circle-left -> circle-arrow-left */
+.fa.fa-arrow-circle-left::before { font-family: "tabler-icons" !important; content: "\f6fb" !important; }
+/* arrow-circle-right -> circle-arrow-right */
+.fa.fa-arrow-circle-right::before { font-family: "tabler-icons" !important; content: "\f6fd" !important; }
+/* arrows -> arrows-move */
+.fa.fa-arrows::before { font-family: "tabler-icons" !important; content: "\f22f" !important; }
+/* at -> at */
+.fa.fa-at::before { font-family: "tabler-icons" !important; content: "\ea2b" !important; }
+/* ban -> ban */
+.fa.fa-ban::before { font-family: "tabler-icons" !important; content: "\ea2e" !important; }
+/* bar-chart -> chart-bar */
+.fa.fa-bar-chart::before { font-family: "tabler-icons" !important; content: "\ea59" !important; }
+/* bars -> menu-2 */
+.fa.fa-bars::before { font-family: "tabler-icons" !important; content: "\ec42" !important; }
+/* bell-o -> bell */
+.fa.fa-bell-o::before { font-family: "tabler-icons" !important; content: "\ea35" !important; }
+/* bolt -> bolt */
+.fa.fa-bolt::before { font-family: "tabler-icons" !important; content: "\ea38" !important; }
+/* book -> book */
+.fa.fa-book::before { font-family: "tabler-icons" !important; content: "\ea39" !important; }
+/* braille -> accessible */
+.fa.fa-braille::before { font-family: "tabler-icons" !important; content: "\eba9" !important; }
+/* briefcase -> briefcase */
+.fa.fa-briefcase::before { font-family: "tabler-icons" !important; content: "\ea46" !important; }
+/* bullhorn -> speakerphone */
+.fa.fa-bullhorn::before { font-family: "tabler-icons" !important; content: "\ed61" !important; }
+/* calendar -> calendar */
+.fa.fa-calendar::before { font-family: "tabler-icons" !important; content: "\ea53" !important; }
+/* calendar-check-o -> calendar-check */
+.fa.fa-calendar-check-o::before { font-family: "tabler-icons" !important; content: "\f824" !important; }
+/* camera -> camera */
+.fa.fa-camera::before { font-family: "tabler-icons" !important; content: "\ea54" !important; }
+/* caret-down -> chevron-down */
+.fa.fa-caret-down::before { font-family: "tabler-icons" !important; content: "\ea5f" !important; }
+/* chain -> link */
+.fa.fa-chain::before { font-family: "tabler-icons" !important; content: "\eade" !important; }
+/* check -> check */
+.fa.fa-check::before { font-family: "tabler-icons" !important; content: "\ea5e" !important; }
+/* check-circle -> circle-check */
+.fa.fa-check-circle::before { font-family: "tabler-icons" !important; content: "\ea67" !important; }
+/* check-circle-o -> circle-check */
+.fa.fa-check-circle-o::before { font-family: "tabler-icons" !important; content: "\ea67" !important; }
+/* check-square -> square-check */
+.fa.fa-check-square::before { font-family: "tabler-icons" !important; content: "\eb28" !important; }
+/* check-square-o -> square-check */
+.fa.fa-check-square-o::before { font-family: "tabler-icons" !important; content: "\eb28" !important; }
+/* chevron-circle-right -> circle-chevron-right */
+.fa.fa-chevron-circle-right::before { font-family: "tabler-icons" !important; content: "\f624" !important; }
+/* chevron-down -> chevron-down */
+.fa.fa-chevron-down::before { font-family: "tabler-icons" !important; content: "\ea5f" !important; }
+/* chevron-left -> chevron-left */
+.fa.fa-chevron-left::before { font-family: "tabler-icons" !important; content: "\ea60" !important; }
+/* chevron-right -> chevron-right */
+.fa.fa-chevron-right::before { font-family: "tabler-icons" !important; content: "\ea61" !important; }
+/* circle -> circle */
+.fa.fa-circle::before { font-family: "tabler-icons" !important; content: "\ea6b" !important; }
+/* circle-o -> circle */
+.fa.fa-circle-o::before { font-family: "tabler-icons" !important; content: "\ea6b" !important; }
+/* clock-o -> clock */
+.fa.fa-clock-o::before { font-family: "tabler-icons" !important; content: "\ea70" !important; }
+/* close -> x */
+.fa.fa-close::before { font-family: "tabler-icons" !important; content: "\eb55" !important; }
+/* cloud-download -> cloud-download */
+.fa.fa-cloud-download::before { font-family: "tabler-icons" !important; content: "\ea71" !important; }
+/* code -> code */
+.fa.fa-code::before { font-family: "tabler-icons" !important; content: "\ea77" !important; }
+/* code-fork -> git-branch */
+.fa.fa-code-fork::before { font-family: "tabler-icons" !important; content: "\eab2" !important; }
+/* cog -> settings */
+.fa.fa-cog::before { font-family: "tabler-icons" !important; content: "\eb20" !important; }
+/* cogs -> settings-2 */
+.fa.fa-cogs::before { font-family: "tabler-icons" !important; content: "\f5ac" !important; }
+/* columns -> columns */
+.fa.fa-columns::before { font-family: "tabler-icons" !important; content: "\eb83" !important; }
+/* comment -> message */
+.fa.fa-comment::before { font-family: "tabler-icons" !important; content: "\eaef" !important; }
+/* comment-o -> message-circle */
+.fa.fa-comment-o::before { font-family: "tabler-icons" !important; content: "\eaed" !important; }
+/* comments -> messages */
+.fa.fa-comments::before { font-family: "tabler-icons" !important; content: "\eb6c" !important; }
+/* comments-o -> messages */
+.fa.fa-comments-o::before { font-family: "tabler-icons" !important; content: "\eb6c" !important; }
+/* compress -> fold */
+.fa.fa-compress::before { font-family: "tabler-icons" !important; content: "\ed56" !important; }
+/* copy -> copy */
+.fa.fa-copy::before { font-family: "tabler-icons" !important; content: "\ea7a" !important; }
+/* cube -> cube */
+.fa.fa-cube::before { font-family: "tabler-icons" !important; content: "\fa97" !important; }
+/* cubes -> components */
+.fa.fa-cubes::before { font-family: "tabler-icons" !important; content: "\efa5" !important; }
+/* dedent -> indent-decrease */
+.fa.fa-dedent::before { font-family: "tabler-icons" !important; content: "\eb91" !important; }
+/* desktop -> device-desktop */
+.fa.fa-desktop::before { font-family: "tabler-icons" !important; content: "\ea89" !important; }
+/* download -> download */
+.fa.fa-download::before { font-family: "tabler-icons" !important; content: "\ea96" !important; }
+/* edit -> edit */
+.fa.fa-edit::before { font-family: "tabler-icons" !important; content: "\ea98" !important; }
+/* ellipsis-h -> dots */
+.fa.fa-ellipsis-h::before { font-family: "tabler-icons" !important; content: "\ea95" !important; }
+/* envelope -> mail */
+.fa.fa-envelope::before { font-family: "tabler-icons" !important; content: "\eae5" !important; }
+/* envelope-o -> mail */
+.fa.fa-envelope-o::before { font-family: "tabler-icons" !important; content: "\eae5" !important; }
+/* expand -> maximize */
+.fa.fa-expand::before { font-family: "tabler-icons" !important; content: "\eaea" !important; }
+/* external-link -> external-link */
+.fa.fa-external-link::before { font-family: "tabler-icons" !important; content: "\ea99" !important; }
+/* external-link-square -> external-link */
+.fa.fa-external-link-square::before { font-family: "tabler-icons" !important; content: "\ea99" !important; }
+/* eye -> eye */
+.fa.fa-eye::before { font-family: "tabler-icons" !important; content: "\ea9a" !important; }
+/* eye-slash -> eye-off */
+.fa.fa-eye-slash::before { font-family: "tabler-icons" !important; content: "\ecf0" !important; }
+/* file -> file */
+.fa.fa-file::before { font-family: "tabler-icons" !important; content: "\eaa4" !important; }
+/* file-image-o -> photo */
+.fa.fa-file-image-o::before { font-family: "tabler-icons" !important; content: "\eb0a" !important; }
+/* file-o -> file */
+.fa.fa-file-o::before { font-family: "tabler-icons" !important; content: "\eaa4" !important; }
+/* file-pdf-o -> file-type-pdf */
+.fa.fa-file-pdf-o::before { font-family: "tabler-icons" !important; content: "\fb10" !important; }
+/* file-text -> file-text */
+.fa.fa-file-text::before { font-family: "tabler-icons" !important; content: "\eaa2" !important; }
+/* file-text-o -> file-text */
+.fa.fa-file-text-o::before { font-family: "tabler-icons" !important; content: "\eaa2" !important; }
+/* frown-o -> mood-sad */
+.fa.fa-frown-o::before { font-family: "tabler-icons" !important; content: "\eaf6" !important; }
+/* gear -> settings */
+.fa.fa-gear::before { font-family: "tabler-icons" !important; content: "\eb20" !important; }
+/* globe -> world */
+.fa.fa-globe::before { font-family: "tabler-icons" !important; content: "\eb54" !important; }
+/* history -> history */
+.fa.fa-history::before { font-family: "tabler-icons" !important; content: "\ebea" !important; }
+/* inbox -> inbox */
+.fa.fa-inbox::before { font-family: "tabler-icons" !important; content: "\eac4" !important; }
+/* indent -> indent-increase */
+.fa.fa-indent::before { font-family: "tabler-icons" !important; content: "\eb92" !important; }
+/* info -> info-circle */
+.fa.fa-info::before { font-family: "tabler-icons" !important; content: "\eac5" !important; }
+/* info-circle -> info-circle */
+.fa.fa-info-circle::before { font-family: "tabler-icons" !important; content: "\eac5" !important; }
+/* key -> key */
+.fa.fa-key::before { font-family: "tabler-icons" !important; content: "\eac7" !important; }
+/* level-down -> corner-left-down */
+.fa.fa-level-down::before { font-family: "tabler-icons" !important; content: "\ea7e" !important; }
+/* life-ring -> lifebuoy */
+.fa.fa-life-ring::before { font-family: "tabler-icons" !important; content: "\eadd" !important; }
+/* line-chart -> chart-line */
+.fa.fa-line-chart::before { font-family: "tabler-icons" !important; content: "\ea5c" !important; }
+/* list-alt -> list-details */
+.fa.fa-list-alt::before { font-family: "tabler-icons" !important; content: "\ef40" !important; }
+/* list-ul -> list */
+.fa.fa-list-ul::before { font-family: "tabler-icons" !important; content: "\eb6b" !important; }
+/* lock -> lock */
+.fa.fa-lock::before { font-family: "tabler-icons" !important; content: "\eae2" !important; }
+/* map-marker -> map-pin */
+.fa.fa-map-marker::before { font-family: "tabler-icons" !important; content: "\eae8" !important; }
+/* meh-o -> mood-empty */
+.fa.fa-meh-o::before { font-family: "tabler-icons" !important; content: "\eeb5" !important; }
+/* minus -> minus */
+.fa.fa-minus::before { font-family: "tabler-icons" !important; content: "\eaf2" !important; }
+/* money -> currency-dollar */
+.fa.fa-money::before { font-family: "tabler-icons" !important; content: "\eb84" !important; }
+/* paper-plane -> send */
+.fa.fa-paper-plane::before { font-family: "tabler-icons" !important; content: "\eb1e" !important; }
+/* paperclip -> paperclip */
+.fa.fa-paperclip::before { font-family: "tabler-icons" !important; content: "\eb02" !important; }
+/* pause -> player-pause */
+.fa.fa-pause::before { font-family: "tabler-icons" !important; content: "\ed45" !important; }
+/* pause-circle-o -> circle-pause */
+.fa.fa-pause-circle-o::before { font-family: "tabler-icons" !important; content: "\102be" !important; }
+/* pencil -> pencil */
+.fa.fa-pencil::before { font-family: "tabler-icons" !important; content: "\eb04" !important; }
+/* pencil-square -> edit */
+.fa.fa-pencil-square::before { font-family: "tabler-icons" !important; content: "\ea98" !important; }
+/* phone -> phone */
+.fa.fa-phone::before { font-family: "tabler-icons" !important; content: "\eb09" !important; }
+/* plus -> plus */
+.fa.fa-plus::before { font-family: "tabler-icons" !important; content: "\eb0b" !important; }
+/* plus-circle -> circle-plus */
+.fa.fa-plus-circle::before { font-family: "tabler-icons" !important; content: "\ea69" !important; }
+/* plus-square-o -> square-plus */
+.fa.fa-plus-square-o::before { font-family: "tabler-icons" !important; content: "\eb2a" !important; }
+/* power-off -> power */
+.fa.fa-power-off::before { font-family: "tabler-icons" !important; content: "\eb0d" !important; }
+/* print -> printer */
+.fa.fa-print::before { font-family: "tabler-icons" !important; content: "\eb0e" !important; }
+/* question-circle -> help-circle */
+.fa.fa-question-circle::before { font-family: "tabler-icons" !important; content: "\f91d" !important; }
+/* question-circle-o -> help-circle */
+.fa.fa-question-circle-o::before { font-family: "tabler-icons" !important; content: "\f91d" !important; }
+/* random -> arrows-random */
+.fa.fa-random::before { font-family: "tabler-icons" !important; content: "\f095" !important; }
+/* refresh -> refresh */
+.fa.fa-refresh::before { font-family: "tabler-icons" !important; content: "\eb13" !important; }
+/* reply -> message-reply */
+.fa.fa-reply::before { font-family: "tabler-icons" !important; content: "\fd4d" !important; }
+/* search -> search */
+.fa.fa-search::before { font-family: "tabler-icons" !important; content: "\eb1c" !important; }
+/* send -> send */
+.fa.fa-send::before { font-family: "tabler-icons" !important; content: "\eb1e" !important; }
+/* ship -> ship */
+.fa.fa-ship::before { font-family: "tabler-icons" !important; content: "\ec84" !important; }
+/* shopping-basket -> basket */
+.fa.fa-shopping-basket::before { font-family: "tabler-icons" !important; content: "\ebe1" !important; }
+/* sign-in -> login */
+.fa.fa-sign-in::before { font-family: "tabler-icons" !important; content: "\eba7" !important; }
+/* sign-out -> logout */
+.fa.fa-sign-out::before { font-family: "tabler-icons" !important; content: "\eba8" !important; }
+/* skype -> brand-skype */
+.fa.fa-skype::before { font-family: "tabler-icons" !important; content: "\ed02" !important; }
+/* slack -> brand-slack */
+.fa.fa-slack::before { font-family: "tabler-icons" !important; content: "\ec72" !important; }
+/* sliders -> adjustments */
+.fa.fa-sliders::before { font-family: "tabler-icons" !important; content: "\ea03" !important; }
+/* star -> star */
+.fa.fa-star::before { font-family: "tabler-icons" !important; content: "\eb2e" !important; }
+/* star-o -> star */
+.fa.fa-star-o::before { font-family: "tabler-icons" !important; content: "\eb2e" !important; }
+/* support -> lifebuoy */
+.fa.fa-support::before { font-family: "tabler-icons" !important; content: "\eadd" !important; }
+/* tags -> tags */
+.fa.fa-tags::before { font-family: "tabler-icons" !important; content: "\ef86" !important; }
+/* tasks -> list-check */
+.fa.fa-tasks::before { font-family: "tabler-icons" !important; content: "\eb6a" !important; }
+/* th-large -> layout-grid */
+.fa.fa-th-large::before { font-family: "tabler-icons" !important; content: "\edba" !important; }
+/* thumbs-o-up -> thumb-up */
+.fa.fa-thumbs-o-up::before { font-family: "tabler-icons" !important; content: "\eb3c" !important; }
+/* thumbs-up -> thumb-up */
+.fa.fa-thumbs-up::before { font-family: "tabler-icons" !important; content: "\eb3c" !important; }
+/* times -> x */
+.fa.fa-times::before { font-family: "tabler-icons" !important; content: "\eb55" !important; }
+/* times-circle -> circle-x */
+.fa.fa-times-circle::before { font-family: "tabler-icons" !important; content: "\ea6a" !important; }
+/* times-circle-o -> circle-x */
+.fa.fa-times-circle-o::before { font-family: "tabler-icons" !important; content: "\ea6a" !important; }
+/* trash -> trash */
+.fa.fa-trash::before { font-family: "tabler-icons" !important; content: "\eb41" !important; }
+/* upload -> upload */
+.fa.fa-upload::before { font-family: "tabler-icons" !important; content: "\eb47" !important; }
+/* user -> user */
+.fa.fa-user::before { font-family: "tabler-icons" !important; content: "\eb4d" !important; }
+/* users -> users */
+.fa.fa-users::before { font-family: "tabler-icons" !important; content: "\ebf2" !important; }
+/* warning -> alert-triangle */
+.fa.fa-warning::before { font-family: "tabler-icons" !important; content: "\ea06" !important; }
+/* wrench -> tool */
+.fa.fa-wrench::before { font-family: "tabler-icons" !important; content: "\eb40" !important; }

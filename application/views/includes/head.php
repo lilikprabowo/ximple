@@ -59,11 +59,6 @@
                     document.documentElement.classList.add("dark-mode");
                 }
             } catch (e) {}
-            if ("serviceWorker" in navigator) {
-                window.addEventListener("load", function () {
-                    navigator.serviceWorker.register("<?php echo base_url('sw.js'); ?>").catch(function () {});
-                });
-            }
         })();
     </script>
 
@@ -117,7 +112,7 @@ $(document).ready(function () {
                 '<div class="rise4-donut-svg-box">' +
                     '<svg class="rise4-donut-svg" viewBox="0 0 220 220"></svg>' +
                     '<div class="rise4-donut-center">' +
-                        '<div class="rise4-donut-center-val">' + total + '</div>' +
+                        '<div class="ribase4-donut-center-val">' + total + '</div>' +
                         '<div class="rise4-donut-center-lbl">Total</div>' +
                     '</div>' +
                 '</div>' +

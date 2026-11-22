@@ -20,6 +20,7 @@
             </div>
         </div>
     </ul>
+    <?php $this->load->view("projects/tasks/saved_filters_bar"); ?>
     <div class="bg-white kanban-filters-container">
         <div class="row">
             <div class="col-md-1 col-xs-2">

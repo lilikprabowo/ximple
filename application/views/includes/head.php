@@ -30,14 +30,40 @@
     <!-- Panggil custom-style.css dengan cache busting -->
     <link rel="stylesheet" href="<?php echo base_url('assets/css/custom-style.css?v=' . time()); ?>">
     <script type="text/javascript">
+        window.getRiseAutoThemeState = function () {
+            var now = new Date();
+            var hour = now.getHours();
+            var isNight = (hour >= 18 || hour < 6); // 18:00 - 05:59 = Dark Mode, 06:00 - 17:59 = Light Mode
+            var refDate = hour < 6 ? new Date(now.getTime() - 86400000) : now;
+            var y = refDate.getFullYear();
+            var m = ("0" + (refDate.getMonth() + 1)).slice(-2);
+            var d = ("0" + refDate.getDate()).slice(-2);
+            var periodKey = y + "-" + m + "-" + d + "-" + (isNight ? "night" : "day");
+            var autoMode = isNight ? "dark" : "light";
+            var manualPeriod = null;
+            var savedMode = null;
+            try {
+                manualPeriod = localStorage.getItem("rise_theme_manual_period");
+                savedMode = localStorage.getItem("rise_theme_mode");
+            } catch (e) {}
+            var effectiveMode = (manualPeriod === periodKey && (savedMode === "dark" || savedMode === "light"))
+                ? savedMode
+                : autoMode;
+            return { mode: effectiveMode, periodKey: periodKey, autoMode: autoMode };
+        };
         (function () {
             try {
-                var savedTheme = localStorage.getItem("rise_theme_mode");
-                if (savedTheme === "dark") {
+                var state = window.getRiseAutoThemeState();
+                if (state.mode === "dark") {
                     document.documentElement.setAttribute("data-theme", "dark");
                     document.documentElement.classList.add("dark-mode");
                 }
             } catch (e) {}
+            if ("serviceWorker" in navigator) {
+                window.addEventListener("load", function () {
+                    navigator.serviceWorker.register("<?php echo base_url('sw.js'); ?>").catch(function () {});
+                });
+            }
         })();
     </script>
 
@@ -262,7 +288,7 @@ $(document).ready(function () {
         $.plot = wrappedPlot;
     }
 
-    function applyThemeMode(mode, replotCharts) {
+    function applyThemeMode(mode, replotCharts, isManual) {
         if (mode === "dark") {
             $("html").attr("data-theme", "dark").addClass("dark-mode");
             $("body").addClass("dark-mode");
@@ -272,6 +298,9 @@ $(document).ready(function () {
         }
         try {
             localStorage.setItem("rise_theme_mode", mode);
+            if (isManual && typeof window.getRiseAutoThemeState === "function") {
+                localStorage.setItem("rise_theme_manual_period", window.getRiseAutoThemeState().periodKey);
+            }
         } catch (e) {}
 
         if (replotCharts && $ && $.plot) {
@@ -284,17 +313,27 @@ $(document).ready(function () {
         }
     }
 
-    var initialTheme = "light";
-    try {
-        initialTheme = localStorage.getItem("rise_theme_mode") || "light";
-    } catch (e) {}
-    applyThemeMode(initialTheme, false);
+    var initialState = (typeof window.getRiseAutoThemeState === "function")
+        ? window.getRiseAutoThemeState()
+        : { mode: "light" };
+    applyThemeMode(initialState.mode, false, false);
 
     $(document).on("click", "#theme-mode-toggle", function (e) {
         e.preventDefault();
         var isDark = $("html").attr("data-theme") === "dark" || $("body").hasClass("dark-mode");
-        applyThemeMode(isDark ? "light" : "dark", true);
+        applyThemeMode(isDark ? "light" : "dark", true, true);
     });
+
+    // Auto-switch theme live when crossing 18:00 (Dark) or 06:00 (Light)
+    setInterval(function () {
+        if (typeof window.getRiseAutoThemeState !== "function") return;
+        var st = window.getRiseAutoThemeState();
+        var curIsDark = $("html").attr("data-theme") === "dark" || $("body").hasClass("dark-mode");
+        var curMode = curIsDark ? "dark" : "light";
+        if (st.mode !== curMode) {
+            applyThemeMode(st.mode, true, false);
+        }
+    }, 60000);
 
     function syncSidebarCollapsed() {
         var isCollapsed = $("#sidebar").hasClass("collapsed");

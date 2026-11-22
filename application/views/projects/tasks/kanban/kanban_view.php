@@ -35,10 +35,44 @@
 
         $disable_dragging = can_edit_this_task_status($task->assigned_to) ? "" : "disable-dragging";
 
+        // RISE 4.x Kanban Card Metadata Footer (Deadline, Checklist, Sub-tasks, Comments)
+        $footer_items = "";
+        $today_ymd = get_my_local_time("Y-m-d");
+        $is_done_task = (isset($task->status_key_name) && $task->status_key_name === "done");
+
+        if (!empty($task->deadline) && is_date_exists($task->deadline)) {
+            $dl_class = "";
+            if (!$is_done_task && $today_ymd > $task->deadline) {
+                $dl_class = "is-overdue";
+            } else if (!$is_done_task && $today_ymd == $task->deadline) {
+                $dl_class = "is-today";
+            }
+            $footer_items .= "<span class='kmeta-chip kmeta-deadline $dl_class' data-deadline='" . htmlspecialchars($task->deadline, ENT_QUOTES, 'UTF-8') . "' title='" . lang("deadline") . "'><i class='fa fa-calendar-o'></i> " . format_to_date($task->deadline, false) . "</span>";
+        }
+
+        $total_cl = isset($task->total_checklist) ? (int) $task->total_checklist : 0;
+        $checked_cl = isset($task->checked_checklist) ? (int) $task->checked_checklist : 0;
+        if ($total_cl > 0) {
+            $cl_class = ($checked_cl >= $total_cl) ? "is-complete" : "";
+            $footer_items .= "<span class='kmeta-chip kmeta-checklist $cl_class' title='" . lang("checklist") . "'><i class='fa fa-check-square-o'></i> " . $checked_cl . "/" . $total_cl . "</span>";
+        }
+
+        $total_st = isset($task->total_sub_tasks) ? (int) $task->total_sub_tasks : 0;
+        if ($total_st > 0) {
+            $footer_items .= "<span class='kmeta-chip kmeta-subtasks' title='" . lang("sub_tasks") . "'><i class='fa fa-code-fork'></i> " . $total_st . "</span>";
+        }
+
+        $total_cm = isset($task->total_comments) ? (int) $task->total_comments : 0;
+        if ($total_cm > 0) {
+            $footer_items .= "<span class='kmeta-chip kmeta-comments' title='" . lang("comments") . "'><i class='fa fa-comment-o'></i> " . $total_cm . "</span>";
+        }
+
+        $kanban_footer = $footer_items ? "<div class='rise4-kanban-footer'>" . $footer_items . "</div>" : "";
+
         $item = $exising_items . modal_anchor(get_uri("projects/task_view"), "<span class='avatar'>" .
                         "<img src='" . get_avatar($task->assigned_to_avatar) . "'>" .
                         "</span>" . $sub_task_icon . $task->id . ". " . $task->title . $batch_operation_checkbox .
-                        $task_labels, array("class" => "kanban-item $disable_dragging $unread_comments_class", "data-id" => $task->id, "data-project_id" => $task->project_id, "data-sort" => $task->new_sort, "data-post-id" => $task->id, "title" => lang('task_info') . " #$task->id", "data-modal-lg" => "1"));
+                        $task_labels . $kanban_footer, array("class" => "kanban-item $disable_dragging $unread_comments_class", "data-id" => $task->id, "data-project_id" => $task->project_id, "data-sort" => $task->new_sort, "data-post-id" => $task->id, "title" => lang('task_info') . " #$task->id", "data-modal-lg" => "1"));
 
         $columns_data[$task->status_id] = $item;
     }
@@ -62,7 +96,7 @@
                     ?>
                 </div>
 
-                <div  id="kanban-item-list-<?php echo $column->id; ?>" class="kanban-item-list" data-status_id="<?php echo $column->id; ?>">
+                <div  id="kanban-item-list-<?php echo $column->id; ?>" class="kanban-item-list" data-status_id="<?php echo $column->id; ?>" data-status_key="<?php echo $column->key_name; ?>">
                     <?php echo get_array_value($columns_data, $column->id); ?>
                 </div>
             </li>
@@ -160,6 +194,24 @@
         }
 
         $item.attr("data-sort", newSort);
+
+        // Live-update deadline chip color immediately on drag between columns
+        if (status) {
+            var $dlChip = $item.find(".kmeta-deadline");
+            if ($dlChip.length) {
+                var targetStatusKey = $item.closest(".kanban-item-list").attr("data-status_key") || "";
+                var dlDate = $dlChip.attr("data-deadline") || "";
+                $dlChip.removeClass("is-overdue is-today");
+                if (targetStatusKey !== "done" && dlDate && typeof moment !== "undefined") {
+                    var todayYmd = moment().format("YYYY-MM-DD");
+                    if (todayYmd > dlDate) {
+                        $dlChip.addClass("is-overdue");
+                    } else if (todayYmd === dlDate) {
+                        $dlChip.addClass("is-today");
+                    }
+                }
+            }
+        }
 
 
         $.ajax({

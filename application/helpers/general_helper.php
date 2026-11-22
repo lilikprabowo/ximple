@@ -1308,10 +1308,31 @@ if (!function_exists('update_custom_fields_changes')) {
  */
 if (!function_exists("clean_data")) {
 
+    function rise4_strip_dangerous_xss($value) {
+        if (is_array($value)) {
+            foreach ($value as $k => $v) {
+                $value[$k] = rise4_strip_dangerous_xss($v);
+            }
+            return $value;
+        }
+        if (!is_string($value) || $value === "") {
+            return $value;
+        }
+        // Strip dangerous tags (script, iframe, object, embed, form, base, meta)
+        $value = preg_replace('#<\s*(script|iframe|object|embed|applet|base|meta)\b[^>]*>.*?<\s*/\s*\1\s*>#is', '', $value);
+        $value = preg_replace('#<\s*/?\s*(script|iframe|object|embed|applet|base|meta)\b[^>]*>#is', '', $value);
+        // Strip inline JS event handlers (onload=, onerror=, onclick=, ontoggle=, etc.)
+        $value = preg_replace('#(<[^>]+?)\s+on[a-z]+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)#is', '$1', $value);
+        // Neutralize javascript: and vbscript: protocols inside attributes
+        $value = preg_replace('#(href|src|action|formaction|xlink:href)\s*=\s*(["\']?)\s*(javascript|vbscript|data\s*:\s*text/html)\s*:#is', '$1=$2#blocked:', $value);
+        return $value;
+    }
+
     function clean_data($data) {
         $ci = get_instance();
 
         $data = $ci->security->xss_clean($data);
+        $data = rise4_strip_dangerous_xss($data);
         $disable_html_input = get_setting("disable_html_input");
 
         if ($disable_html_input == "1") {

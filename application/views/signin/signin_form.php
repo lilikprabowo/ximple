@@ -1,7 +1,8 @@
 <div class="panel panel-default signin-panel mb15">
     <div class="panel-heading signin-panel-heading text-center">
         <?php if (get_setting("show_logo_in_signin_page") === "yes") { ?>
-            <img class="signin-logo mw100p" src="<?php echo get_logo_url(); ?>" alt="logo" />
+            <img class="signin-logo signin-logo-light mw100p" src="<?php echo get_logo_url(); ?>" alt="logo" />
+            <img class="signin-logo signin-logo-dark mw100p" src="<?php echo get_file_uri("files/system/site-logo-dark.png"); ?>" alt="logo" />
         <?php } ?>
         <h4 class="signin-title"><?php echo lang('signin'); ?></h4>
         <p class="signin-subtitle">Silakan masuk ke akun Anda untuk melanjutkan</p>

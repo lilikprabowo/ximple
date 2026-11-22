@@ -1,0 +1,12 @@
+# Prevent execution of uploaded scripts inside files/ directory (RCE Protection)
+Options -Indexes
+
+<FilesMatch "\.(php|phtml|php[3-8]|phar|pl|py|cgi|sh|exe|bat)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

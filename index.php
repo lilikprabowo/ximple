@@ -55,8 +55,8 @@
  */
 //define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
 
-//set the environment to production after installation
-define('ENVIRONMENT', 'production');
+//set the environment to production after installation (override via CI_ENV if needed)
+define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'production');
 
 // we don't want to access the main project before installation. redirect to installation page
 if (ENVIRONMENT === 'pre_installation') {

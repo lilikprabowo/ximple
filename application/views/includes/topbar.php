@@ -63,8 +63,10 @@
             if ($this->login_user->user_type == "staff") {
                 load_js(array("assets/js/awesomplete/awesomplete.min.js"));
                 ?>
-                <li class="hidden-xs" title="<?php echo lang('search') . ' (/)'; ?>" data-toggle="tooltip" data-placement="left">
-                    <?php echo modal_anchor(get_uri("search/search_modal_form"), "<i class='fa fa-search'></i>", array("class" => "pull-left", "data-modal-title" => lang('search') . ' (/)', "data-post-hide-header" => true, "id" => "global-search-btn")); ?>
+                <li class="hidden-xs" title="<?php echo lang('search') . ' (Ctrl+K)'; ?>" data-toggle="tooltip" data-placement="bottom">
+                    <a href="javascript:void(0);" class="pull-left" id="global-search-btn" aria-label="Command Palette">
+                        <i class="fa fa-search"></i>
+                    </a>
                 </li>
             <?php } ?>
 

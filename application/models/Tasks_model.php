@@ -337,6 +337,9 @@ class Tasks_model extends Crud_model {
         $milestones_table = $this->db->dbprefix('milestones');
         $labels_table = $this->db->dbprefix('labels');
         $project_members_table = $this->db->dbprefix('project_members');
+        $task_status_table = $this->db->dbprefix('task_status');
+        $checklist_items_table = $this->db->dbprefix('checklist_items');
+        $project_comments_table = $this->db->dbprefix('project_comments');
 
         $where = "";
 
@@ -427,11 +430,17 @@ class Tasks_model extends Crud_model {
 
         $select_labels_data_query = $this->get_labels_data_query();
 
-        $sql = "SELECT $tasks_table.id, $tasks_table.title, $tasks_table.priority, $tasks_table.sort, IF($tasks_table.sort!=0, $tasks_table.sort, $tasks_table.id) AS new_sort, $tasks_table.assigned_to, $tasks_table.labels, $tasks_table.status_id, $tasks_table.project_id, CONCAT($users_table.first_name, ' ',$users_table.last_name) AS assigned_to_user, $users_table.image as assigned_to_avatar, $tasks_table.parent_task_id, $select_labels_data_query $extra_select
+        $sql = "SELECT $tasks_table.id, $tasks_table.title, $tasks_table.priority, $tasks_table.sort, IF($tasks_table.sort!=0, $tasks_table.sort, $tasks_table.id) AS new_sort, $tasks_table.assigned_to, $tasks_table.labels, $tasks_table.status_id, $task_status_table.key_name AS status_key_name, $tasks_table.project_id, IF($tasks_table.deadline IS NULL, $milestones_table.due_date, $tasks_table.deadline) AS deadline, CONCAT($users_table.first_name, ' ',$users_table.last_name) AS assigned_to_user, $users_table.image as assigned_to_avatar, $tasks_table.parent_task_id,
+        (SELECT COUNT(ci.id) FROM $checklist_items_table ci WHERE ci.deleted=0 AND ci.task_id=$tasks_table.id) AS total_checklist,
+        (SELECT COUNT(ci2.id) FROM $checklist_items_table ci2 WHERE ci2.deleted=0 AND ci2.task_id=$tasks_table.id AND ci2.is_checked=1) AS checked_checklist,
+        (SELECT COUNT(st.id) FROM $tasks_table st WHERE st.deleted=0 AND st.parent_task_id=$tasks_table.id) AS total_sub_tasks,
+        (SELECT COUNT(pc.id) FROM $project_comments_table pc WHERE pc.deleted=0 AND pc.task_id=$tasks_table.id) AS total_comments,
+        $select_labels_data_query $extra_select
         FROM $tasks_table
         LEFT JOIN $users_table ON $users_table.id= $tasks_table.assigned_to
         LEFT JOIN $projects ON $tasks_table.project_id=$projects.id 
         LEFT JOIN $milestones_table ON $tasks_table.milestone_id=$milestones_table.id 
+        LEFT JOIN $task_status_table ON $tasks_table.status_id=$task_status_table.id
         $extra_left_join    
         WHERE $tasks_table.deleted=0 $where 
         ORDER BY new_sort ASC";

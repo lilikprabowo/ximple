@@ -677,24 +677,56 @@ textarea.form-control:focus,
 }
 
 .select2-container-multi .select2-choices .select2-search-choice {
+    position: relative !important;
     display: inline-flex !important;
     align-items: center !important;
     background-image: none !important;
     background-color: #eff6ff !important;
-    border: 1px solid #dbeafe !important;
+    border: 1px solid #bfdbfe !important;
     border-radius: 6px !important;
     color: #1d4ed8 !important;
     font-size: 12px !important;
     font-weight: 500 !important;
-    padding: 3px 8px 3px 22px !important;
-    margin: 2px 4px 2px 0 !important;
+    line-height: 1.4 !important;
+    padding: 4px 24px 4px 10px !important;
+    margin: 2px 5px 2px 0 !important;
     box-shadow: none !important;
 }
 
 .select2-container-multi .select2-search-choice-close {
+    position: absolute !important;
     top: 50% !important;
+    right: 5px !important;
+    left: auto !important;
     transform: translateY(-50%) !important;
-    left: 5px !important;
+    width: 16px !important;
+    height: 16px !important;
+    border-radius: 4px !important;
+    background: none !important;
+    background-image: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+.select2-container-multi .select2-search-choice-close::before {
+    content: "\00d7" !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    color: currentColor !important;
+    opacity: 0.7 !important;
+}
+
+.select2-container-multi .select2-search-choice-close:hover {
+    background-color: rgba(239, 68, 68, 0.14) !important;
+    color: #ef4444 !important;
+}
+
+.select2-container-multi .select2-search-choice-close:hover::before {
+    opacity: 1 !important;
 }
 
 .select2-container-multi .select2-choices .select2-search-field {
@@ -9295,4 +9327,692 @@ html[data-theme="dark"] .app-alert.alert-info {
     border-color: #334155 !important;
     color: #f1f5f9 !important;
     box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* ==========================================================================
+   19. RISE 4.x SAVED FILTER PRESETS BAR (TASKS LIST & KANBAN)
+   ========================================================================== */
+.rise4-saved-filters-bar {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 10px 16px !important;
+    background-color: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    border-left: 1px solid #e2e8f0 !important;
+    border-right: 1px solid #e2e8f0 !important;
+}
+
+.rise4-sf-group {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+}
+
+.rise4-sf-label {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    margin-right: 2px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+}
+
+.rise4-sf-divider {
+    width: 1px !important;
+    height: 20px !important;
+    background-color: #cbd5e1 !important;
+    margin: 0 2px !important;
+}
+
+.rise4-sf-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    height: 28px !important;
+    padding: 0 11px !important;
+    border-radius: 9999px !important;
+    border: 1px solid #cbd5e1 !important;
+    background-color: #ffffff !important;
+    color: #475569 !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    outline: none !important;
+}
+
+.rise4-sf-pill:hover {
+    border-color: #93c5fd !important;
+    background-color: #eff6ff !important;
+    color: #2563eb !important;
+}
+
+.rise4-sf-pill.active {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3) !important;
+}
+
+.rise4-sf-pill.pill-urgent:hover,
+.rise4-sf-pill.pill-overdue:hover {
+    border-color: #fca5a5 !important;
+    background-color: #fef2f2 !important;
+    color: #dc2626 !important;
+}
+
+.rise4-sf-pill.pill-urgent.active,
+.rise4-sf-pill.pill-overdue.active {
+    background-color: #ef4444 !important;
+    border-color: #ef4444 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3) !important;
+}
+
+.rise4-sf-pill.pill-high:hover {
+    border-color: #fdba74 !important;
+    background-color: #fff7ed !important;
+    color: #ea580c !important;
+}
+
+.rise4-sf-pill.pill-high.active {
+    background-color: #f97316 !important;
+    border-color: #f97316 !important;
+    color: #ffffff !important;
+}
+
+.rise4-sf-custom-wrap {
+    display: inline-flex !important;
+    align-items: center !important;
+    position: relative !important;
+}
+
+.rise4-sf-custom-wrap .rise4-sf-pill.pill-custom {
+    padding-right: 24px !important;
+    border-color: #fde68a !important;
+    background-color: #fffbeb !important;
+    color: #b45309 !important;
+}
+
+.rise4-sf-custom-wrap .rise4-sf-pill.pill-custom.active {
+    background-color: #f59e0b !important;
+    border-color: #f59e0b !important;
+    color: #ffffff !important;
+}
+
+.rise4-sf-del {
+    position: absolute !important;
+    right: 6px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    border: none !important;
+    background: transparent !important;
+    color: #b45309 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    padding: 0 2px !important;
+    cursor: pointer !important;
+    opacity: 0.7 !important;
+}
+
+.rise4-sf-del:hover {
+    opacity: 1 !important;
+    color: #dc2626 !important;
+}
+
+.rise4-sf-save-wrap {
+    margin-left: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.rise4-sf-save-trigger {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    height: 28px !important;
+    padding: 0 11px !important;
+    border-radius: 9999px !important;
+    border: 1px dashed #94a3b8 !important;
+    background-color: transparent !important;
+    color: #475569 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+}
+
+.rise4-sf-save-trigger:hover {
+    border-color: #3b82f6 !important;
+    color: #2563eb !important;
+    background-color: #eff6ff !important;
+}
+
+.rise4-sf-save-inline {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+}
+
+.rise4-sf-save-inline.hide,
+.rise4-sf-save-trigger.hide {
+    display: none !important;
+}
+
+.rise4-sf-save-inline input.form-control {
+    height: 28px !important;
+    width: 150px !important;
+    padding: 2px 10px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+}
+
+.rise4-sf-save-inline .btn {
+    height: 28px !important;
+    width: 28px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+}
+
+/* Saved Filter Presets — Dark Mode */
+html[data-theme="dark"] .rise4-saved-filters-bar {
+    background-color: #162032 !important;
+    border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .rise4-sf-label {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rise4-sf-divider {
+    background-color: #334155 !important;
+}
+
+html[data-theme="dark"] .rise4-sf-pill {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .rise4-sf-pill:hover {
+    background-color: #263449 !important;
+    border-color: #60a5fa !important;
+    color: #60a5fa !important;
+}
+
+html[data-theme="dark"] .rise4-sf-pill.active {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .rise4-sf-custom-wrap .rise4-sf-pill.pill-custom {
+    background-color: rgba(245, 158, 11, 0.16) !important;
+    border-color: rgba(251, 191, 36, 0.35) !important;
+    color: #fcd34d !important;
+}
+
+html[data-theme="dark"] .rise4-sf-custom-wrap .rise4-sf-pill.pill-custom.active {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .rise4-sf-del {
+    color: #fcd34d !important;
+}
+
+html[data-theme="dark"] .rise4-sf-save-trigger {
+    border-color: #475569 !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rise4-sf-save-trigger:hover {
+    border-color: #60a5fa !important;
+    color: #60a5fa !important;
+    background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* ==========================================================================
+   20. RISE 4.0 SIGN IN / RESET PASSWORD — FULL DARK MODE POLISH
+   ========================================================================== */
+.signin-box .signin-logo-dark {
+    display: none !important;
+}
+
+.signin-box .signin-logo-light {
+    display: block !important;
+}
+
+html[data-theme="dark"] body.signin-page {
+    background: radial-gradient(circle at 50% 15%, #1e293b 0%, #0f172a 60%, #090e1a 100%) !important;
+}
+
+html[data-theme="dark"] body.signin-page .scrollable-page {
+    background: transparent !important;
+}
+
+html[data-theme="dark"] .signin-box .panel {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.55) !important;
+}
+
+html[data-theme="dark"] .signin-box .signin-panel-heading,
+html[data-theme="dark"] body.signin-page .panel-heading {
+    background: transparent !important;
+}
+
+html[data-theme="dark"] .signin-box .signin-logo-light {
+    display: none !important;
+}
+
+html[data-theme="dark"] .signin-box .signin-logo-dark {
+    display: block !important;
+}
+
+html[data-theme="dark"] .signin-box .signin-title {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .signin-box .signin-subtitle {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] body.signin-page .signin-box .signin-input-group input.form-control:not(.select2-offscreen),
+html[data-theme="dark"] body.signin-page .signin-box input.form-control:not(.select2-offscreen),
+html[data-theme="dark"] body.signin-page .signin-box .signin-input-group input.form-control,
+html[data-theme="dark"] .signin-box .signin-input-group input.form-control,
+html[data-theme="dark"] .signin-box input.signin-input {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] body.signin-page .signin-box .signin-input-group input.form-control:focus,
+html[data-theme="dark"] .signin-box .signin-input-group input.form-control:focus,
+html[data-theme="dark"] .signin-box input.signin-input:focus {
+    background-color: #0f172a !important;
+    border-color: #60a5fa !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22) !important;
+}
+
+html[data-theme="dark"] .signin-input-group .signin-input-icon,
+html[data-theme="dark"] .signin-input-group .btn-toggle-password {
+    color: #64748b !important;
+}
+
+html[data-theme="dark"] .signin-input-group:focus-within .signin-input-icon,
+html[data-theme="dark"] .signin-input-group .btn-toggle-password:hover {
+    color: #60a5fa !important;
+}
+
+/* ==========================================================================
+   21. RISE 4.x KANBAN CARD METADATA FOOTER (DEADLINE, CHECKLIST, SUBTASKS, COMMENTS)
+   ========================================================================== */
+.rise4-kanban-footer {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    margin-top: 10px !important;
+    padding-top: 8px !important;
+    border-top: 1px solid #f1f5f9 !important;
+}
+
+.rise4-kanban-footer .kmeta-chip {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    line-height: 1.4 !important;
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+.rise4-kanban-footer .kmeta-chip i {
+    font-size: 11px !important;
+}
+
+.rise4-kanban-footer .kmeta-deadline.is-overdue {
+    background-color: #fef2f2 !important;
+    border-color: #fecaca !important;
+    color: #dc2626 !important;
+    font-weight: 600 !important;
+}
+
+.rise4-kanban-footer .kmeta-deadline.is-today {
+    background-color: #fffbeb !important;
+    border-color: #fde68a !important;
+    color: #d97706 !important;
+    font-weight: 600 !important;
+}
+
+.rise4-kanban-footer .kmeta-checklist.is-complete {
+    background-color: #ecfdf5 !important;
+    border-color: #a7f3d0 !important;
+    color: #059669 !important;
+    font-weight: 600 !important;
+}
+
+/* Kanban Card Metadata Footer — Dark Mode */
+html[data-theme="dark"] .rise4-kanban-footer {
+    border-top-color: #334155 !important;
+}
+
+html[data-theme="dark"] .rise4-kanban-footer .kmeta-chip {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rise4-kanban-footer .kmeta-deadline.is-overdue {
+    background-color: rgba(239, 68, 68, 0.16) !important;
+    border-color: rgba(248, 113, 113, 0.35) !important;
+    color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] .rise4-kanban-footer .kmeta-deadline.is-today {
+    background-color: rgba(245, 158, 11, 0.16) !important;
+    border-color: rgba(251, 191, 36, 0.35) !important;
+    color: #fcd34d !important;
+}
+
+html[data-theme="dark"] .rise4-kanban-footer .kmeta-checklist.is-complete {
+    background-color: rgba(16, 185, 129, 0.16) !important;
+    border-color: rgba(52, 211, 153, 0.35) !important;
+    color: #6ee7b7 !important;
+}
+
+/* ==========================================================================
+   22. RISE 4.x GLOBAL COMMAND PALETTE (CTRL + K)
+   ========================================================================== */
+.rise4-cmd-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 999999 !important;
+    background-color: rgba(15, 23, 42, 0.5) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding-top: 10vh !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+}
+
+.rise4-cmd-backdrop.hide {
+    display: none !important;
+}
+
+.rise4-cmd-modal {
+    width: 100% !important;
+    max-width: 600px !important;
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.28) !important;
+    overflow: hidden !important;
+    animation: rise4CmdZoom 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes rise4CmdZoom {
+    from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.rise4-cmd-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 14px 18px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.rise4-cmd-search-icon {
+    font-size: 17px !important;
+    color: #3b82f6 !important;
+}
+
+.rise4-cmd-input {
+    flex: 1 1 auto !important;
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    height: auto !important;
+}
+
+.rise4-cmd-input::placeholder {
+    color: #94a3b8 !important;
+}
+
+.rise4-cmd-kbd {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    padding: 3px 7px !important;
+    border-radius: 6px !important;
+    background-color: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+.rise4-cmd-results {
+    max-height: 380px !important;
+    overflow-y: auto !important;
+    padding: 8px 10px !important;
+}
+
+.rise4-cmd-group-title {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: #94a3b8 !important;
+    padding: 8px 10px 4px !important;
+}
+
+.rise4-cmd-item {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 9px 12px !important;
+    border: none !important;
+    border-radius: 10px !important;
+    background: transparent !important;
+    color: #334155 !important;
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    text-align: left !important;
+    cursor: pointer !important;
+    transition: background-color 0.12s ease, color 0.12s ease !important;
+}
+
+.rise4-cmd-item.active {
+    background-color: #eff6ff !important;
+    color: #2563eb !important;
+}
+
+.rise4-cmd-item-icon {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #64748b !important;
+    flex-shrink: 0 !important;
+}
+
+.rise4-cmd-item.active .rise4-cmd-item-icon {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
+}
+
+.rise4-cmd-item-title {
+    flex: 1 1 auto !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.rise4-cmd-tag {
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+    background-color: #f1f5f9 !important;
+    color: #64748b !important;
+}
+
+.rise4-cmd-empty,
+.rise4-cmd-loading {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 20px 12px !important;
+    color: #94a3b8 !important;
+    font-size: 13px !important;
+}
+
+.rise4-cmd-footer {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+    padding: 10px 18px !important;
+    border-top: 1px solid #f1f5f9 !important;
+    background-color: #f8fafc !important;
+    font-size: 11.5px !important;
+    color: #64748b !important;
+}
+
+.rise4-cmd-footer kbd {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+    padding: 1px 5px !important;
+    font-size: 10.5px !important;
+    color: #334155 !important;
+    box-shadow: none !important;
+}
+
+/* Global Command Palette — Dark Mode */
+html[data-theme="dark"] .rise4-cmd-backdrop {
+    background-color: rgba(2, 6, 23, 0.72) !important;
+}
+
+html[data-theme="dark"] .rise4-cmd-modal {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.7) !important;
+}
+
+html[data-theme="dark"] .rise4-cmd-header {
+    border-bottom-color: #334155 !important;
+}
+
+html[data-theme="dark"] .rise4-cmd-input {
+    color: #f8fafc !important;
+    background: transparent !important;
+}
+
+html[data-theme="dark"] .rise4-cmd-kbd {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rise4-cmd-item {
+    color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .rise4-cmd-item.active {
+    background-color: rgba(59, 130, 246, 0.18) !important;
+    color: #93c5fd !important;
+}
+
+html[data-theme="dark"] .rise4-cmd-item-icon {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rise4-cmd-tag {
+    background-color: #0f172a !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rise4-cmd-footer {
+    background-color: #162032 !important;
+    border-top-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rise4-cmd-footer kbd {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+/* ==========================================================================
+   23. RISE 4.x PROFILE HERO BANNER & COVER WIDGET POLISH
+   ========================================================================== */
+#page-content > .bg-success.clearfix:has(.cover-widget) {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 8px 12px !important;
+}
+
+.cover-widget .box-content.widget-container {
+    background-color: rgba(255, 255, 255, 0.07) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border-radius: 12px !important;
+    margin: 4px 6px !important;
+    padding: 14px 18px !important;
+    backdrop-filter: blur(6px) !important;
+}
+
+.cover-widget .box-content.widget-container:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.cover-widget .box-content.widget-container h1,
+.cover-widget .box-content.widget-container .total-hours-scramble {
+    color: #ffffff !important;
+    font-size: 26px !important;
+    font-weight: 700 !important;
+}
+
+.cover-widget .box-content.widget-container .text-off,
+.cover-widget .box-content.widget-container span.uppercase {
+    color: #94a3b8 !important;
+}
+
+#page-content > .bg-success.clearfix:has(.cover-widget) .avatar img {
+    border: 3px solid rgba(96, 165, 250, 0.65) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
 }

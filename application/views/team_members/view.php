@@ -24,7 +24,7 @@
     <ul id="team-member-view-tabs" data-toggle="ajax-tab" class="nav nav-tabs" role="tablist">
 
         <?php if ($show_timeline) { ?>
-            <li><a  role="presentation" class="active" href="javascript:;" data-target="#tab-timeline"> <?php echo lang('timeline'); ?></a></li>
+            <li class="active"><a role="presentation" href="javascript:;" data-target="#tab-timeline"> <?php echo lang('timeline'); ?></a></li>
         <?php } ?>
 
         <?php if ($show_general_info) { ?>

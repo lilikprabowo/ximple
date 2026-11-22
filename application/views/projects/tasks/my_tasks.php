@@ -23,6 +23,8 @@
 
     </ul>
 
+    <?php $this->load->view("projects/tasks/saved_filters_bar"); ?>
+
     <div class="panel panel-default">
         <div class="table-responsive">
             <table id="task-table" class="display" cellspacing="0" width="100%">            

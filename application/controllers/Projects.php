@@ -2640,12 +2640,20 @@ class Projects extends MY_Controller {
         $is_clone = $this->input->post('is_clone');
         $view_data['is_clone'] = $is_clone;
 
+        //ensure source project is included in dropdown when cloning (even if project is completed/hold)
+        if ($is_clone && $model_info->project_id && !isset($view_data["projects_dropdown"][$model_info->project_id])) {
+            $source_project = $this->Projects_model->get_one($model_info->project_id);
+            if ($source_project && $source_project->id) {
+                $view_data["projects_dropdown"][$source_project->id] = $source_project->title;
+            }
+        }
+
         $view_data['view_type'] = $this->input->post("view_type");
 
         $view_data['has_checklist'] = $this->Checklist_items_model->get_details(array("task_id" => $id))->num_rows();
         $view_data['has_sub_task'] = $this->Tasks_model->get_all_where(array("parent_task_id" => $id, "deleted" => 0))->num_rows();
 
-        $view_data["project_deadline"] = $this->_get_project_deadline_for_task($project_id);
+        $view_data["project_deadline"] = $is_clone ? "" : $this->_get_project_deadline_for_task($project_id);
 
         $this->load->view('projects/tasks/modal_form', $view_data);
     }
@@ -2888,6 +2896,10 @@ class Projects extends MY_Controller {
                         unset($sub_task_data["blocking"]);
 
                         $sub_task_data['parent_task_id'] = $save_id;
+                        $sub_task_data['project_id'] = $project_id;
+                        if ($sub_task->project_id != $project_id) {
+                            $sub_task_data['milestone_id'] = 0;
+                        }
                         $sub_task_data['created_date'] = $now;
 
                         $this->Tasks_model->save($sub_task_data);

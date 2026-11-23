@@ -14,8 +14,7 @@
                 "class" => "form-control white",
                 "placeholder" => lang('post_placeholder_text'),
                 "data-rule-required" => true,
-                "data-msg-required" => lang("field_required"),
-                "data-rich-text-editor" => true
+                "data-msg-required" => lang("field_required")
             ));
             ?>
 
@@ -36,13 +35,49 @@
         var validationUrl = "<?php echo get_uri("timeline/validate_post_file"); ?>";
         var dropzone = attachDropzoneWithForm("#post-dropzone", uploadUrl, validationUrl);
 
+        function initTimelineEditor() {
+            var $desc = $("#post_description");
+            if (!$desc.length || $desc.next(".note-editor").length) {
+                return;
+            }
+            if (typeof initWYSIWYGEditor === "function" && $.fn && $.fn.summernote) {
+                initWYSIWYGEditor("#post_description", {
+                    height: 150,
+                    placeholder: $desc.attr("placeholder") || "",
+                    toolbar: [
+                        ['font', ['bold', 'italic', 'underline', 'clear']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['table', ['table']],
+                        ['insert', ['link']]
+                    ],
+                    lang: "<?php echo lang('language_locale_long'); ?>"
+                });
+            }
+        }
+
+        setTimeout(initTimelineEditor, 100);
+
         $("#post-form").appForm({
             isModal: false,
+            beforeAjaxSubmit: function (data) {
+                if ($("#post_description").next(".note-editor").length) {
+                    var html = $("#post_description").summernote("code");
+                    $("#post_description").val(html);
+                    $.each(data, function (i, field) {
+                        if (field.name === "description") {
+                            field.value = html;
+                        }
+                    });
+                }
+            },
             onSuccess: function (result) {
                 if ($("body").hasClass("dropzone-disabled")) {
                     location.reload();
                 } else {
                     $("#post_description").val("");
+                    if ($("#post_description").next(".note-editor").length) {
+                        $("#post_description").summernote("code", "");
+                    }
                     $("#timeline").prepend(result.data);
                     dropzone.removeAllFiles();
                 }

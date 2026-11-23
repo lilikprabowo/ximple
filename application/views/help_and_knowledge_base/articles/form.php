@@ -114,7 +114,8 @@
             height: 250,
             toolbar: [
                 ['font', ['bold', 'italic', 'underline', 'clear']],
-                ['para', ['ul', 'ol']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['table', ['table']],
                 ['insert', ['link', 'picture']]
             ],
             onImageUpload: function (files, editor, welEditable) {

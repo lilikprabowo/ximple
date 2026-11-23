@@ -1,6 +1,6 @@
 <head>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <?php $this->load->view('includes/meta'); ?>
     <?php $this->load->view('includes/helper_js'); ?>
     <?php $this->load->view('includes/plugin_language_js'); ?>
@@ -26,9 +26,13 @@
     load_css($css_files);
 
     ?>
-    <script type="text/javascript" src="<?php echo base_url('assets/js/app.all.js?v=' . time()); ?>"></script>
-    <!-- Panggil custom-style.css dengan cache busting -->
-    <link rel="stylesheet" href="<?php echo base_url('assets/css/custom-style.css?v=' . time()); ?>">
+    <?php
+    $app_js_v = file_exists(FCPATH . 'assets/js/app.all.js') ? filemtime(FCPATH . 'assets/js/app.all.js') : '4.1';
+    $custom_css_v = file_exists(FCPATH . 'assets/css/custom-style.css') ? filemtime(FCPATH . 'assets/css/custom-style.css') : '4.1';
+    ?>
+    <script type="text/javascript" src="<?php echo base_url('assets/js/app.all.js?v=' . $app_js_v); ?>"></script>
+    <!-- Panggil custom-style.css dengan cache busting berbasis filemtime -->
+    <link rel="stylesheet" href="<?php echo base_url('assets/css/custom-style.css?v=' . $custom_css_v); ?>">
     <script type="text/javascript">
         window.getRiseAutoThemeState = function () {
             var now = new Date();

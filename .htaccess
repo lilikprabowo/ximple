@@ -22,9 +22,30 @@ Options -Indexes
     Header always unset X-Powered-By
 </IfModule>
 
+# GZIP Compression for fast loading over VPN (~75-85% smaller assets)
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/x-javascript application/json image/svg+xml font/ttf font/otf application/font-woff application/font-woff2
+</IfModule>
+
+# Browser Caching for static assets (safe with ?v=filemtime cache-busting)
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 30 days"
+    ExpiresByType application/javascript "access plus 30 days"
+    ExpiresByType text/javascript "access plus 30 days"
+    ExpiresByType image/png "access plus 30 days"
+    ExpiresByType image/jpeg "access plus 30 days"
+    ExpiresByType image/gif "access plus 30 days"
+    ExpiresByType image/svg+xml "access plus 30 days"
+    ExpiresByType image/x-icon "access plus 30 days"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/ttf "access plus 1 year"
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /
+    # RewriteBase / (omitted so routing works on both root / and subpath /ximple4/)
 
     # Block direct HTTP access to internal folders
     RewriteRule ^(\.git|application|system|mcgg-assistant)(/|$) - [F,L]

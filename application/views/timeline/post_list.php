@@ -57,6 +57,7 @@
                                                 <i class="fa fa-chevron-down clickable"></i>
                                             </div>
                                             <ul class="dropdown-menu" role="menu">
+                                                <li role="presentation"><?php echo modal_anchor(get_uri("timeline/edit_post_modal_form/$post->id"), "<i class='fa fa-pencil'></i> " . lang('edit'), array("class" => "", "title" => lang('edit'), "data-modal-lg" => "1")); ?></li>
                                                 <li role="presentation"><?php echo ajax_anchor(get_uri("timeline/delete/$post->id"), "<i class='fa fa-times'></i> " . lang('delete'), array("class" => "", "title" => lang('delete'), "data-fade-out-on-success" => "#post-content-container-$post->id")); ?> </li>
                                             </ul>
                                         </span>
@@ -64,9 +65,9 @@
 
                                 </div>
 
-                                <p>
+                                <div id="timeline-post-desc-<?php echo $post->id; ?>" class="timeline-post-description mb10">
                                     <?php echo nl2br(link_it($post->description)); ?>
-                                </p>
+                                </div>
 
                                 <?php
                                 $files = unserialize($post->files);

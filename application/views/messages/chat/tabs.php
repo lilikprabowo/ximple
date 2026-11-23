@@ -28,6 +28,12 @@
 </div>
 
 
+<div class="rise-chat-search-box">
+    <i class="ti ti-search rise-chat-search-icon"></i>
+    <input type="text" id="rise-chat-search-input" class="rise-chat-search-input" placeholder="Cari karyawan atau chat..." autocomplete="off" />
+    <button type="button" id="rise-chat-search-clear" class="rise-chat-search-clear hide" title="Clear">&times;</button>
+</div>
+
 <div class="rise-chat-body long clearfix">
     <div class="tab-content">
         <div role="tabpanel" class="tab-pane fade" id="chat-inbox-tab">
@@ -36,4 +42,62 @@
         <div role="tabpanel" class="tab-pane fade" id="chat-users-tab"></div>
         <div role="tabpanel" class="tab-pane fade" id="chat-clients-tab"></div>
     </div>
+    <div id="rise-chat-search-empty" class="chat-no-messages text-off text-center hide">
+        <i class="ti ti-search-off" style="font-size:28px;display:block;margin-bottom:6px;opacity:.6;"></i>
+        Tidak ditemukan
+    </div>
 </div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        function filterRiseChatList() {
+            var $input = $("#rise-chat-search-input");
+            var q = $.trim(($input.val() || "").toLowerCase());
+            var $clearBtn = $("#rise-chat-search-clear");
+            var $empty = $("#rise-chat-search-empty");
+
+            if (q.length > 0) {
+                $clearBtn.removeClass("hide");
+            } else {
+                $clearBtn.addClass("hide");
+            }
+
+            var $activePane = $(".rise-chat-body .tab-pane.active");
+            var $rows = $activePane.find(".message-row");
+
+            if (!$rows.length) {
+                $empty.addClass("hide");
+                return;
+            }
+
+            var visibleCount = 0;
+            $rows.each(function () {
+                var text = ($(this).text() || "").toLowerCase();
+                if (!q || text.indexOf(q) !== -1) {
+                    $(this).show();
+                    visibleCount++;
+                } else {
+                    $(this).hide();
+                }
+            });
+
+            if (q && visibleCount === 0) {
+                $empty.removeClass("hide");
+            } else {
+                $empty.addClass("hide");
+            }
+        }
+
+        $("#rise-chat-search-input").on("input keyup", filterRiseChatList);
+
+        $("#rise-chat-search-clear").on("click", function () {
+            $("#rise-chat-search-input").val("").focus();
+            filterRiseChatList();
+        });
+
+        $(".chat-tab a").on("click", function () {
+            setTimeout(filterRiseChatList, 180);
+            setTimeout(filterRiseChatList, 500);
+        });
+    });
+</script>

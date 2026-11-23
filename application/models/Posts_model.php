@@ -37,7 +37,24 @@ class Posts_model extends Crud_model {
 
         $user_id = get_array_value($options, "user_id");
         if ($user_id) {
+            $user_id = (int) $user_id;
             $where .= " AND $posts_table.created_by=$user_id";
+        }
+
+        $search = trim((string) get_array_value($options, "search"));
+        if ($search !== "") {
+            $escaped_search = $this->db->escape_like_str($search);
+            $where .= " AND ($posts_table.description LIKE '%$escaped_search%' OR CONCAT($users_table.first_name, ' ', $users_table.last_name) LIKE '%$escaped_search%')";
+        }
+
+        $month = (int) get_array_value($options, "month");
+        if ($month >= 1 && $month <= 12) {
+            $where .= " AND MONTH($posts_table.created_at)=$month";
+        }
+
+        $year = (int) get_array_value($options, "year");
+        if ($year >= 2000 && $year <= 2100) {
+            $where .= " AND YEAR($posts_table.created_at)=$year";
         }
 
 

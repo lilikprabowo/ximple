@@ -305,9 +305,9 @@ class Attendance extends MY_Controller {
             $note_title = "";
         }
 
-        $note_link = modal_anchor(get_uri("attendance/note_modal_form"), "<i class='fa fa-comment-o p10'></i>", array("class" => "edit text-muted", "title" => lang("note"), "data-post-id" => $data->id));
+        $note_link = modal_anchor(get_uri("attendance/note_modal_form"), "<i class='ti ti-message-plus'></i>", array("class" => "edit attendance-note-btn no-note", "title" => lang("note"), "data-post-id" => $data->id));
         if ($data->note) {
-            $note_link = modal_anchor(get_uri("attendance/note_modal_form"), "<i class='fa fa-comment p10'></i>", array("class" => "edit text-muted", "title" => $note_title, "data-modal-title" => lang("note"), "data-post-id" => $data->id));
+            $note_link = modal_anchor(get_uri("attendance/note_modal_form"), "<i class='ti ti-message-dots'></i>", array("class" => "edit attendance-note-btn has-note", "title" => $note_title, "data-modal-title" => lang("note"), "data-post-id" => $data->id));
         }
 
 

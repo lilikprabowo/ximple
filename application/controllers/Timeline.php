@@ -132,7 +132,52 @@ class Timeline extends MY_Controller {
     /* load more posts */
 
     function load_more_posts($offset = 0) {
-        timeline_widget(array("limit" => 20, "offset" => $offset));
+        $params = array("limit" => 20, "offset" => (int) $offset);
+        if ($this->input->get("search")) {
+            $params["search"] = $this->input->get("search");
+        }
+        if ($this->input->get("month")) {
+            $params["month"] = (int) $this->input->get("month");
+        }
+        if ($this->input->get("year")) {
+            $params["year"] = (int) $this->input->get("year");
+        }
+        if ($this->input->get("user_id")) {
+            $params["user_id"] = (int) $this->input->get("user_id");
+        }
+        timeline_widget($params);
+    }
+
+    /* search & filter timeline posts by keyword, month, year, and user */
+
+    function search_posts() {
+        $search = trim((string) $this->input->post("search"));
+        $month = (int) $this->input->post("month");
+        $year = (int) $this->input->post("year");
+        $user_id = (int) $this->input->post("user_id");
+
+        $params = array(
+            "limit" => 50,
+            "offset" => 0,
+            "is_first_load" => true,
+            "search" => $search,
+            "month" => $month,
+            "year" => $year,
+            "user_id" => $user_id
+        );
+
+        $logs = $this->Posts_model->get_details($params);
+        if (!count($logs->result)) {
+            echo '<div id="timeline"><div class="rise4-timeline-empty"><i class="ti ti-search-off"></i><div>Tidak ada post timeline yang cocok dengan pencarian/filter.</div></div></div>';
+            return;
+        }
+
+        $view_data["posts"] = $logs->result;
+        $view_data["single_post"] = "";
+        $view_data["is_first_load"] = true;
+        $view_data["result_remaining"] = $logs->found_rows - 50;
+        $view_data["next_page_offset"] = 50;
+        $this->load->view("timeline/post_list", $view_data);
     }
 
     /* post page for notification */
@@ -150,6 +195,65 @@ class Timeline extends MY_Controller {
         $view_data['result_remaining'] = 0;
         $view_data['single_post'] = 'single_post';
         $this->template->rander("timeline/post_list", $view_data);
+    }
+
+    /* open edit modal for timeline post */
+
+    function edit_post_modal_form($id = 0) {
+        if (!$id) {
+            show_404();
+        }
+
+        $post_info = $this->Posts_model->get_one($id);
+        if (!$post_info || !$post_info->id) {
+            show_404();
+        }
+
+        //only admin and creator can edit the post
+        if (!($this->login_user->is_admin || $post_info->created_by == $this->login_user->id)) {
+            redirect("forbidden");
+        }
+
+        $view_data["model_info"] = $post_info;
+        $this->load->view("timeline/edit_post_modal_form", $view_data);
+    }
+
+    /* save edited timeline post */
+
+    function save_edited_post() {
+        validate_submitted_data(array(
+            "id" => "required|numeric",
+            "description" => "required"
+        ));
+
+        $id = $this->input->post("id");
+        $post_info = $this->Posts_model->get_one($id);
+        if (!$post_info || !$post_info->id) {
+            echo json_encode(array("success" => false, "message" => lang("error_occurred")));
+            return;
+        }
+
+        //only admin and creator can edit the post
+        if (!($this->login_user->is_admin || $post_info->created_by == $this->login_user->id)) {
+            redirect("forbidden");
+        }
+
+        $data = array(
+            "description" => $this->input->post("description")
+        );
+        $data = clean_data($data);
+
+        $save_id = $this->Posts_model->save($data, $id);
+        if ($save_id) {
+            echo json_encode(array(
+                "success" => true,
+                "id" => $id,
+                "html" => nl2br(link_it($data["description"])),
+                "message" => lang("record_saved")
+            ));
+        } else {
+            echo json_encode(array("success" => false, "message" => lang("error_occurred")));
+        }
     }
 
 }

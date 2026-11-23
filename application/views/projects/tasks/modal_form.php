@@ -2,7 +2,9 @@
 <div id="tasks-dropzone" class="post-dropzone">
     <div class="modal-body clearfix">
         <input type="hidden" name="id" value="<?php echo $add_type == "multiple" ? "" : $model_info->id; ?>" />
-        <input type="hidden" name="project_id" value="<?php echo $project_id; ?>" />
+        <?php if ($project_id && !$is_clone) { ?>
+            <input type="hidden" name="project_id" value="<?php echo $project_id; ?>" />
+        <?php } ?>
         <input type="hidden" name="add_type" value="<?php echo $add_type; ?>" />
         <input type="hidden" name="ticket_id" value="<?php echo $ticket_id; ?>" />
 
@@ -42,7 +44,7 @@
                 ?>
             </div>
         </div>
-        <?php if (!$project_id) { ?>
+        <?php if (!$project_id || $is_clone) { ?>
             <div class="form-group">
                 <label for="project_id" class=" col-md-3"><?php echo lang('project'); ?></label>
                 <div class="col-md-9">
@@ -343,7 +345,12 @@
         window.taskForm = $("#task-form").appForm({
             closeModalOnSuccess: false,
             onSuccess: function (result) {
-                $("#task-table").appTable({newData: result.data, dataId: result.id});
+                var selectedProjectId = $("#project_id").length ? $("#project_id").val() : "<?php echo $project_id; ?>";
+                var isSameProject = !selectedProjectId || selectedProjectId == "<?php echo $project_id; ?>";
+                var isSingleProjectView = window.location.href.indexOf("/projects/view/") !== -1;
+                if (!isSingleProjectView || isSameProject) {
+                    $("#task-table").appTable({newData: result.data, dataId: result.id});
+                }
                 $("#reload-kanban-button:visible").trigger("click");
 
                 $("#save_and_show_value").append(result.save_and_show_link);

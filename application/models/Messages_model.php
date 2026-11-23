@@ -157,7 +157,7 @@ class Messages_model extends Crud_model {
                 WHERE $messages_table.deleted=0 AND $messages_table.message_id=0 $where AND
                 FIND_IN_SET($login_user_id, $messages_table.deleted_by_users) = 0 AND ($messages_table.from_user_id=$login_user_id OR $messages_table.to_user_id=$login_user_id)
                 GROUP BY id
-                ORDER BY message_time DESC LIMIT 0, 30";
+                ORDER BY message_time DESC LIMIT 0, 100";
 
         return $this->db->query($sql);
     }
@@ -270,7 +270,7 @@ class Messages_model extends Crud_model {
         FROM $users_table
         LEFT JOIN $clients_table ON $clients_table.id = $users_table.client_id AND $clients_table.deleted=0
         WHERE $users_table.deleted=0 AND $users_table.status='active' AND $users_table.id!=$login_user_id $where
-        ORDER BY $users_table.user_type, $users_table.first_name ASC";
+        ORDER BY $users_table.user_type, TRIM($users_table.first_name) ASC, TRIM($users_table.last_name) ASC";
 
         return $this->db->query($sql);
     }

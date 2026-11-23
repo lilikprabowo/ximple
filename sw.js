@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ximple-pwa-v1';
+const CACHE_NAME = 'ximple-pwa-v2';
 const STATIC_ASSETS = [
   '/assets/images/pwa-icon-192.png',
   '/assets/images/pwa-icon-512.png'
@@ -32,8 +32,8 @@ self.addEventListener('fetch', function (event) {
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Cache-first / stale-while-revalidate for static assets (images, fonts, icons)
-  if (/\.(png|jpg|jpeg|svg|gif|webp|woff2?|ttf|eot|ico)$/i.test(url.pathname)) {
+  // Cache-first / stale-while-revalidate for static assets (CSS, JS, images, fonts, icons)
+  if (/\.(css|js|png|jpg|jpeg|svg|gif|webp|woff2?|ttf|eot|ico)$/i.test(url.pathname)) {
     event.respondWith(
       caches.match(req).then(function (cached) {
         var fetchPromise = fetch(req).then(function (networkRes) {

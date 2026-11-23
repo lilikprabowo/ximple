@@ -1328,6 +1328,27 @@ if (!function_exists("clean_data")) {
         return $value;
     }
 
+    function rise4_encode_emojis_for_utf8($data) {
+        if (is_array($data)) {
+            foreach ($data as $k => $v) {
+                $data[$k] = rise4_encode_emojis_for_utf8($v);
+            }
+            return $data;
+        }
+        if (!is_string($data) || $data === "") {
+            return $data;
+        }
+        // Encode 4-byte UTF-8 characters (emojis) to ASCII HTML entities so legacy MySQL utf8 stores them safely
+        return preg_replace_callback('/[\x{10000}-\x{10FFFF}]/u', function ($m) {
+            $ch = $m[0];
+            if (function_exists('mb_ord')) {
+                return '&#' . mb_ord($ch, 'UTF-8') . ';';
+            }
+            $u = unpack('N', mb_convert_encoding($ch, 'UCS-4BE', 'UTF-8'));
+            return isset($u[1]) ? ('&#' . $u[1] . ';') : $ch;
+        }, $data);
+    }
+
     function clean_data($data) {
         $ci = get_instance();
 
@@ -1338,6 +1359,8 @@ if (!function_exists("clean_data")) {
         if ($disable_html_input == "1") {
             $data = html_escape($data);
         }
+
+        $data = rise4_encode_emojis_for_utf8($data);
 
         return $data;
     }

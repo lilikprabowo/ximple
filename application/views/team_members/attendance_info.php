@@ -51,7 +51,7 @@ if (isset($page_type) && $page_type === "full") {
                             {title: "<?php echo lang("out_date"); ?>", "class": "w20p", iDataSort: 1},
                             {title: "<?php echo lang("out_time"); ?>", "class": "w20p"},
                             {title: "<?php echo lang("duration"); ?>", "class": "text-right"},
-                            {title: '<i class="fa fa-comment"></i>', "class": "text-center w50"},
+                            {title: '<i class="ti ti-message-dots attendance-note-th-icon" title="<?php echo lang("note"); ?>"></i>', "class": "text-center w50"},
                             {title: '<i class="fa fa-bars"></i>', "class": "text-center option w100"}
                         ],
                         printColumns: [2, 3, 5, 6, 7],

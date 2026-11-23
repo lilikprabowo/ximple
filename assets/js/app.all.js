@@ -8994,7 +8994,9 @@ setSummernote = function ($instance, notFocus) {
             focus: focus,
             toolbar: [
                 ['font', ['bold', 'italic', 'underline', 'clear']],
-                ['para', ['ul', 'ol']]
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['table', ['table']],
+                ['insert', ['link']]
             ],
             disableDragAndDrop: true,
             placeholder: $instance.attr("placeholder") || ""
@@ -9356,7 +9358,9 @@ initWYSIWYGEditor = function (element, options) {
         height: 250,
         toolbar: [
             ['font', ['bold', 'italic', 'underline', 'clear']],
-            ['para', ['ul', 'ol']]
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['table', ['table']],
+            ['insert', ['link']]
         ],
         disableDragAndDrop: true
     }, options);

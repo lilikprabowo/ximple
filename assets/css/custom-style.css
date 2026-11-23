@@ -3978,17 +3978,11 @@ textarea.sticky-note:focus {
     margin: 1px auto !important;
 }
 
-/* Summernote Minimalist Formatting Toolbar (RISE 4.0 Standard) */
+/* Summernote Minimalist Formatting Toolbar (RISE 4.0 Standard + Align & Table Support) */
 .note-toolbar .note-btn-group:has(.dropdown-style),
 .note-toolbar .btn-group:has(.dropdown-style),
 .note-toolbar .note-btn-group:has(.dropdown-fontname),
 .note-toolbar .btn-group:has(.dropdown-fontname),
-.note-toolbar .note-table,
-.note-toolbar .note-btn-group:has(.note-table),
-.note-toolbar .btn-group:has(.note-table),
-.note-toolbar .note-align,
-.note-toolbar .btn-group:has(.note-align),
-.note-toolbar .note-btn-group:has(.note-align),
 .note-toolbar .btn-fullscreen,
 .note-toolbar .note-btn-group:has(.btn-fullscreen),
 .note-toolbar .btn-group:has(.btn-fullscreen),
@@ -4010,11 +4004,38 @@ textarea.sticky-note:focus {
 .note-toolbar .btn-group:has([data-name="style"]),
 .note-toolbar .note-btn-group:has([data-name="fontname"]),
 .note-toolbar .btn-group:has([data-name="fontname"]),
-.note-toolbar .note-btn-group:has([data-name="table"]),
-.note-toolbar .btn-group:has([data-name="table"]),
 .note-toolbar .note-btn-group:has([data-name="view"]),
 .note-toolbar .btn-group:has([data-name="view"]) {
     display: none !important;
+}
+
+/* Dark Mode styling for Summernote Table Dimension Picker & Tables */
+html[data-theme="dark"] .note-editor .note-table .dropdown-menu {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .note-editor .note-editable table td,
+html[data-theme="dark"] .note-editor .note-editable table th {
+    border-color: #475569 !important;
+}
+
+.note-editor .note-editable table {
+    max-width: 100% !important;
+    border-collapse: collapse !important;
+}
+
+.note-editor .note-editable table td,
+.note-editor .note-editable table th {
+    position: relative !important;
+    min-width: 40px !important;
+    padding: 6px 10px !important;
+}
+
+body.rise4-col-resizing {
+    cursor: col-resize !important;
+    user-select: none !important;
 }
 
 /* 9.1 Modern Dark Slate Tooltips (RISE 4.0 Style) */
@@ -6003,9 +6024,13 @@ input[type="checkbox"].switch-toggle:checked:hover {
 }
 
 /* Timeline Post Containers - Balanced Stagger so Left (Odd) & Right (Even) Date Badges Never Align or Collide */
+#timeline {
+    padding-top: 20px !important;
+}
+
 #timeline .post-content {
     width: 50% !important;
-    padding-top: 16px !important;
+    padding-top: 20px !important;
     box-sizing: border-box !important;
     position: relative !important;
 }
@@ -6274,12 +6299,13 @@ input[type="checkbox"].switch-toggle:checked:hover {
 }
 
 /* Post Description Text */
-#timeline .post-content > .post > .media > .media-body > p {
+#timeline .post-content > .post > .media > .media-body > p,
+#timeline .post-content > .post > .media > .media-body > .timeline-post-description {
     font-size: 13.5px !important;
     line-height: 1.65 !important;
     color: #334155 !important;
     margin: 0 !important;
-    padding: 16px 20px 6px 20px !important;
+    padding: 16px 20px 10px 20px !important;
     background-color: #ffffff !important;
     box-sizing: border-box !important;
 }
@@ -7924,6 +7950,7 @@ html[data-theme="dark"] #post-form-container .box > .avatar img {
 }
 
 html[data-theme="dark"] #timeline .post-content > .post > .media > .media-body > p,
+html[data-theme="dark"] #timeline .post-content > .post > .media > .media-body > .timeline-post-description,
 html[data-theme="dark"] #post-form-container .panel-body,
 html[data-theme="dark"] #post-form-container textarea.form-control {
     background-color: #1e293b !important;
@@ -9169,7 +9196,7 @@ html[data-theme="dark"] .permission-list label {
 
 .rise-chat-wrapper {
     width: 340px !important;
-    height: 440px !important;
+    height: 480px !important;
     border-radius: 16px !important;
     border: 1px solid #e2e8f0 !important;
     box-shadow: 0 20px 42px -10px rgba(15, 23, 42, 0.22) !important;
@@ -9185,14 +9212,91 @@ html[data-theme="dark"] .permission-list label {
     box-shadow: none !important;
 }
 
+.rise-chat-search-box {
+    position: relative !important;
+    padding: 8px 10px !important;
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.rise-chat-search-icon {
+    position: absolute !important;
+    left: 20px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    font-size: 15px !important;
+    color: #94a3b8 !important;
+    pointer-events: none !important;
+}
+
+.rise-chat-search-input {
+    width: 100% !important;
+    height: 32px !important;
+    padding: 4px 28px 4px 30px !important;
+    font-size: 12.5px !important;
+    border-radius: 8px !important;
+    border: 1px solid #e2e8f0 !important;
+    background-color: #f8fafc !important;
+    color: #1e293b !important;
+    outline: none !important;
+    transition: border-color 0.15s ease, background-color 0.15s ease !important;
+}
+
+.rise-chat-search-input:focus {
+    background-color: #ffffff !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.14) !important;
+}
+
+.rise-chat-search-clear {
+    position: absolute !important;
+    right: 16px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    border: none !important;
+    background: transparent !important;
+    color: #94a3b8 !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    padding: 2px 4px !important;
+}
+
+.rise-chat-search-clear:hover {
+    color: #475569 !important;
+}
+
+html[data-theme="dark"] .rise-chat-search-box {
+    background-color: #162032 !important;
+    border-bottom-color: #334155 !important;
+}
+
+html[data-theme="dark"] .rise-chat-search-input {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .rise-chat-search-input:focus {
+    border-color: #60a5fa !important;
+    background-color: #0f172a !important;
+}
+
+html[data-theme="dark"] .rise-chat-search-clear:hover {
+    color: #e2e8f0 !important;
+}
+
 .rise-chat-body {
-    height: 340px !important;
-    padding: 8px 4px !important;
+    height: 365px !important;
+    padding: 8px 4px 20px 4px !important;
+    overflow-y: auto !important;
 }
 
 .rise-chat-body.full-height,
 .rise-chat-body.long {
-    height: 390px !important;
+    height: 382px !important;
+    overflow-y: auto !important;
+    padding-bottom: 24px !important;
 }
 
 .rise-chat-wrapper .message-row {
@@ -10015,4 +10119,521 @@ html[data-theme="dark"] .rise4-cmd-footer kbd {
 #page-content > .bg-success.clearfix:has(.cover-widget) .avatar img {
     border: 3px solid rgba(96, 165, 250, 0.65) !important;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* ==========================================================================
+   24. RISE 4.x TIME CARDS (ATTENDANCE) NOTE ICON BUTTONS
+   ========================================================================== */
+.attendance-note-th-icon {
+    font-size: 18px !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+    color: #64748b !important;
+    display: inline-block !important;
+}
+
+a.attendance-note-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+a.attendance-note-btn i {
+    font-size: 18px !important;
+    line-height: 1 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+a.attendance-note-btn.no-note {
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+a.attendance-note-btn.no-note:hover {
+    background-color: #eff6ff !important;
+    border-color: #93c5fd !important;
+    color: #2563eb !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.14) !important;
+}
+
+a.attendance-note-btn.has-note {
+    background-color: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+    color: #2563eb !important;
+}
+
+a.attendance-note-btn.has-note:hover {
+    background-color: #dbeafe !important;
+    border-color: #60a5fa !important;
+    color: #1d4ed8 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2) !important;
+}
+
+html[data-theme="dark"] .attendance-note-th-icon {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] a.attendance-note-btn.no-note {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] a.attendance-note-btn.no-note:hover {
+    background-color: rgba(59, 130, 246, 0.16) !important;
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+}
+
+html[data-theme="dark"] a.attendance-note-btn.has-note {
+    background-color: rgba(59, 130, 246, 0.18) !important;
+    border-color: rgba(96, 165, 250, 0.45) !important;
+    color: #60a5fa !important;
+}
+
+html[data-theme="dark"] a.attendance-note-btn.has-note:hover {
+    background-color: rgba(59, 130, 246, 0.28) !important;
+    border-color: #60a5fa !important;
+    color: #93c5fd !important;
+}
+
+/* ==========================================================================
+   25. RISE 4.x RESPONSIVE HARDENING (MOBILE, TABLET & SMALL LAPTOP)
+   ========================================================================== */
+@media (max-width: 767px) {
+    /* Floating Chat: prevent horizontal/vertical clipping on mobile */
+    .rise-chat-wrapper {
+        width: calc(100vw - 24px) !important;
+        max-width: 380px !important;
+        right: 12px !important;
+        left: auto !important;
+        bottom: 76px !important;
+        height: calc(100vh - 104px) !important;
+        max-height: 500px !important;
+    }
+
+    .rise-chat-body {
+        height: calc(100% - 115px) !important;
+    }
+
+    .rise-chat-body.full-height,
+    .rise-chat-body.long {
+        height: calc(100% - 98px) !important;
+    }
+
+    .init-chat-icon {
+        right: 16px !important;
+        bottom: 16px !important;
+        width: 48px !important;
+        height: 48px !important;
+    }
+
+    /* Topbar Dropdowns (Reminders & Notifications): never overflow mobile viewport */
+    .rise4-reminders-dropdown,
+    #default-navbar .dropdown-menu.aside-xl {
+        width: calc(100vw - 24px) !important;
+        max-width: 370px !important;
+        right: 8px !important;
+        left: auto !important;
+    }
+
+    /* Global Command Palette (Ctrl+K) on mobile */
+    .rise4-cmd-overlay {
+        padding: 6vh 12px 12px !important;
+    }
+
+    .rise4-cmd-box {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Profile Hero Banner cards stack cleanly */
+    .cover-widget .box-content.widget-container {
+        display: block !important;
+        width: auto !important;
+        margin: 6px 0 !important;
+    }
+
+    /* Smooth horizontal scroll on DataTables & compact modals */
+    .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .modal-dialog {
+        margin: 12px !important;
+        width: auto !important;
+        max-width: calc(100vw - 24px) !important;
+    }
+}
+
+/* Inline Table Action Bar inside Summernote Editors (RISE 4.x) */
+.rise4-table-action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+    font-family: Inter, system-ui, sans-serif;
+}
+
+.rise4-table-action-bar .rise4-tbl-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-right: 4px;
+}
+
+html[data-theme="dark"] .rise4-table-action-bar .rise4-tbl-label {
+    color: #94a3b8;
+}
+
+.rise4-table-action-bar button {
+    border: none;
+    background: transparent;
+    color: #334155;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 4px 7px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.2;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.rise4-table-action-bar button:hover {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.rise4-table-action-bar button.danger {
+    color: #dc2626;
+}
+
+.rise4-table-action-bar button.danger:hover {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.rise4-table-action-bar .rise4-tbl-sep {
+    width: 1px;
+    height: 16px;
+    background: #e2e8f0;
+    margin: 0 2px;
+}
+
+html[data-theme="dark"] .rise4-table-action-bar {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .rise4-table-action-bar button {
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .rise4-table-action-bar button:hover {
+    background: rgba(59, 130, 246, 0.18);
+    color: #60a5fa;
+}
+
+html[data-theme="dark"] .rise4-table-action-bar button.danger {
+    color: #f87171;
+}
+
+html[data-theme="dark"] .rise4-table-action-bar button.danger:hover {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+}
+
+html[data-theme="dark"] .rise4-table-action-bar .rise4-tbl-sep {
+    background: #334155;
+}
+
+/* Emoji Picker Button & Popover for Summernote Editors (RISE 4.x) */
+.rise4-emoji-group {
+    position: relative !important;
+}
+
+.rise4-emoji-btn {
+    font-size: 14px !important;
+    line-height: 1 !important;
+    padding: 4px 7px !important;
+}
+
+.rise4-emoji-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 10650;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 2px;
+    padding: 8px;
+    width: 296px;
+    max-width: calc(100vw - 32px);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.22);
+}
+
+.rise4-emoji-item {
+    border: none;
+    background: transparent;
+    font-size: 17px;
+    line-height: 1;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: transform 0.12s ease, background-color 0.12s ease;
+}
+
+.rise4-emoji-item:hover {
+    background: #eff6ff;
+    transform: scale(1.18);
+}
+
+html[data-theme="dark"] .rise4-emoji-popover {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 14px 32px -6px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] .rise4-emoji-item:hover {
+    background: rgba(59, 130, 246, 0.22);
+}
+
+/* Nested Lists Styling (List di dalam List) inside Editors & Timeline Posts */
+.note-editable ul,
+.note-editable ol,
+#timeline .post-content ul,
+#timeline .post-content ol,
+#timeline .panel-body ul,
+#timeline .panel-body ol {
+    padding-left: 24px !important;
+    margin: 4px 0 !important;
+}
+
+.note-editable ul,
+#timeline .panel-body ul {
+    list-style-type: disc !important;
+}
+
+.note-editable ul ul,
+#timeline .panel-body ul ul {
+    list-style-type: circle !important;
+}
+
+.note-editable ul ul ul,
+#timeline .panel-body ul ul ul {
+    list-style-type: square !important;
+}
+
+.note-editable ol,
+#timeline .panel-body ol,
+.note-editable ul ol,
+#timeline .panel-body ul ol {
+    list-style-type: decimal !important;
+}
+
+.note-editable ol ol,
+#timeline .panel-body ol ol {
+    list-style-type: lower-alpha !important;
+}
+
+/* Timeline Search & Month/Year Filter Bar (RISE 4.x Modern Style) */
+.rise4-timeline-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    margin: 14px auto 8px auto;
+    max-width: 100%;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.05);
+}
+
+.rise4-tl-search-wrap {
+    position: relative;
+    flex: 1 1 220px;
+    min-width: 190px;
+}
+
+.rise4-tl-search-wrap i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 16px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+#rise4-timeline-filter-bar .rise4-tl-search-wrap input#rise4-tl-search.form-control {
+    padding: 6px 12px 6px 38px !important;
+    height: 36px !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    text-indent: 0 !important;
+    transition: all 0.18s ease !important;
+}
+
+#rise4-timeline-filter-bar .rise4-tl-search-wrap input#rise4-tl-search.form-control:focus {
+    background-color: #ffffff !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12) !important;
+}
+
+/* Select2 dropdowns inside Timeline Filter Bar */
+#rise4-timeline-filter-bar .select2-container.rise4-tl-select {
+    width: auto !important;
+    min-width: 148px !important;
+}
+
+#rise4-timeline-filter-bar .select2-container .select2-choice {
+    height: 36px !important;
+    line-height: 34px !important;
+    border-radius: 10px !important;
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    color: #334155 !important;
+    padding: 0 28px 0 12px !important;
+}
+
+#rise4-timeline-filter-bar .select2-container .select2-choice:hover {
+    border-color: #cbd5e1 !important;
+    background-color: #ffffff !important;
+}
+
+#rise4-timeline-filter-bar .select2-container .select2-choice .select2-arrow {
+    top: 4px !important;
+}
+
+/* Primary Blue Search Button & Soft Reset Button (matching RISE 4.x Post button) */
+#rise4-timeline-filter-bar #rise4-tl-search-btn {
+    height: 36px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 0 16px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px -2px rgba(37, 99, 235, 0.35) !important;
+    transition: all 0.18s ease !important;
+}
+
+#rise4-timeline-filter-bar #rise4-tl-search-btn:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 14px -2px rgba(37, 99, 235, 0.45) !important;
+}
+
+#rise4-timeline-filter-bar #rise4-tl-reset-btn {
+    height: 36px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    padding: 0 13px !important;
+    border-radius: 10px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+    transition: all 0.18s ease !important;
+}
+
+#rise4-timeline-filter-bar #rise4-tl-reset-btn:hover {
+    background-color: #fef2f2 !important;
+    border-color: #fca5a5 !important;
+    color: #ef4444 !important;
+}
+
+.rise4-timeline-filter-bar .btn i,
+.rise4-indent-group i {
+    font-size: 15px !important;
+    line-height: 1 !important;
+}
+
+.rise4-timeline-empty {
+    text-align: center;
+    padding: 42px 20px;
+    margin: 16px auto;
+    max-width: 460px;
+    background: #ffffff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    color: #64748b;
+    font-size: 13.5px;
+}
+
+.rise4-timeline-empty i {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 8px;
+    opacity: 0.6;
+}
+
+html[data-theme="dark"] .rise4-timeline-filter-bar,
+html[data-theme="dark"] .rise4-timeline-empty {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rise4-timeline-filter-bar input.form-control,
+html[data-theme="dark"] .rise4-timeline-filter-bar select.rise4-tl-select,
+html[data-theme="dark"] #rise4-timeline-filter-bar .select2-container .select2-choice {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] #rise4-timeline-filter-bar #rise4-tl-reset-btn {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] #rise4-timeline-filter-bar #rise4-tl-reset-btn:hover {
+    background-color: rgba(239, 68, 68, 0.16) !important;
+    border-color: rgba(248, 113, 113, 0.45) !important;
+    color: #f87171 !important;
 }
